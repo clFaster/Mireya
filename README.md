@@ -1,6 +1,16 @@
 # Mireya
 A versatile digital signage solution for creating and managing visual content across multiple screens in real time.
 
+## Overview
+
+```mermaid
+flowchart LR
+    A[Web] -- REST API and SignalR --> B[Server]
+    C[ClientApp] -- WebSocket --> B
+    B -- Content Updates --> C
+    B -- Live Updates --> A
+```
+
 ## Architecture
 
 - **Server (.NET Core):**  
