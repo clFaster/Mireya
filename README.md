@@ -1,3 +1,16 @@
 # Mireya
 A versatile digital signage solution for creating and managing visual content across multiple screens in real time.
 
+## Architecture
+
+- **Server (.NET Core):**  
+	The backend is developed with .NET Core, responsible for managing screens, user authentication, and content distribution. It exposes a REST API for standard operations and uses SignalR for real-time updates and communication.
+
+- **Web Frontend (Next.js):**  
+	The web interface, built with Next.js, allows users to configure screens, design templates, and schedule content. It interacts with the .NET backend via REST APIs and receives live updates through SignalR.
+
+- **Client Application (Android TV):**  
+	The client app runs on Android TV devices, connecting to the server using WebSocket for efficient, real-time content delivery and screen updates.
+
+This architecture ensures seamless management and instant synchronization of visual content across multiple screens.
+
