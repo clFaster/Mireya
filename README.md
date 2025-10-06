@@ -24,3 +24,23 @@ flowchart LR
 
 This architecture ensures seamless management and instant synchronization of visual content across multiple screens.
 
+# Development
+
+## Database Providers
+
+- **SQLite**: Used for quick local development
+- **PostgreSQL**: Used for production and testing environments
+
+## Migrations
+
+```bash
+# Add Migration for SQLite (Development)
+dotnet ef migrations add <MigrationName> --project .\src\Mireya.Database.Sqlite --startup-project .\src\Mireya.Api -- --provider Sqlite
+
+# Add Migration for PostgreSQL (Production/Testing)
+dotnet ef migrations add <MigrationName> --project .\src\Mireya.Database.Postgres --startup-project .\src\Mireya.Api -- --provider Postgres
+
+# Apply migrations
+dotnet ef database update --project .\src\Mireya.Database.Sqlite --startup-project .\src\Mireya.Api -- --provider Sqlite
+dotnet ef database update --project .\src\Mireya.Database.Postgres --startup-project .\src\Mireya.Api -- --provider Postgres
+```

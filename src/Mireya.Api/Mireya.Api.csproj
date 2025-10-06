@@ -8,6 +8,15 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Mireya.Database.Postgres\Mireya.Database.Postgres.csproj" />
+      <ProjectReference Include="..\Mireya.Database.Sqlite\Mireya.Database.Sqlite.csproj" />
     </ItemGroup>
 
 </Project>
