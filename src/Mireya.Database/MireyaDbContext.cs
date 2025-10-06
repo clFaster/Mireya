@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Mireya.Database.Models;
 
 namespace Mireya.Database;
 
-public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : DbContext(options)
+public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : IdentityDbContext<User>(options)
 {
     public DbSet<Display> Displays { get; set; }
     public DbSet<Asset> Assets { get; set; }
