@@ -74,6 +74,7 @@ if (app.Environment.IsDevelopment())
     await MireyaDbContext.InitializeAsync(db);
 
     app.MapOpenApi();
+    app.MapScalarApiReference();
     app.UseCors("Development");
 }
 
