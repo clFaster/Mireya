@@ -1,22 +1,36 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { apiClient } from "@/lib/api";
 
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // TODO: Connect to backend authentication
-    console.log("Login attempt:", { email, password });
-    
-    setIsLoading(false);
+    try {
+      const data = await apiClient.login(email, password);
+      
+      // Store the access token
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      
+      // Redirect to dashboard
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred during login");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -72,7 +86,7 @@ export default function Home() {
             </div>
           )}
 
-          <div>
+          <div className="space-y-4">
             <button
               type="submit"
               disabled={isLoading}
@@ -80,6 +94,15 @@ export default function Home() {
             >
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
+            
+            <div className="text-center">
+              <Link
+                href="/reset-admin-password"
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                Reset Admin Password
+              </Link>
+            </div>
           </div>
         </form>
       </div>
