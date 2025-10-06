@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Mireya.Api.Startup;
 using Mireya.Database;
 using Mireya.Database.Models;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration
@@ -116,7 +117,7 @@ static async Task InitializeDefaultAdminUser(IServiceProvider services, IConfigu
 
         if (string.IsNullOrEmpty(password))
         {
-            logger.LogWarning("Default admin password not configured. Admin user will not be created.");
+            logger.LogWarning("Default admin password not configured. Admin user will not be created");
             return;
         }
 
