@@ -69,6 +69,8 @@ await context.Database.MigrateAsync();
 await InitializeDefaultAdminUser(services, config);
 
 // Configure the HTTP request pipeline.
+app.UseHttpsRedirection();
+
 if (app.Environment.IsDevelopment())
 {
     var db = services.GetRequiredService<MireyaDbContext>();
@@ -78,8 +80,6 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
     app.UseCors("Development");
 }
-
-app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
