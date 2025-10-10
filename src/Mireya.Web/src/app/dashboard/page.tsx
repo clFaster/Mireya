@@ -13,22 +13,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      const token = localStorage.getItem("accessToken");
-      
-      if (!token) {
-        router.push("/");
-        return;
-      }
-
       try {
+        // With cookie authentication, just try to fetch user info
+        // The cookies will be sent automatically with the request
         const response = await api.getManageInfo();
         if (response.result) {
           setUserInfo(response.result);
+        } else if (response.status === 401) {
+          // Unauthorized - redirect to login
+          router.push("/");
         }
       } catch (error) {
         console.error("Error fetching user info:", error);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        // If we get an authentication error, redirect to login
         router.push("/");
       } finally {
         setIsLoading(false);
@@ -38,10 +35,16 @@ export default function Dashboard() {
     fetchUserInfo();
   }, [router, api]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      // Call the logout endpoint to clear cookies on the server
+      await api.postAccountLogout();
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      // Redirect to login page
+      router.push("/");
+    }
   };
 
   if (isLoading) {

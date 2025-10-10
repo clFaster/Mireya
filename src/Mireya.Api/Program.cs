@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Mireya.Api.Extensions;
 using Mireya.Api.Services;
 using Mireya.Api.Startup;
 using Mireya.Database;
@@ -18,11 +19,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Add NSwag OpenAPI document generation
-builder.Services.AddOpenApiDocument(config =>
+builder.Services.AddOpenApiDocument(generatorSettings =>
 {
-    config.DocumentName = "v1";
-    config.Title = "Mireya Digital Signage API";
-    config.Version = "v1";
+    generatorSettings.DocumentName = "v1";
+    generatorSettings.Title = "Mireya Digital Signage API";
+    generatorSettings.Version = "v1";
 });
 
 builder.Services.AddMireyaDbContext(config);
@@ -109,6 +110,7 @@ app.UseAuthorization();
 
 // Map Identity API endpoints
 app.MapIdentityApi<User>();
+app.MapIdentityApiAdditionalEndpoints<User>();
 
 app.MapControllers();
 

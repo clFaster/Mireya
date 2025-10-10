@@ -496,6 +496,39 @@ export class Client extends ClientBase {
         return Promise.resolve<SwaggerResponse<InfoResponse>>(new SwaggerResponse(status, _headers, null as any));
     }
 
+    postAccountLogout(signal?: AbortSignal): Promise<SwaggerResponse<void>> {
+        let url_ = this.baseUrl + "/account/logout";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "POST",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.transformOptions(options_).then(transformedOptions_ => {
+            return this.http.fetch(url_, transformedOptions_);
+        }).then((_response: Response) => {
+            return this.transformResult(url_, _response, (_response: Response) => this.processPostAccountLogout(_response));
+        });
+    }
+
+    protected processPostAccountLogout(response: Response): Promise<SwaggerResponse<void>> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return new SwaggerResponse(status, _headers, null as any);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<SwaggerResponse<void>>(new SwaggerResponse(status, _headers, null as any));
+    }
+
     health_Get(signal?: AbortSignal): Promise<SwaggerResponse<FileResponse>> {
         let url_ = this.baseUrl + "/api/Health";
         url_ = url_.replace(/[?&]$/, "");

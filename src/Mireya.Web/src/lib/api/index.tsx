@@ -6,11 +6,12 @@ import { Client } from "./generated/client";
 // Get API base URL from environment variable or default to localhost
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-// Create fetch implementation with logging
+// Create fetch implementation with logging and credentials
 const fetchImplementation = {
   fetch: (url: RequestInfo, init?: RequestInit): Promise<Response> => {
     console.log("Making API request to:", url);
-    return fetch(url, init);
+    // Always include credentials (cookies) in requests
+    return fetch(url, { ...init, credentials: "include" });
   },
 };
 
@@ -20,16 +21,8 @@ const apiClient = new Client(API_BASE_URL, fetchImplementation).withMiddleware({
     // Add auth headers, logging, etc.
     console.log("API Request:", options);
     
-    // Add authorization header if token exists
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        if (!options.headers) {
-          options.headers = {};
-        }
-        (options.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-      }
-    }
+    // Ensure credentials are included for cookie-based authentication
+    options.credentials = "include";
     
     return options;
   },
@@ -42,8 +35,8 @@ const apiClient = new Client(API_BASE_URL, fetchImplementation).withMiddleware({
       
       // Handle 401 Unauthorized - redirect to login
       if (response.status === 401 && typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // With cookie authentication, just redirect to login
+        // The browser will handle cookie cleanup
         window.location.href = '/';
       }
     }

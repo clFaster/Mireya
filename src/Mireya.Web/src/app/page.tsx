@@ -8,6 +8,7 @@ import { LoginRequest } from "@/lib/api/generated/client";
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -24,19 +25,17 @@ export default function Home() {
         password,
       });
 
-      const response = await api.postLogin(true, false, loginRequest);
+      // Use cookie-based authentication
+      // useCookies: true - enables cookie authentication
+      // useSessionCookies: !stayLoggedIn - if "Stay logged in" is unchecked, use session cookies (expire when browser closes)
+      const response = await api.postLogin(true, !stayLoggedIn, loginRequest);
       
-      if (response.result?.accessToken) {
-        // Store the access token
-        localStorage.setItem("accessToken", response.result.accessToken);
-        if (response.result.refreshToken) {
-          localStorage.setItem("refreshToken", response.result.refreshToken);
-        }
-        
-        // Redirect to dashboard
+      // With cookie authentication, check for successful status (200)
+      if (response.status === 200) {
+        // Redirect to dashboard - cookies are set automatically by the browser
         router.push("/dashboard");
       } else {
-        setError("Login failed: No access token received");
+        setError("Login failed: Invalid credentials");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during login");
@@ -90,6 +89,20 @@ export default function Home() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="stay-logged-in"
+              name="stay-logged-in"
+              type="checkbox"
+              checked={stayLoggedIn}
+              onChange={(e) => setStayLoggedIn(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="stay-logged-in" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+              Stay logged in
+            </label>
           </div>
 
           {error && (
