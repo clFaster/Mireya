@@ -94,15 +94,6 @@ export default function Home() {
             >
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
-            
-            <div className="text-center">
-              <Link
-                href="/reset-admin-password"
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-              >
-                Reset Admin Password
-              </Link>
-            </div>
           </div>
         </form>
       </div>

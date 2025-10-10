@@ -12,6 +12,5 @@
     </PropertyGroup>
     <ItemGroup>
         <Folder Include="public\"/>
-        <Folder Include="src\assets\"/>
     </ItemGroup>
 </Project>

@@ -21,4 +21,8 @@
       <ProjectReference Include="..\Mireya.Database.Sqlite\Mireya.Database.Sqlite.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Controllers\" />
+    </ItemGroup>
+
 </Project>
