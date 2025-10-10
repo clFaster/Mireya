@@ -26,12 +26,14 @@ This architecture ensures seamless management and instant synchronization of vis
 
 # Development
 
-## Database Providers
+## Mireya Api
+
+### Database Providers
 
 - **SQLite**: Used for quick local development
 - **PostgreSQL**: Used for production and testing environments
 
-## Migrations
+### Migrations
 
 ```bash
 # Add Migration for SQLite (Development)
@@ -44,3 +46,35 @@ dotnet ef migrations add <MigrationName> --project .\src\Mireya.Database.Postgre
 dotnet ef database update --project .\src\Mireya.Database.Sqlite --startup-project .\src\Mireya.Api -- --provider Sqlite
 dotnet ef database update --project .\src\Mireya.Database.Postgres --startup-project .\src\Mireya.Api -- --provider Postgres
 ```
+
+## Mireya Web
+
+### Api Generation
+
+The NSwag tool is installed as a local dotnet tool in the repository. The configuration is defined in:
+- `.config/dotnet-tools.json` - Defines the NSwag CLI tool
+- `nswag.json` - Configuration for generating the TypeScript client
+
+To regenerate the TypeScript API client after making changes to the API:
+
+```bash
+npm run generate:api
+```
+
+Or directly with dotnet:
+
+```bash
+dotnet nswag run nswag.json
+```
+
+This will:
+1. Analyze the API project (`../Mireya.Api/Mireya.Api.csproj`)
+2. Extract the OpenAPI/Swagger specification (document name "v1")
+3. Generate TypeScript client classes in `src/lib/api/generated/client.ts`
+
+#### Generated Files
+
+- **`src/lib/api/generated/client.ts`** - Auto-generated TypeScript API client
+  - Contains type-safe client classes for all API endpoints
+  - Includes TypeScript interfaces for request/response DTOs
+  - Extends `ClientBase` from `src/lib/api/client-base.ts`

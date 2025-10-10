@@ -2,8 +2,8 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { apiClient } from "@/lib/api";
+import { useApi } from "@/lib/api";
+import { LoginRequest } from "@/lib/api/generated/client";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -11,6 +11,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const api = useApi();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -18,14 +19,25 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const data = await apiClient.login(email, password);
+      const loginRequest = new LoginRequest({
+        email,
+        password,
+      });
+
+      const response = await api.postLogin(true, false, loginRequest);
       
-      // Store the access token
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      
-      // Redirect to dashboard
-      router.push("/dashboard");
+      if (response.result?.accessToken) {
+        // Store the access token
+        localStorage.setItem("accessToken", response.result.accessToken);
+        if (response.result.refreshToken) {
+          localStorage.setItem("refreshToken", response.result.refreshToken);
+        }
+        
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        setError("Login failed: No access token received");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during login");
     } finally {

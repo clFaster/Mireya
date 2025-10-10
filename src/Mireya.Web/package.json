@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:api": "dotnet nswag run nswag.json"
   },
   "dependencies": {
     "react": "19.1.0",

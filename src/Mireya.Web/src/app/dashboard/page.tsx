@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiClient, UserInfo } from "@/lib/api";
+import { useApi } from "@/lib/api";
+import type { InfoResponse } from "@/lib/api";
 
 export default function Dashboard() {
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [userInfo, setUserInfo] = useState<InfoResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const api = useApi();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -19,8 +21,10 @@ export default function Dashboard() {
       }
 
       try {
-        const data = await apiClient.getUserInfo(token);
-        setUserInfo(data);
+        const response = await api.getManageInfo();
+        if (response.result) {
+          setUserInfo(response.result);
+        }
       } catch (error) {
         console.error("Error fetching user info:", error);
         localStorage.removeItem("accessToken");
@@ -32,7 +36,7 @@ export default function Dashboard() {
     };
 
     fetchUserInfo();
-  }, [router]);
+  }, [router, api]);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
