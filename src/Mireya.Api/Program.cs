@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Mireya.Api.Services;
 using Mireya.Api.Startup;
 using Mireya.Database;
 using Mireya.Database.Models;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration
@@ -15,13 +15,20 @@ var config = builder.Configuration
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+
+// Add NSwag OpenAPI document generation
+builder.Services.AddOpenApiDocument(config =>
+{
+    config.DocumentName = "v1";
+    config.Title = "Mireya Digital Signage API";
+    config.Version = "v1";
+});
 
 builder.Services.AddMireyaDbContext(config);
 
-// Add Identity with API endpoints
-builder.Services.AddIdentity<User, IdentityRole>(options =>
+// Add Identity with API endpoints (supports both Bearer tokens and Cookies)
+builder.Services.AddIdentityApiEndpoints<User>(options =>
 {
     // Password settings
     options.Password.RequireDigit = true;
@@ -37,12 +44,21 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
     
     // User settings
     options.User.RequireUniqueEmail = true;
+    
+    // SignIn settings - allow signing in with email
+    options.SignIn.RequireConfirmedEmail = false;
+    options.SignIn.RequireConfirmedPhoneNumber = false;
+    options.SignIn.RequireConfirmedAccount = false;
 })
+.AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<MireyaDbContext>()
-.AddApiEndpoints();
+.AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
+
+// Register admin user initializer service
+builder.Services.AddScoped<IInitializerService, InitializerService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>
@@ -66,18 +82,25 @@ var context = services.GetRequiredService<MireyaDbContext>();
 await context.Database.MigrateAsync();
 
 // Initialize default admin user
-await InitializeDefaultAdminUser(services, config);
+var adminInitializer = services.GetRequiredService<IInitializerService>();
+await adminInitializer.InitializeAsync();
 
 // Configure the HTTP request pipeline.
-app.UseHttpsRedirection();
+// Only use HTTPS redirection in production to avoid 307 redirects in development
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 if (app.Environment.IsDevelopment())
 {
     var db = services.GetRequiredService<MireyaDbContext>();
     await MireyaDbContext.InitializeAsync(db);
-
-    app.MapOpenApi();
-    app.MapScalarApiReference();
+    
+    // Enable NSwag middleware for document generation and Swagger UI
+    app.UseOpenApi();
+    app.UseSwaggerUi();
+    
     app.UseCors("Development");
 }
 
@@ -90,55 +113,3 @@ app.MapIdentityApi<User>();
 app.MapControllers();
 
 app.Run();
-
-// Method to initialize default admin user
-static async Task InitializeDefaultAdminUser(IServiceProvider services, IConfiguration config)
-{
-    var userManager = services.GetRequiredService<UserManager<User>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var logger = services.GetRequiredService<ILogger<Program>>();
-
-    // Create Admin role if it doesn't exist
-    if (!await roleManager.RoleExistsAsync("Admin"))
-    {
-        await roleManager.CreateAsync(new IdentityRole("Admin"));
-        logger.LogInformation("Admin role created");
-    }
-
-    // Check if any admin user exists
-    var adminUsers = await userManager.GetUsersInRoleAsync("Admin");
-    
-    if (!adminUsers.Any())
-    {
-        var adminConfig = config.GetSection("DefaultAdminUser");
-        var username = adminConfig["Username"] ?? "admin";
-        var email = adminConfig["Email"] ?? "admin@mireya.local";
-        var password = adminConfig["Password"];
-
-        if (string.IsNullOrEmpty(password))
-        {
-            logger.LogWarning("Default admin password not configured. Admin user will not be created");
-            return;
-        }
-
-        var adminUser = new User
-        {
-            UserName = username,
-            Email = email,
-            CreatedAt = DateTime.UtcNow,
-            EmailConfirmed = true
-        };
-
-        var result = await userManager.CreateAsync(adminUser, password);
-        
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
-            logger.LogInformation("Default admin user created with email: {Email}", email);
-        }
-        else
-        {
-            logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
-        }
-    }
-}
