@@ -1,6 +1,10 @@
 # Mireya
 A versatile digital signage solution for creating and managing visual content across multiple screens in real time.
 
+> **Disclaimer:** This project is currently in a concept state. Features, architecture, and implementation are subject to change, and it is not yet production-ready.
+
+
+
 ## Overview
 
 ```mermaid
