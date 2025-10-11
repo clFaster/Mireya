@@ -22,10 +22,22 @@ public class Display
     public string Location { get; set; } = string.Empty;
 
     /// <summary>
-    /// Unique identifier for the physical device (e.g., MAC address, serial number)
+    /// Screen identifier which uniquely identifies the display device
     /// </summary>
-    [MaxLength(100)]
-    public string? DeviceIdentifier { get; set; }
+    [Required]
+    [MaxLength(10)]
+    public string ScreenIdentifier { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Approval status of the display
+    /// </summary>
+    public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
+
+    /// <summary>
+    /// User ID of the associated user account (created upon approval)
+    /// </summary>
+    [MaxLength(64)]
+    public string? UserId { get; set; }
 
     /// <summary>
     /// Screen resolution width in pixels

@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Mireya.Api.Models;
+using Mireya.Api.Constants;
 using Mireya.Api.Services.Asset;
 using Mireya.Database.Models;
 
 namespace Mireya.Api.Controllers;
 
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = Roles.Admin)]
 [Route("api/[controller]")]
 public class AssetController(IAssetService assetService) : ControllerBase
 {
