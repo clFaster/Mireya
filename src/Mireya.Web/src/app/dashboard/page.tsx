@@ -71,7 +71,7 @@ export default function Dashboard() {
                 Logout
               </button>
             </div>
-            
+
             {userInfo && (
               <div className="space-y-4">
                 <div>
@@ -97,10 +97,11 @@ export default function Dashboard() {
                     </div>
                   </dl>
                 </div>
-                
+
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Welcome to Mireya Digital Signage! You are successfully authenticated.
+                    Welcome to Mireya Digital Signage! You are successfully
+                    authenticated.
                   </p>
                 </div>
               </div>
