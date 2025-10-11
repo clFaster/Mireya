@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Mireya.Api;
 using Mireya.Api.Extensions;
 using Mireya.Api.Services;
+using Mireya.Api.Services.Asset;
 using Mireya.Api.Startup;
 using Mireya.Database;
 using Mireya.Database.Models;
@@ -24,6 +27,9 @@ builder.Services.AddOpenApiDocument(generatorSettings =>
     generatorSettings.DocumentName = "v1";
     generatorSettings.Title = "Mireya Digital Signage API";
     generatorSettings.Version = "v1";
+    
+    // Process IFormFile as binary string for file uploads
+    generatorSettings.SchemaSettings.SchemaProcessors.Add(new FormFileSchemaProcessor());
 });
 
 builder.Services.AddMireyaDbContext(config);
@@ -60,6 +66,7 @@ builder.Services.AddAuthorization();
 
 // Register admin user initializer service
 builder.Services.AddScoped<IInitializerService, InitializerService>();
+builder.Services.AddScoped<IAssetService, AssetService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>
@@ -107,6 +114,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Serve uploaded files
+// Erstelle das Verzeichnis "uploads", falls es nicht existiert
+Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "uploads"));
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+    RequestPath = "/uploads"
+});
 
 // Map Identity API endpoints
 app.MapIdentityApi<User>();
