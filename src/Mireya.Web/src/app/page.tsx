@@ -29,7 +29,7 @@ export default function Home() {
       // useCookies: true - enables cookie authentication
       // useSessionCookies: !stayLoggedIn - if "Stay logged in" is unchecked, use session cookies (expire when browser closes)
       const response = await api.postLogin(true, !stayLoggedIn, loginRequest);
-      
+
       // With cookie authentication, check for successful status (200)
       if (response.status === 200) {
         // Redirect to dashboard - cookies are set automatically by the browser
@@ -38,7 +38,9 @@ export default function Home() {
         setError("Login failed: Invalid credentials");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred during login");
+      setError(
+        err instanceof Error ? err.message : "An error occurred during login",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +102,10 @@ export default function Home() {
               onChange={(e) => setStayLoggedIn(e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="stay-logged-in" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+            <label
+              htmlFor="stay-logged-in"
+              className="ml-2 block text-sm text-gray-900 dark:text-gray-300"
+            >
               Stay logged in
             </label>
           </div>

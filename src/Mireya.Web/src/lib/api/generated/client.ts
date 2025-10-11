@@ -36,1195 +36,1541 @@ export abstract class ClientBase {
 }
 
 export class Client extends ClientBase {
-    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+  private http: {
+    fetch(url: RequestInfo, init?: RequestInit): Promise<Response>;
+  };
+  private baseUrl: string;
+  protected jsonParseReviver: ((key: string, value: any) => any) | undefined =
+    undefined;
 
-    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
-        super();
-        this.http = http ? http : window as any;
-        this.baseUrl = baseUrl ?? "";
+  constructor(
+    baseUrl?: string,
+    http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> },
+  ) {
+    super();
+    this.http = http ? http : (window as any);
+    this.baseUrl = baseUrl ?? "";
+  }
+
+  postRegister(
+    registration: RegisterRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<void>> {
+    let url_ = this.baseUrl + "/register";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(registration);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostRegister(_response),
+        );
+      });
+  }
+
+  protected processPostRegister(
+    response: Response,
+  ): Promise<SwaggerResponse<void>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
     }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return new SwaggerResponse(status, _headers, null as any);
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = HttpValidationProblemDetails.fromJS(resultData400);
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<void>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
 
-    postRegister(registration: RegisterRequest, signal?: AbortSignal): Promise<SwaggerResponse<void>> {
-        let url_ = this.baseUrl + "/register";
-        url_ = url_.replace(/[?&]$/, "");
+  postLogin(
+    useCookies: boolean | null | undefined,
+    useSessionCookies: boolean | null | undefined,
+    login: LoginRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<AccessTokenResponse>> {
+    let url_ = this.baseUrl + "/login?";
+    if (useCookies !== undefined && useCookies !== null)
+      url_ += "useCookies=" + encodeURIComponent("" + useCookies) + "&";
+    if (useSessionCookies !== undefined && useSessionCookies !== null)
+      url_ +=
+        "useSessionCookies=" + encodeURIComponent("" + useSessionCookies) + "&";
+    url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(registration);
+    const content_ = JSON.stringify(login);
 
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-            }
-        };
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
 
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostRegister(_response));
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostLogin(_response),
+        );
+      });
+  }
+
+  protected processPostLogin(
+    response: Response,
+  ): Promise<SwaggerResponse<AccessTokenResponse>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AccessTokenResponse.fromJS(resultData200);
+        return new SwaggerResponse(status, _headers, result200);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<AccessTokenResponse>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  postRefresh(
+    refreshRequest: RefreshRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<AccessTokenResponse>> {
+    let url_ = this.baseUrl + "/refresh";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(refreshRequest);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostRefresh(_response),
+        );
+      });
+  }
+
+  protected processPostRefresh(
+    response: Response,
+  ): Promise<SwaggerResponse<AccessTokenResponse>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = AccessTokenResponse.fromJS(resultData200);
+        return new SwaggerResponse(status, _headers, result200);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<AccessTokenResponse>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  getConfirmEmail(
+    userId: string | null,
+    code: string | null,
+    changedEmail: string | null | undefined,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<void>> {
+    let url_ = this.baseUrl + "/confirmEmail?";
+    if (userId === undefined)
+      throw new Error("The parameter 'userId' must be defined.");
+    else if (userId !== null)
+      url_ += "userId=" + encodeURIComponent("" + userId) + "&";
+    if (code === undefined)
+      throw new Error("The parameter 'code' must be defined.");
+    else if (code !== null)
+      url_ += "code=" + encodeURIComponent("" + code) + "&";
+    if (changedEmail !== undefined && changedEmail !== null)
+      url_ += "changedEmail=" + encodeURIComponent("" + changedEmail) + "&";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {},
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processGetConfirmEmail(_response),
+        );
+      });
+  }
+
+  protected processGetConfirmEmail(
+    response: Response,
+  ): Promise<SwaggerResponse<void>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return new SwaggerResponse(status, _headers, null as any);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<void>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  postResendConfirmationEmail(
+    resendRequest: ResendConfirmationEmailRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<void>> {
+    let url_ = this.baseUrl + "/resendConfirmationEmail";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(resendRequest);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostResendConfirmationEmail(_response),
+        );
+      });
+  }
+
+  protected processPostResendConfirmationEmail(
+    response: Response,
+  ): Promise<SwaggerResponse<void>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return new SwaggerResponse(status, _headers, null as any);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<void>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  postForgotPassword(
+    resetRequest: ForgotPasswordRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<void>> {
+    let url_ = this.baseUrl + "/forgotPassword";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(resetRequest);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostForgotPassword(_response),
+        );
+      });
+  }
+
+  protected processPostForgotPassword(
+    response: Response,
+  ): Promise<SwaggerResponse<void>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return new SwaggerResponse(status, _headers, null as any);
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = HttpValidationProblemDetails.fromJS(resultData400);
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<void>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  postResetPassword(
+    resetRequest: ResetPasswordRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<void>> {
+    let url_ = this.baseUrl + "/resetPassword";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(resetRequest);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostResetPassword(_response),
+        );
+      });
+  }
+
+  protected processPostResetPassword(
+    response: Response,
+  ): Promise<SwaggerResponse<void>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return new SwaggerResponse(status, _headers, null as any);
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = HttpValidationProblemDetails.fromJS(resultData400);
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<void>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  postManage2fa(
+    tfaRequest: TwoFactorRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<TwoFactorResponse>> {
+    let url_ = this.baseUrl + "/manage/2fa";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(tfaRequest);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostManage2fa(_response),
+        );
+      });
+  }
+
+  protected processPostManage2fa(
+    response: Response,
+  ): Promise<SwaggerResponse<TwoFactorResponse>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = TwoFactorResponse.fromJS(resultData200);
+        return new SwaggerResponse(status, _headers, result200);
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = HttpValidationProblemDetails.fromJS(resultData400);
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<TwoFactorResponse>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  getManageInfo(signal?: AbortSignal): Promise<SwaggerResponse<InfoResponse>> {
+    let url_ = this.baseUrl + "/manage/info";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processGetManageInfo(_response),
+        );
+      });
+  }
+
+  protected processGetManageInfo(
+    response: Response,
+  ): Promise<SwaggerResponse<InfoResponse>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = InfoResponse.fromJS(resultData200);
+        return new SwaggerResponse(status, _headers, result200);
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = HttpValidationProblemDetails.fromJS(resultData400);
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<InfoResponse>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  postManageInfo(
+    infoRequest: InfoRequest,
+    signal?: AbortSignal,
+  ): Promise<SwaggerResponse<InfoResponse>> {
+    let url_ = this.baseUrl + "/manage/info";
+    url_ = url_.replace(/[?&]$/, "");
+
+    const content_ = JSON.stringify(infoRequest);
+
+    let options_: RequestInit = {
+      body: content_,
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostManageInfo(_response),
+        );
+      });
+  }
+
+  protected processPostManageInfo(
+    response: Response,
+  ): Promise<SwaggerResponse<InfoResponse>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        let result200: any = null;
+        let resultData200 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result200 = InfoResponse.fromJS(resultData200);
+        return new SwaggerResponse(status, _headers, result200);
+      });
+    } else if (status === 400) {
+      return response.text().then((_responseText) => {
+        let result400: any = null;
+        let resultData400 =
+          _responseText === ""
+            ? null
+            : JSON.parse(_responseText, this.jsonParseReviver);
+        result400 = HttpValidationProblemDetails.fromJS(resultData400);
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+          result400,
+        );
+      });
+    } else if (status === 404) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "A server side error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<InfoResponse>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  postAccountLogout(signal?: AbortSignal): Promise<SwaggerResponse<void>> {
+    let url_ = this.baseUrl + "/account/logout";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "POST",
+      signal,
+      headers: {},
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processPostAccountLogout(_response),
+        );
+      });
+  }
+
+  protected processPostAccountLogout(
+    response: Response,
+  ): Promise<SwaggerResponse<void>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200) {
+      return response.text().then((_responseText) => {
+        return new SwaggerResponse(status, _headers, null as any);
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
+    }
+    return Promise.resolve<SwaggerResponse<void>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
+
+  health_Get(signal?: AbortSignal): Promise<SwaggerResponse<FileResponse>> {
+    let url_ = this.baseUrl + "/api/Health";
+    url_ = url_.replace(/[?&]$/, "");
+
+    let options_: RequestInit = {
+      method: "GET",
+      signal,
+      headers: {
+        Accept: "application/octet-stream",
+      },
+    };
+
+    return this.transformOptions(options_)
+      .then((transformedOptions_) => {
+        return this.http.fetch(url_, transformedOptions_);
+      })
+      .then((_response: Response) => {
+        return this.transformResult(url_, _response, (_response: Response) =>
+          this.processHealth_Get(_response),
+        );
+      });
+  }
+
+  protected processHealth_Get(
+    response: Response,
+  ): Promise<SwaggerResponse<FileResponse>> {
+    const status = response.status;
+    let _headers: any = {};
+    if (response.headers && response.headers.forEach) {
+      response.headers.forEach((v: any, k: any) => (_headers[k] = v));
+    }
+    if (status === 200 || status === 206) {
+      const contentDisposition = response.headers
+        ? response.headers.get("content-disposition")
+        : undefined;
+      let fileNameMatch = contentDisposition
+        ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(
+            contentDisposition,
+          )
+        : undefined;
+      let fileName =
+        fileNameMatch && fileNameMatch.length > 1
+          ? fileNameMatch[3] || fileNameMatch[2]
+          : undefined;
+      if (fileName) {
+        fileName = decodeURIComponent(fileName);
+      } else {
+        fileNameMatch = contentDisposition
+          ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition)
+          : undefined;
+        fileName =
+          fileNameMatch && fileNameMatch.length > 1
+            ? fileNameMatch[1]
+            : undefined;
+      }
+      return response.blob().then((blob) => {
+        return new SwaggerResponse(status, _headers, {
+          fileName: fileName,
+          data: blob,
+          status: status,
+          headers: _headers,
         });
+      });
+    } else if (status !== 200 && status !== 204) {
+      return response.text().then((_responseText) => {
+        return throwException(
+          "An unexpected server error occurred.",
+          status,
+          _responseText,
+          _headers,
+        );
+      });
     }
-
-    protected processPostRegister(response: Response): Promise<SwaggerResponse<void>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return new SwaggerResponse(status, _headers, null as any);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = HttpValidationProblemDetails.fromJS(resultData400);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<void>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postLogin(useCookies: boolean | null | undefined, useSessionCookies: boolean | null | undefined, login: LoginRequest, signal?: AbortSignal): Promise<SwaggerResponse<AccessTokenResponse>> {
-        let url_ = this.baseUrl + "/login?";
-        if (useCookies !== undefined && useCookies !== null)
-            url_ += "useCookies=" + encodeURIComponent("" + useCookies) + "&";
-        if (useSessionCookies !== undefined && useSessionCookies !== null)
-            url_ += "useSessionCookies=" + encodeURIComponent("" + useSessionCookies) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(login);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostLogin(_response));
-        });
-    }
-
-    protected processPostLogin(response: Response): Promise<SwaggerResponse<AccessTokenResponse>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = AccessTokenResponse.fromJS(resultData200);
-            return new SwaggerResponse(status, _headers, result200);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<AccessTokenResponse>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postRefresh(refreshRequest: RefreshRequest, signal?: AbortSignal): Promise<SwaggerResponse<AccessTokenResponse>> {
-        let url_ = this.baseUrl + "/refresh";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(refreshRequest);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostRefresh(_response));
-        });
-    }
-
-    protected processPostRefresh(response: Response): Promise<SwaggerResponse<AccessTokenResponse>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = AccessTokenResponse.fromJS(resultData200);
-            return new SwaggerResponse(status, _headers, result200);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<AccessTokenResponse>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    getConfirmEmail(userId: string | null, code: string | null, changedEmail: string | null | undefined, signal?: AbortSignal): Promise<SwaggerResponse<void>> {
-        let url_ = this.baseUrl + "/confirmEmail?";
-        if (userId === undefined)
-            throw new Error("The parameter 'userId' must be defined.");
-        else if(userId !== null)
-            url_ += "userId=" + encodeURIComponent("" + userId) + "&";
-        if (code === undefined)
-            throw new Error("The parameter 'code' must be defined.");
-        else if(code !== null)
-            url_ += "code=" + encodeURIComponent("" + code) + "&";
-        if (changedEmail !== undefined && changedEmail !== null)
-            url_ += "changedEmail=" + encodeURIComponent("" + changedEmail) + "&";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processGetConfirmEmail(_response));
-        });
-    }
-
-    protected processGetConfirmEmail(response: Response): Promise<SwaggerResponse<void>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return new SwaggerResponse(status, _headers, null as any);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<void>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postResendConfirmationEmail(resendRequest: ResendConfirmationEmailRequest, signal?: AbortSignal): Promise<SwaggerResponse<void>> {
-        let url_ = this.baseUrl + "/resendConfirmationEmail";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(resendRequest);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostResendConfirmationEmail(_response));
-        });
-    }
-
-    protected processPostResendConfirmationEmail(response: Response): Promise<SwaggerResponse<void>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return new SwaggerResponse(status, _headers, null as any);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<void>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postForgotPassword(resetRequest: ForgotPasswordRequest, signal?: AbortSignal): Promise<SwaggerResponse<void>> {
-        let url_ = this.baseUrl + "/forgotPassword";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(resetRequest);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostForgotPassword(_response));
-        });
-    }
-
-    protected processPostForgotPassword(response: Response): Promise<SwaggerResponse<void>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return new SwaggerResponse(status, _headers, null as any);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = HttpValidationProblemDetails.fromJS(resultData400);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<void>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postResetPassword(resetRequest: ResetPasswordRequest, signal?: AbortSignal): Promise<SwaggerResponse<void>> {
-        let url_ = this.baseUrl + "/resetPassword";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(resetRequest);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostResetPassword(_response));
-        });
-    }
-
-    protected processPostResetPassword(response: Response): Promise<SwaggerResponse<void>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return new SwaggerResponse(status, _headers, null as any);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = HttpValidationProblemDetails.fromJS(resultData400);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<void>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postManage2fa(tfaRequest: TwoFactorRequest, signal?: AbortSignal): Promise<SwaggerResponse<TwoFactorResponse>> {
-        let url_ = this.baseUrl + "/manage/2fa";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(tfaRequest);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostManage2fa(_response));
-        });
-    }
-
-    protected processPostManage2fa(response: Response): Promise<SwaggerResponse<TwoFactorResponse>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = TwoFactorResponse.fromJS(resultData200);
-            return new SwaggerResponse(status, _headers, result200);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = HttpValidationProblemDetails.fromJS(resultData400);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<TwoFactorResponse>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    getManageInfo(signal?: AbortSignal): Promise<SwaggerResponse<InfoResponse>> {
-        let url_ = this.baseUrl + "/manage/info";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/json"
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processGetManageInfo(_response));
-        });
-    }
-
-    protected processGetManageInfo(response: Response): Promise<SwaggerResponse<InfoResponse>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = InfoResponse.fromJS(resultData200);
-            return new SwaggerResponse(status, _headers, result200);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = HttpValidationProblemDetails.fromJS(resultData400);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<InfoResponse>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postManageInfo(infoRequest: InfoRequest, signal?: AbortSignal): Promise<SwaggerResponse<InfoResponse>> {
-        let url_ = this.baseUrl + "/manage/info";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(infoRequest);
-
-        let options_: RequestInit = {
-            body: content_,
-            method: "POST",
-            signal,
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostManageInfo(_response));
-        });
-    }
-
-    protected processPostManageInfo(response: Response): Promise<SwaggerResponse<InfoResponse>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = InfoResponse.fromJS(resultData200);
-            return new SwaggerResponse(status, _headers, result200);
-            });
-        } else if (status === 400) {
-            return response.text().then((_responseText) => {
-            let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result400 = HttpValidationProblemDetails.fromJS(resultData400);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            return throwException("A server side error occurred.", status, _responseText, _headers);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<InfoResponse>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    postAccountLogout(signal?: AbortSignal): Promise<SwaggerResponse<void>> {
-        let url_ = this.baseUrl + "/account/logout";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "POST",
-            signal,
-            headers: {
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processPostAccountLogout(_response));
-        });
-    }
-
-    protected processPostAccountLogout(response: Response): Promise<SwaggerResponse<void>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return new SwaggerResponse(status, _headers, null as any);
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<void>>(new SwaggerResponse(status, _headers, null as any));
-    }
-
-    health_Get(signal?: AbortSignal): Promise<SwaggerResponse<FileResponse>> {
-        let url_ = this.baseUrl + "/api/Health";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            signal,
-            headers: {
-                "Accept": "application/octet-stream"
-            }
-        };
-
-        return this.transformOptions(options_).then(transformedOptions_ => {
-            return this.http.fetch(url_, transformedOptions_);
-        }).then((_response: Response) => {
-            return this.transformResult(url_, _response, (_response: Response) => this.processHealth_Get(_response));
-        });
-    }
-
-    protected processHealth_Get(response: Response): Promise<SwaggerResponse<FileResponse>> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return response.blob().then(blob => { return new SwaggerResponse(status, _headers, { fileName: fileName, data: blob, status: status, headers: _headers }); });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<SwaggerResponse<FileResponse>>(new SwaggerResponse(status, _headers, null as any));
-    }
+    return Promise.resolve<SwaggerResponse<FileResponse>>(
+      new SwaggerResponse(status, _headers, null as any),
+    );
+  }
 }
 
 export class ProblemDetails implements IProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
+  type?: string | undefined;
+  title?: string | undefined;
+  status?: number | undefined;
+  detail?: string | undefined;
+  instance?: string | undefined;
 
-    [key: string]: any;
+  [key: string]: any;
 
-    constructor(data?: IProblemDetails) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IProblemDetails) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            this.type = _data["type"];
-            this.title = _data["title"];
-            this.status = _data["status"];
-            this.detail = _data["detail"];
-            this.instance = _data["instance"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      for (var property in _data) {
+        if (_data.hasOwnProperty(property)) this[property] = _data[property];
+      }
+      this.type = _data["type"];
+      this.title = _data["title"];
+      this.status = _data["status"];
+      this.detail = _data["detail"];
+      this.instance = _data["instance"];
     }
+  }
 
-    static fromJS(data: any): ProblemDetails {
-        data = typeof data === 'object' ? data : {};
-        let result = new ProblemDetails();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): ProblemDetails {
+    data = typeof data === "object" ? data : {};
+    let result = new ProblemDetails();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        data["type"] = this.type;
-        data["title"] = this.title;
-        data["status"] = this.status;
-        data["detail"] = this.detail;
-        data["instance"] = this.instance;
-        return data;
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    for (var property in this) {
+      if (this.hasOwnProperty(property)) data[property] = this[property];
     }
+    data["type"] = this.type;
+    data["title"] = this.title;
+    data["status"] = this.status;
+    data["detail"] = this.detail;
+    data["instance"] = this.instance;
+    return data;
+  }
 }
 
 export interface IProblemDetails {
-    type?: string | undefined;
-    title?: string | undefined;
-    status?: number | undefined;
-    detail?: string | undefined;
-    instance?: string | undefined;
+  type?: string | undefined;
+  title?: string | undefined;
+  status?: number | undefined;
+  detail?: string | undefined;
+  instance?: string | undefined;
 
-    [key: string]: any;
+  [key: string]: any;
 }
 
-export class HttpValidationProblemDetails extends ProblemDetails implements IHttpValidationProblemDetails {
-    errors?: { [key: string]: string[]; };
+export class HttpValidationProblemDetails
+  extends ProblemDetails
+  implements IHttpValidationProblemDetails
+{
+  errors?: { [key: string]: string[] };
 
-    [key: string]: any;
+  [key: string]: any;
 
-    constructor(data?: IHttpValidationProblemDetails) {
-        super(data);
-    }
+  constructor(data?: IHttpValidationProblemDetails) {
+    super(data);
+  }
 
-    override init(_data?: any) {
-        super.init(_data);
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
-            }
-            if (_data["errors"]) {
-                this.errors = {} as any;
-                for (let key in _data["errors"]) {
-                    if (_data["errors"].hasOwnProperty(key))
-                        (<any>this.errors)![key] = _data["errors"][key] !== undefined ? _data["errors"][key] : [];
-                }
-            }
+  override init(_data?: any) {
+    super.init(_data);
+    if (_data) {
+      for (var property in _data) {
+        if (_data.hasOwnProperty(property)) this[property] = _data[property];
+      }
+      if (_data["errors"]) {
+        this.errors = {} as any;
+        for (let key in _data["errors"]) {
+          if (_data["errors"].hasOwnProperty(key))
+            (<any>this.errors)![key] =
+              _data["errors"][key] !== undefined ? _data["errors"][key] : [];
         }
+      }
     }
+  }
 
-    static override fromJS(data: any): HttpValidationProblemDetails {
-        data = typeof data === 'object' ? data : {};
-        let result = new HttpValidationProblemDetails();
-        result.init(data);
-        return result;
-    }
+  static override fromJS(data: any): HttpValidationProblemDetails {
+    data = typeof data === "object" ? data : {};
+    let result = new HttpValidationProblemDetails();
+    result.init(data);
+    return result;
+  }
 
-    override toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        for (var property in this) {
-            if (this.hasOwnProperty(property))
-                data[property] = this[property];
-        }
-        if (this.errors) {
-            data["errors"] = {};
-            for (let key in this.errors) {
-                if (this.errors.hasOwnProperty(key))
-                    (<any>data["errors"])[key] = (<any>this.errors)[key];
-            }
-        }
-        super.toJSON(data);
-        return data;
+  override toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    for (var property in this) {
+      if (this.hasOwnProperty(property)) data[property] = this[property];
     }
+    if (this.errors) {
+      data["errors"] = {};
+      for (let key in this.errors) {
+        if (this.errors.hasOwnProperty(key))
+          (<any>data["errors"])[key] = (<any>this.errors)[key];
+      }
+    }
+    super.toJSON(data);
+    return data;
+  }
 }
 
 export interface IHttpValidationProblemDetails extends IProblemDetails {
-    errors?: { [key: string]: string[]; };
+  errors?: { [key: string]: string[] };
 
-    [key: string]: any;
+  [key: string]: any;
 }
 
 export class RegisterRequest implements IRegisterRequest {
-    email?: string;
-    password?: string;
+  email?: string;
+  password?: string;
 
-    constructor(data?: IRegisterRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IRegisterRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.password = _data["password"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.email = _data["email"];
+      this.password = _data["password"];
     }
+  }
 
-    static fromJS(data: any): RegisterRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new RegisterRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): RegisterRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new RegisterRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        data["password"] = this.password;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["email"] = this.email;
+    data["password"] = this.password;
+    return data;
+  }
 }
 
 export interface IRegisterRequest {
-    email?: string;
-    password?: string;
+  email?: string;
+  password?: string;
 }
 
 export class AccessTokenResponse implements IAccessTokenResponse {
-    tokenType?: string;
-    accessToken?: string;
-    expiresIn?: number;
-    refreshToken?: string;
+  tokenType?: string;
+  accessToken?: string;
+  expiresIn?: number;
+  refreshToken?: string;
 
-    constructor(data?: IAccessTokenResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IAccessTokenResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.tokenType = _data["tokenType"];
-            this.accessToken = _data["accessToken"];
-            this.expiresIn = _data["expiresIn"];
-            this.refreshToken = _data["refreshToken"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.tokenType = _data["tokenType"];
+      this.accessToken = _data["accessToken"];
+      this.expiresIn = _data["expiresIn"];
+      this.refreshToken = _data["refreshToken"];
     }
+  }
 
-    static fromJS(data: any): AccessTokenResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new AccessTokenResponse();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): AccessTokenResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new AccessTokenResponse();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["tokenType"] = this.tokenType;
-        data["accessToken"] = this.accessToken;
-        data["expiresIn"] = this.expiresIn;
-        data["refreshToken"] = this.refreshToken;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["tokenType"] = this.tokenType;
+    data["accessToken"] = this.accessToken;
+    data["expiresIn"] = this.expiresIn;
+    data["refreshToken"] = this.refreshToken;
+    return data;
+  }
 }
 
 export interface IAccessTokenResponse {
-    tokenType?: string;
-    accessToken?: string;
-    expiresIn?: number;
-    refreshToken?: string;
+  tokenType?: string;
+  accessToken?: string;
+  expiresIn?: number;
+  refreshToken?: string;
 }
 
 export class LoginRequest implements ILoginRequest {
-    email?: string;
-    password?: string;
-    twoFactorCode?: string | undefined;
-    twoFactorRecoveryCode?: string | undefined;
+  email?: string;
+  password?: string;
+  twoFactorCode?: string | undefined;
+  twoFactorRecoveryCode?: string | undefined;
 
-    constructor(data?: ILoginRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: ILoginRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.password = _data["password"];
-            this.twoFactorCode = _data["twoFactorCode"];
-            this.twoFactorRecoveryCode = _data["twoFactorRecoveryCode"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.email = _data["email"];
+      this.password = _data["password"];
+      this.twoFactorCode = _data["twoFactorCode"];
+      this.twoFactorRecoveryCode = _data["twoFactorRecoveryCode"];
     }
+  }
 
-    static fromJS(data: any): LoginRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new LoginRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): LoginRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new LoginRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        data["password"] = this.password;
-        data["twoFactorCode"] = this.twoFactorCode;
-        data["twoFactorRecoveryCode"] = this.twoFactorRecoveryCode;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["email"] = this.email;
+    data["password"] = this.password;
+    data["twoFactorCode"] = this.twoFactorCode;
+    data["twoFactorRecoveryCode"] = this.twoFactorRecoveryCode;
+    return data;
+  }
 }
 
 export interface ILoginRequest {
-    email?: string;
-    password?: string;
-    twoFactorCode?: string | undefined;
-    twoFactorRecoveryCode?: string | undefined;
+  email?: string;
+  password?: string;
+  twoFactorCode?: string | undefined;
+  twoFactorRecoveryCode?: string | undefined;
 }
 
 export class RefreshRequest implements IRefreshRequest {
-    refreshToken?: string;
+  refreshToken?: string;
 
-    constructor(data?: IRefreshRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IRefreshRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.refreshToken = _data["refreshToken"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.refreshToken = _data["refreshToken"];
     }
+  }
 
-    static fromJS(data: any): RefreshRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new RefreshRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): RefreshRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new RefreshRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["refreshToken"] = this.refreshToken;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["refreshToken"] = this.refreshToken;
+    return data;
+  }
 }
 
 export interface IRefreshRequest {
-    refreshToken?: string;
+  refreshToken?: string;
 }
 
-export class ResendConfirmationEmailRequest implements IResendConfirmationEmailRequest {
-    email?: string;
+export class ResendConfirmationEmailRequest
+  implements IResendConfirmationEmailRequest
+{
+  email?: string;
 
-    constructor(data?: IResendConfirmationEmailRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IResendConfirmationEmailRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.email = _data["email"];
     }
+  }
 
-    static fromJS(data: any): ResendConfirmationEmailRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new ResendConfirmationEmailRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): ResendConfirmationEmailRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ResendConfirmationEmailRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["email"] = this.email;
+    return data;
+  }
 }
 
 export interface IResendConfirmationEmailRequest {
-    email?: string;
+  email?: string;
 }
 
 export class ForgotPasswordRequest implements IForgotPasswordRequest {
-    email?: string;
+  email?: string;
 
-    constructor(data?: IForgotPasswordRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IForgotPasswordRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.email = _data["email"];
     }
+  }
 
-    static fromJS(data: any): ForgotPasswordRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new ForgotPasswordRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): ForgotPasswordRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ForgotPasswordRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["email"] = this.email;
+    return data;
+  }
 }
 
 export interface IForgotPasswordRequest {
-    email?: string;
+  email?: string;
 }
 
 export class ResetPasswordRequest implements IResetPasswordRequest {
-    email?: string;
-    resetCode?: string;
-    newPassword?: string;
+  email?: string;
+  resetCode?: string;
+  newPassword?: string;
 
-    constructor(data?: IResetPasswordRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IResetPasswordRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.resetCode = _data["resetCode"];
-            this.newPassword = _data["newPassword"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.email = _data["email"];
+      this.resetCode = _data["resetCode"];
+      this.newPassword = _data["newPassword"];
     }
+  }
 
-    static fromJS(data: any): ResetPasswordRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new ResetPasswordRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): ResetPasswordRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new ResetPasswordRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        data["resetCode"] = this.resetCode;
-        data["newPassword"] = this.newPassword;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["email"] = this.email;
+    data["resetCode"] = this.resetCode;
+    data["newPassword"] = this.newPassword;
+    return data;
+  }
 }
 
 export interface IResetPasswordRequest {
-    email?: string;
-    resetCode?: string;
-    newPassword?: string;
+  email?: string;
+  resetCode?: string;
+  newPassword?: string;
 }
 
 export class TwoFactorResponse implements ITwoFactorResponse {
-    sharedKey?: string;
-    recoveryCodesLeft?: number;
-    recoveryCodes?: string[] | undefined;
-    isTwoFactorEnabled?: boolean;
-    isMachineRemembered?: boolean;
+  sharedKey?: string;
+  recoveryCodesLeft?: number;
+  recoveryCodes?: string[] | undefined;
+  isTwoFactorEnabled?: boolean;
+  isMachineRemembered?: boolean;
 
-    constructor(data?: ITwoFactorResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: ITwoFactorResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.sharedKey = _data["sharedKey"];
-            this.recoveryCodesLeft = _data["recoveryCodesLeft"];
-            if (Array.isArray(_data["recoveryCodes"])) {
-                this.recoveryCodes = [] as any;
-                for (let item of _data["recoveryCodes"])
-                    this.recoveryCodes!.push(item);
-            }
-            this.isTwoFactorEnabled = _data["isTwoFactorEnabled"];
-            this.isMachineRemembered = _data["isMachineRemembered"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.sharedKey = _data["sharedKey"];
+      this.recoveryCodesLeft = _data["recoveryCodesLeft"];
+      if (Array.isArray(_data["recoveryCodes"])) {
+        this.recoveryCodes = [] as any;
+        for (let item of _data["recoveryCodes"]) this.recoveryCodes!.push(item);
+      }
+      this.isTwoFactorEnabled = _data["isTwoFactorEnabled"];
+      this.isMachineRemembered = _data["isMachineRemembered"];
     }
+  }
 
-    static fromJS(data: any): TwoFactorResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new TwoFactorResponse();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): TwoFactorResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new TwoFactorResponse();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["sharedKey"] = this.sharedKey;
-        data["recoveryCodesLeft"] = this.recoveryCodesLeft;
-        if (Array.isArray(this.recoveryCodes)) {
-            data["recoveryCodes"] = [];
-            for (let item of this.recoveryCodes)
-                data["recoveryCodes"].push(item);
-        }
-        data["isTwoFactorEnabled"] = this.isTwoFactorEnabled;
-        data["isMachineRemembered"] = this.isMachineRemembered;
-        return data;
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["sharedKey"] = this.sharedKey;
+    data["recoveryCodesLeft"] = this.recoveryCodesLeft;
+    if (Array.isArray(this.recoveryCodes)) {
+      data["recoveryCodes"] = [];
+      for (let item of this.recoveryCodes) data["recoveryCodes"].push(item);
     }
+    data["isTwoFactorEnabled"] = this.isTwoFactorEnabled;
+    data["isMachineRemembered"] = this.isMachineRemembered;
+    return data;
+  }
 }
 
 export interface ITwoFactorResponse {
-    sharedKey?: string;
-    recoveryCodesLeft?: number;
-    recoveryCodes?: string[] | undefined;
-    isTwoFactorEnabled?: boolean;
-    isMachineRemembered?: boolean;
+  sharedKey?: string;
+  recoveryCodesLeft?: number;
+  recoveryCodes?: string[] | undefined;
+  isTwoFactorEnabled?: boolean;
+  isMachineRemembered?: boolean;
 }
 
 export class TwoFactorRequest implements ITwoFactorRequest {
-    enable?: boolean | undefined;
-    twoFactorCode?: string | undefined;
-    resetSharedKey?: boolean;
-    resetRecoveryCodes?: boolean;
-    forgetMachine?: boolean;
+  enable?: boolean | undefined;
+  twoFactorCode?: string | undefined;
+  resetSharedKey?: boolean;
+  resetRecoveryCodes?: boolean;
+  forgetMachine?: boolean;
 
-    constructor(data?: ITwoFactorRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: ITwoFactorRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.enable = _data["enable"];
-            this.twoFactorCode = _data["twoFactorCode"];
-            this.resetSharedKey = _data["resetSharedKey"];
-            this.resetRecoveryCodes = _data["resetRecoveryCodes"];
-            this.forgetMachine = _data["forgetMachine"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.enable = _data["enable"];
+      this.twoFactorCode = _data["twoFactorCode"];
+      this.resetSharedKey = _data["resetSharedKey"];
+      this.resetRecoveryCodes = _data["resetRecoveryCodes"];
+      this.forgetMachine = _data["forgetMachine"];
     }
+  }
 
-    static fromJS(data: any): TwoFactorRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new TwoFactorRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): TwoFactorRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new TwoFactorRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["enable"] = this.enable;
-        data["twoFactorCode"] = this.twoFactorCode;
-        data["resetSharedKey"] = this.resetSharedKey;
-        data["resetRecoveryCodes"] = this.resetRecoveryCodes;
-        data["forgetMachine"] = this.forgetMachine;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["enable"] = this.enable;
+    data["twoFactorCode"] = this.twoFactorCode;
+    data["resetSharedKey"] = this.resetSharedKey;
+    data["resetRecoveryCodes"] = this.resetRecoveryCodes;
+    data["forgetMachine"] = this.forgetMachine;
+    return data;
+  }
 }
 
 export interface ITwoFactorRequest {
-    enable?: boolean | undefined;
-    twoFactorCode?: string | undefined;
-    resetSharedKey?: boolean;
-    resetRecoveryCodes?: boolean;
-    forgetMachine?: boolean;
+  enable?: boolean | undefined;
+  twoFactorCode?: string | undefined;
+  resetSharedKey?: boolean;
+  resetRecoveryCodes?: boolean;
+  forgetMachine?: boolean;
 }
 
 export class InfoResponse implements IInfoResponse {
-    email?: string;
-    isEmailConfirmed?: boolean;
+  email?: string;
+  isEmailConfirmed?: boolean;
 
-    constructor(data?: IInfoResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IInfoResponse) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.isEmailConfirmed = _data["isEmailConfirmed"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.email = _data["email"];
+      this.isEmailConfirmed = _data["isEmailConfirmed"];
     }
+  }
 
-    static fromJS(data: any): InfoResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new InfoResponse();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): InfoResponse {
+    data = typeof data === "object" ? data : {};
+    let result = new InfoResponse();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        data["isEmailConfirmed"] = this.isEmailConfirmed;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["email"] = this.email;
+    data["isEmailConfirmed"] = this.isEmailConfirmed;
+    return data;
+  }
 }
 
 export interface IInfoResponse {
-    email?: string;
-    isEmailConfirmed?: boolean;
+  email?: string;
+  isEmailConfirmed?: boolean;
 }
 
 export class InfoRequest implements IInfoRequest {
-    newEmail?: string | undefined;
-    newPassword?: string | undefined;
-    oldPassword?: string | undefined;
+  newEmail?: string | undefined;
+  newPassword?: string | undefined;
+  oldPassword?: string | undefined;
 
-    constructor(data?: IInfoRequest) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
+  constructor(data?: IInfoRequest) {
+    if (data) {
+      for (var property in data) {
+        if (data.hasOwnProperty(property))
+          (<any>this)[property] = (<any>data)[property];
+      }
     }
+  }
 
-    init(_data?: any) {
-        if (_data) {
-            this.newEmail = _data["newEmail"];
-            this.newPassword = _data["newPassword"];
-            this.oldPassword = _data["oldPassword"];
-        }
+  init(_data?: any) {
+    if (_data) {
+      this.newEmail = _data["newEmail"];
+      this.newPassword = _data["newPassword"];
+      this.oldPassword = _data["oldPassword"];
     }
+  }
 
-    static fromJS(data: any): InfoRequest {
-        data = typeof data === 'object' ? data : {};
-        let result = new InfoRequest();
-        result.init(data);
-        return result;
-    }
+  static fromJS(data: any): InfoRequest {
+    data = typeof data === "object" ? data : {};
+    let result = new InfoRequest();
+    result.init(data);
+    return result;
+  }
 
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["newEmail"] = this.newEmail;
-        data["newPassword"] = this.newPassword;
-        data["oldPassword"] = this.oldPassword;
-        return data;
-    }
+  toJSON(data?: any) {
+    data = typeof data === "object" ? data : {};
+    data["newEmail"] = this.newEmail;
+    data["newPassword"] = this.newPassword;
+    data["oldPassword"] = this.oldPassword;
+    return data;
+  }
 }
 
 export interface IInfoRequest {
-    newEmail?: string | undefined;
-    newPassword?: string | undefined;
-    oldPassword?: string | undefined;
+  newEmail?: string | undefined;
+  newPassword?: string | undefined;
+  oldPassword?: string | undefined;
 }
 
 export class SwaggerResponse<TResult> {
-    status: number;
-    headers: { [key: string]: any; };
-    result: TResult;
+  status: number;
+  headers: { [key: string]: any };
+  result: TResult;
 
-    constructor(status: number, headers: { [key: string]: any; }, result: TResult)
-    {
-        this.status = status;
-        this.headers = headers;
-        this.result = result;
-    }
+  constructor(
+    status: number,
+    headers: { [key: string]: any },
+    result: TResult,
+  ) {
+    this.status = status;
+    this.headers = headers;
+    this.result = result;
+  }
 }
 
 export interface FileResponse {
-    data: Blob;
-    status: number;
-    fileName?: string;
-    headers?: { [name: string]: any };
+  data: Blob;
+  status: number;
+  fileName?: string;
+  headers?: { [name: string]: any };
 }
 
 export class ApiException extends Error {
-    override message: string;
-    status: number;
-    response: string;
-    headers: { [key: string]: any; };
-    result: any;
+  override message: string;
+  status: number;
+  response: string;
+  headers: { [key: string]: any };
+  result: any;
 
-    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
-        super();
+  constructor(
+    message: string,
+    status: number,
+    response: string,
+    headers: { [key: string]: any },
+    result: any,
+  ) {
+    super();
 
-        this.message = message;
-        this.status = status;
-        this.response = response;
-        this.headers = headers;
-        this.result = result;
-    }
+    this.message = message;
+    this.status = status;
+    this.response = response;
+    this.headers = headers;
+    this.result = result;
+  }
 
-    protected isApiException = true;
+  protected isApiException = true;
 
-    static isApiException(obj: any): obj is ApiException {
-        return obj.isApiException === true;
-    }
+  static isApiException(obj: any): obj is ApiException {
+    return obj.isApiException === true;
+  }
 }
 
-function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): any {
-    if (result !== null && result !== undefined)
-        throw result;
-    else
-        throw new ApiException(message, status, response, headers, null);
+function throwException(
+  message: string,
+  status: number,
+  response: string,
+  headers: { [key: string]: any },
+  result?: any,
+): any {
+  if (result !== null && result !== undefined) throw result;
+  else throw new ApiException(message, status, response, headers, null);
 }
 
 export type Middleware = {
