@@ -5,6 +5,7 @@ using Mireya.Api;
 using Mireya.Api.Extensions;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
+using Mireya.Api.Services.ScreenManagement;
 using Mireya.Api.Startup;
 using Mireya.Database;
 using Mireya.Database.Models;
@@ -39,10 +40,10 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 {
     // Password settings
     options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 8;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 9;
     
     // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -64,9 +65,10 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
-// Register admin user initializer service
+// Register services
 builder.Services.AddScoped<IInitializerService, InitializerService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
+builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>
