@@ -90,10 +90,9 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
 
         // Delete the file if it exists
         var filePath = Path.Combine(_uploadsFolder, asset.Source["/uploads/".Length..]);
-        if (!string.IsNullOrEmpty(filePath) && asset.Source.StartsWith("/uploads/"))
+        if (!string.IsNullOrEmpty(filePath) && asset.Source.StartsWith("/uploads/") && File.Exists(filePath))
         {
-            if (File.Exists(filePath))
-                File.Delete(filePath);
+            File.Delete(filePath);
         }
 
         db.Assets.Remove(asset);
