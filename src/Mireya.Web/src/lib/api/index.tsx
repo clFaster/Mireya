@@ -20,27 +20,27 @@ const apiClient = new Client(API_BASE_URL, fetchImplementation).withMiddleware({
   onRequest: async (options) => {
     // Add auth headers, logging, etc.
     console.log("API Request:", options);
-    
+
     // Ensure credentials are included for cookie-based authentication
     options.credentials = "include";
-    
+
     return options;
   },
   onResponse: async (response) => {
     // Handle errors, logging, etc.
     console.log("API Response:", response.status, response.url);
-    
+
     if (!response.ok) {
       console.error("API Error:", response.status, response.statusText);
-      
+
       // Handle 401 Unauthorized - redirect to login
-      if (response.status === 401 && typeof window !== 'undefined') {
+      if (response.status === 401 && typeof window !== "undefined") {
         // With cookie authentication, just redirect to login
         // The browser will handle cookie cleanup
-        window.location.href = '/';
+        window.location.href = "/";
       }
     }
-    
+
     return response;
   },
 });
@@ -57,13 +57,15 @@ interface ApiProviderProps {
  * Wrap your app with this provider to use the useApi hook
  */
 export const ApiProvider = ({ children }: ApiProviderProps) => {
-  return <ApiContext.Provider value={apiClient}>{children}</ApiContext.Provider>;
+  return (
+    <ApiContext.Provider value={apiClient}>{children}</ApiContext.Provider>
+  );
 };
 
 /**
  * Hook to access the API client in React components
  * Must be used within an ApiProvider
- * 
+ *
  * @example
  * ```tsx
  * const api = useApi();

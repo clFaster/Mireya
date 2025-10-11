@@ -3,11 +3,13 @@
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 20+ and npm/yarn/pnpm/bun
 
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 # or
@@ -19,11 +21,13 @@ bun install
 ```
 
 2. Create environment file:
+
 ```bash
 cp .env.local.example .env.local
 ```
 
 3. Update the API URL in `.env.local` if needed:
+
 ```
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
@@ -45,21 +49,26 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 ## Features
 
 ### Authentication
+
 - **Login Page** (`/`) - Main login interface
 - **Dashboard** (`/dashboard`) - Protected route showing user information
 - **Admin Password Reset** (`/reset-admin-password`) - Emergency admin password recovery
 
 ### API Integration
+
 The frontend communicates with the ASP.NET Core backend using the centralized API client located in `src/lib/api.ts`.
 
 #### Available API Methods:
+
 - `apiClient.login(email, password)` - User authentication
 - `apiClient.getUserInfo(token)` - Fetch current user information
 - `apiClient.refreshToken(refreshToken)` - Refresh access token
 - `apiClient.resetAdminPassword(resetToken, newPassword)` - Reset admin password
 
 ### Token Management
+
 Access tokens and refresh tokens are stored in `localStorage`:
+
 - `accessToken` - Used for API authentication
 - `refreshToken` - Used to obtain new access tokens
 
@@ -82,6 +91,7 @@ src/
 ## Default Admin Credentials
 
 On first run, the backend creates a default admin user:
+
 - **Email**: admin@mireya.local
 - **Password**: Admin123!
 
@@ -94,6 +104,7 @@ On first run, the backend creates a default admin user:
 ## Learn More
 
 To learn more about Next.js:
+
 - [Next.js Documentation](https://nextjs.org/docs) - Learn about Next.js features and API
 - [Learn Next.js](https://nextjs.org/learn) - Interactive Next.js tutorial
 

@@ -1,9 +1,8 @@
 # Mireya
+
 A versatile digital signage solution for creating and managing visual content across multiple screens in real time.
 
 > **Disclaimer:** This project is currently in a concept state. Features, architecture, and implementation are subject to change, and it is not yet production-ready.
-
-
 
 ## Overview
 
@@ -18,13 +17,13 @@ flowchart LR
 ## Architecture
 
 - **Server (.NET Core):**  
-	The backend is developed with .NET Core, responsible for managing screens, user authentication, and content distribution. It exposes a REST API for standard operations and uses SignalR for real-time updates and communication.
+  The backend is developed with .NET Core, responsible for managing screens, user authentication, and content distribution. It exposes a REST API for standard operations and uses SignalR for real-time updates and communication.
 
 - **Web Frontend (Next.js):**  
-	The web interface, built with Next.js, allows users to configure screens, design templates, and schedule content. It interacts with the .NET backend via REST APIs and receives live updates through SignalR.
+  The web interface, built with Next.js, allows users to configure screens, design templates, and schedule content. It interacts with the .NET backend via REST APIs and receives live updates through SignalR.
 
 - **Client Application (Android TV):**  
-	The client app runs on Android TV devices, connecting to the server using WebSocket for efficient, real-time content delivery and screen updates.
+  The client app runs on Android TV devices, connecting to the server using WebSocket for efficient, real-time content delivery and screen updates.
 
 This architecture ensures seamless management and instant synchronization of visual content across multiple screens.
 
@@ -56,6 +55,7 @@ dotnet ef database update --project .\src\Mireya.Database.Postgres --startup-pro
 ### Api Generation
 
 The NSwag tool is installed as a local dotnet tool in the repository. The configuration is defined in:
+
 - `.config/dotnet-tools.json` - Defines the NSwag CLI tool
 - `nswag.json` - Configuration for generating the TypeScript client
 
@@ -72,6 +72,7 @@ dotnet nswag run nswag.json
 ```
 
 This will:
+
 1. Analyze the API project (`../Mireya.Api/Mireya.Api.csproj`)
 2. Extract the OpenAPI/Swagger specification (document name "v1")
 3. Generate TypeScript client classes in `src/lib/api/generated/client.ts`
