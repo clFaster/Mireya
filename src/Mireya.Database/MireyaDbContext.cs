@@ -16,9 +16,10 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
         // Configure Display entity
         modelBuilder.Entity<Display>(entity =>
         {
-            entity.HasIndex(e => e.DeviceIdentifier).IsUnique();
+            entity.HasIndex(e => e.ScreenIdentifier).IsUnique();
             entity.HasIndex(e => e.Name);
             entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.ApprovalStatus);
         });
 
         // Configure Asset entity

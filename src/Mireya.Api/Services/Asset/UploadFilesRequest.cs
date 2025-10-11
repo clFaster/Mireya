@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Mireya.Api.Models;
+namespace Mireya.Api.Services.Asset;
 
 public class UploadFilesRequest
 {
