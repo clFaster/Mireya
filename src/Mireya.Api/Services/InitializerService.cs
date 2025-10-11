@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Mireya.Api.Constants;
 using Mireya.Database.Models;
 
 namespace Mireya.Api.Services;
@@ -24,25 +25,36 @@ public class InitializerService(
     IConfiguration config)
     : IInitializerService
 {
-    private const string AdminRoleName = "Admin";
     private const string DefaultAdminEmail = "admin@mireya.local";
 
     public async Task InitializeAsync()
     {
-        await EnsureAdminRoleExistsAsync();
+        await EnsureRolesExistAsync();
         await EnsureDefaultAdminUserExistsAsync();
     }
 
-    private async Task EnsureAdminRoleExistsAsync()
+    private async Task EnsureRolesExistAsync()
     {
-        if (!await roleManager.RoleExistsAsync(AdminRoleName))
+        // Ensure Admin role exists
+        if (!await roleManager.RoleExistsAsync(Roles.Admin))
         {
-            await roleManager.CreateAsync(new IdentityRole(AdminRoleName));
+            await roleManager.CreateAsync(new IdentityRole(Roles.Admin));
             logger.LogInformation("Admin role created");
         }
         else
         {
             logger.LogInformation("Admin role already exists");
+        }
+        
+        // Ensure Screen role exists
+        if (!await roleManager.RoleExistsAsync(Roles.Screen))
+        {
+            await roleManager.CreateAsync(new IdentityRole(Roles.Screen));
+            logger.LogInformation("Screen role created");
+        }
+        else
+        {
+            logger.LogInformation("Screen role already exists");
         }
     }
 
@@ -94,7 +106,7 @@ public class InitializerService(
         
         if (result.Succeeded)
         {
-            await userManager.AddToRoleAsync(adminUser, AdminRoleName);
+            await userManager.AddToRoleAsync(adminUser, Roles.Admin);
             logger.LogInformation("Default admin user created successfully with email: {Email}", email);
         }
         else
@@ -109,9 +121,9 @@ public class InitializerService(
         logger.LogInformation("Default admin user already exists with email: {Email}", email);
         
         // Ensure the user is in the Admin role
-        if (!await userManager.IsInRoleAsync(user, AdminRoleName))
+        if (!await userManager.IsInRoleAsync(user, Roles.Admin))
         {
-            await userManager.AddToRoleAsync(user, AdminRoleName);
+            await userManager.AddToRoleAsync(user, Roles.Admin);
             logger.LogInformation("Added Admin role to existing user: {Email}", email);
         }
     }
