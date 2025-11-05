@@ -1,0 +1,150 @@
+@page
+@model UploadModel
+@{
+    ViewData["Title"] = "Upload Assets";
+}
+
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Upload Assets</h1>
+            <p class="text-gray-600 mt-1">Upload images and videos for your digital signage</p>
+        </div>
+        <a href="/Admin/Assets" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+            Back to Assets
+        </a>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="rounded-md bg-green-50 p-4">
+            <div class="flex">
+                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">@Model.SuccessMessage</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="rounded-md bg-red-50 p-4">
+            <div class="flex">
+                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">@Model.ErrorMessage</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Upload Form -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <form method="post" enctype="multipart/form-data">
+            <div class="space-y-6">
+                <!-- File Upload Area -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Select Files
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                    <span>Upload files</span>
+                                    <input id="file-upload" name="Files" type="file" class="sr-only" multiple accept="image/*,video/*" asp-for="Files" />
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                Images (PNG, JPG, GIF) and Videos (MP4, WebM) up to 100MB each
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File List Preview (with JavaScript enhancement) -->
+                <div id="file-list" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Selected Files
+                    </label>
+                    <ul id="file-list-items" class="divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                    </ul>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end space-x-3">
+                    <a href="/Admin/Assets" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                        Upload Assets
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Supported Formats Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-blue-900 mb-2">Supported Formats</h3>
+        <div class="text-sm text-blue-800">
+            <p><strong>Images:</strong> JPEG, PNG, GIF, WebP</p>
+            <p><strong>Videos:</strong> MP4, WebM, MOV</p>
+            <p><strong>Maximum file size:</strong> 100 MB per file</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // File upload preview
+        const fileInput = document.getElementById('file-upload');
+        const fileList = document.getElementById('file-list');
+        const fileListItems = document.getElementById('file-list-items');
+
+        fileInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            
+            if (files.length > 0) {
+                fileList.classList.remove('hidden');
+                fileListItems.innerHTML = '';
+                
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = 'px-4 py-3 flex items-center justify-between';
+                    
+                    const fileInfo = document.createElement('div');
+                    fileInfo.className = 'flex items-center';
+                    
+                    const icon = document.createElement('svg');
+                    icon.className = 'h-5 w-5 text-gray-400 mr-3';
+                    icon.setAttribute('fill', 'currentColor');
+                    icon.setAttribute('viewBox', '0 0 20 20');
+                    icon.innerHTML = '<path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />';
+                    
+                    const text = document.createElement('div');
+                    text.innerHTML = `<p class="text-sm font-medium text-gray-900">${file.name}</p>
+                                     <p class="text-sm text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>`;
+                    
+                    fileInfo.appendChild(icon);
+                    fileInfo.appendChild(text);
+                    li.appendChild(fileInfo);
+                    fileListItems.appendChild(li);
+                });
+            } else {
+                fileList.classList.add('hidden');
+            }
+        });
+    </script>
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Mireya.Api;
+using Mireya.Api.Constants;
 using Mireya.Api.Extensions;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
@@ -20,6 +21,13 @@ var config = builder.Configuration
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddRazorPages(options =>
+{
+    // Require authentication for all pages in the Admin area by default
+    options.Conventions.AuthorizeAreaFolder("Admin", "/", Roles.Admin);
+    // Allow anonymous access to the login page
+    options.Conventions.AllowAnonymousToAreaPage("Admin", "/Login");
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // Add NSwag OpenAPI document generation
@@ -117,6 +125,9 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Serve static files for Razor Pages (CSS, JS, images)
+app.UseStaticFiles();
+
 // Serve uploaded files
 // Erstelle das Verzeichnis "uploads", falls es nicht existiert
 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "uploads"));
@@ -131,5 +142,6 @@ app.MapIdentityApi<User>();
 app.MapIdentityApiAdditionalEndpoints<User>();
 
 app.MapControllers();
+app.MapRazorPages();
 
 app.Run();
