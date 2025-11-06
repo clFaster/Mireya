@@ -1,10 +1,12 @@
 # Development Plan: Mireya (feature/assets-management-13 branch)
 
-*Generated on 2025-11-06 by Vibe Feature MCP*
-*Workflow: [epcc](https://mrsimpson.github.io/responsible-vibe-mcp/workflows/epcc)*
+_Generated on 2025-11-06 by Vibe Feature MCP_
+_Workflow: [epcc](https://mrsimpson.github.io/responsible-vibe-mcp/workflows/epcc)_
 
 ## Goal
+
 Improve Assets Management for Mireya Digital Signage system by implementing:
+
 - Upload assets (images, videos, etc.) via UI
 - Delete existing assets from the system
 - Preview assets before taking actions
@@ -14,10 +16,14 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 **GitHub Issue**: #13 - Feature: Improve Assets Management (Upload, Delete, Preview)
 
 ## Explore
+
 ### Phase Entrance Criteria:
+
 - [x] Development workflow started
 - [x] Initial plan file created
+
 ### Tasks
+
 - [x] Analyze existing asset management implementation
 - [x] Understand current file upload mechanism
 - [x] Review existing UI pages (Assets/Index and Assets/Upload)
@@ -27,6 +33,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Identify missing edit metadata UI
 
 ### Completed
+
 - [x] Created development plan file
 - [x] Analyzed existing AssetService implementation
 - [x] Reviewed AssetController API endpoints
@@ -38,6 +45,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ## Plan
 
 ### Phase Entrance Criteria:
+
 - [x] Existing codebase patterns and architecture understood
 - [x] Current asset management implementation analyzed
 - [x] File upload/storage mechanisms identified
@@ -45,6 +53,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Frontend and backend integration points documented
 
 ### Tasks
+
 - [x] Analyze current implementation gaps
 - [x] Define implementation approach for each feature
 - [x] Break down work into logical phases
@@ -53,6 +62,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Plan UI/UX improvements
 
 ### Completed
+
 - [x] Created detailed implementation plan (see Key Decisions section)
 - [x] Defined task breakdown for coding phase
 - [x] Documented edge cases and security considerations
@@ -60,6 +70,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ## Code
 
 ### Phase Entrance Criteria:
+
 - [ ] Detailed implementation plan completed
 - [ ] Architecture and design decisions documented
 - [ ] Task breakdown for backend and frontend completed
@@ -69,11 +80,13 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ### Tasks
 
 #### Phase 1: Fix Delete Handler
+
 - [x] Add `OnPostDeleteAsync` method to `Index.cshtml.cs`
 - [x] Add success/error message properties
 - [x] Test delete functionality with existing backend
 
 #### Phase 2: Video Upload Support
+
 - [x] Update `AssetService.UploadAssetsAsync` to support video extensions
 - [x] Add MIME type validation for videos
 - [x] Add file size validation (configurable limits)
@@ -82,6 +95,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Test video upload workflow
 
 #### Phase 3: Edit Metadata UI
+
 - [x] Create Edit modal HTML in `Index.cshtml`
 - [x] Add Edit button to asset cards
 - [x] Add JavaScript for modal show/hide
@@ -92,6 +106,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Test edit functionality
 
 #### Phase 4: Website Asset Type
+
 - [x] Add `CreateWebsiteAssetAsync` method to `IAssetService` and `AssetService`
 - [x] Add corresponding API endpoint in `AssetController`
 - [x] Add "Add Website" UI (on Upload page or new section)
@@ -100,10 +115,12 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Test website asset creation and display
 
 #### Bug Fixes
+
 - [x] Fix edit metadata dialog not opening (changed from onclick to data attributes + event listeners)
 - [x] Fix pagination links (changed from ?page= to ?CurrentPage= to match model property)
 
 #### Phase 5: Preview Modal
+
 - [x] Create preview modal component in `Index.cshtml`
 - [x] Add JavaScript for modal navigation (open, close, keyboard)
 - [x] Support image preview (full size display)
@@ -113,6 +130,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Test preview for all asset types
 
 #### Phase 6: Upload Preview (Optional)
+
 - [x] Add JavaScript file input change handler in `Upload.cshtml`
 - [x] Generate thumbnail previews for selected images
 - [x] Display file info (name, size, type)
@@ -121,6 +139,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Test upload preview functionality
 
 ### Completed
+
 - [x] Phase 1: Delete handler and backend integration
 - [x] Phase 2: Video upload support with validation
 - [x] Phase 3: Edit metadata modal UI
@@ -133,6 +152,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ## Commit
 
 ### Phase Entrance Criteria:
+
 - [ ] All planned features implemented
 - [ ] Backend endpoints tested and working
 - [ ] Frontend UI components functional
@@ -141,6 +161,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [ ] User acceptance criteria met
 
 ### Tasks
+
 - [x] Remove debug output statements from all modified files
 - [x] Review and address TODO/FIXME comments
 - [x] Remove commented-out code and debugging blocks
@@ -149,6 +170,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - [x] Final code review and validation
 
 ### Completed
+
 - [x] Code cleanup: No debug statements or commented code found
 - [x] TODO review: No TODOs in modified files
 - [x] Tests: Build successful, no regressions detected
@@ -159,6 +181,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ### Exploration Findings:
 
 **Current Implementation Status:**
+
 1. **Upload Assets** ✅ ALREADY IMPLEMENTED
    - Backend: `AssetController.UploadAssets()` endpoint exists
    - Service: `AssetService.UploadAssetsAsync()` handles file upload
@@ -190,6 +213,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
    - Different from file upload - needs URL input field
 
 **Architecture Details:**
+
 - ASP.NET Core (.NET 8) backend with Razor Pages
 - Entity Framework Core with SQLite (dev) and PostgreSQL (prod)
 - Static file serving configured for `/uploads` directory
@@ -198,11 +222,13 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - No JavaScript framework (vanilla JS for enhancements)
 
 **Security Measures Identified:**
+
 - File type validation (currently only images)
 - Authorization required (Admin role)
 - Unique GUID filenames prevent conflicts/overwrites
 
 **What Needs to be Added:**
+
 1. Fix delete functionality on Razor Page (add handler)
 2. Expand file type support to videos (.mp4, .webm, etc.)
 3. Add support for Website asset type (URL input instead of file upload)
@@ -218,13 +244,17 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ### Implementation Plan:
 
 #### **Phase 1: Fix Critical Issues (Delete Handler)**
+
 **Priority: HIGH - Existing feature is broken**
+
 - Add `OnPostDeleteAsync` handler to `Index.cshtml.cs`
 - Implement proper error handling and user feedback
 - Test delete functionality end-to-end
 
 #### **Phase 2: Extend File Upload Support (Videos)**
+
 **Priority: HIGH - Core requirement from issue**
+
 - Update `AssetService.UploadAssetsAsync()` to accept video files
 - Add video file extensions: .mp4, .webm, .avi, .mov
 - Update file type validation logic
@@ -233,7 +263,9 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - Test video upload and display
 
 #### **Phase 3: Add Edit Metadata UI**
+
 **Priority: HIGH - Requested feature, backend exists**
+
 - Create Edit modal or separate page for asset metadata
 - Add "Edit" button to asset cards in Index.cshtml
 - Wire up to existing `UpdateAssetMetadata` API endpoint
@@ -242,7 +274,9 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - Show success/error feedback
 
 #### **Phase 4: Add Website Asset Type**
+
 **Priority: MEDIUM - New asset type**
+
 - Update `AssetService` to handle Website type creation
 - Add new method `CreateWebsiteAssetAsync(string url, string name, string? description)`
 - Add UI for adding website URLs (could be on Upload page or separate)
@@ -251,7 +285,9 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - Update asset grid to show Website assets differently (globe icon?)
 
 #### **Phase 5: Improve Preview Experience**
+
 **Priority: MEDIUM - UX enhancement**
+
 - Add modal/lightbox for inline preview
 - Support preview for images, videos, and websites (iframe)
 - Add keyboard navigation (ESC to close, arrows for next/prev)
@@ -259,7 +295,9 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - Consider using a lightweight JS library or build custom modal
 
 #### **Phase 6: Add Upload Preview**
+
 **Priority: LOW - Nice-to-have UX enhancement**
+
 - Show file previews before upload submission
 - Display thumbnail for selected images
 - Show file name, size, type for all files
@@ -271,30 +309,36 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ### Technical Decisions:
 
 **1. File Size Limits:**
+
 - Images: 10 MB max
 - Videos: 100 MB max
 - Configurable via appsettings.json
 
 **2. Supported File Types:**
+
 - Images: .jpg, .jpeg, .png, .gif, .webp
 - Videos: .mp4, .webm, .avi, .mov
 
 **3. Edit UI Approach:**
+
 - Use inline modal (not separate page) for quick editing
 - Keep user on Index page for better UX
 - Use vanilla JavaScript for modal functionality (no extra dependencies)
 
 **4. Website Asset Validation:**
+
 - URL format validation (must be valid HTTP/HTTPS URL)
 - Optional URL reachability check (ping before save)
 - Store raw URL in Source field
 
 **5. Preview Modal:**
+
 - Custom lightweight modal with Tailwind CSS
 - Support all three asset types
 - Escape key to close, click outside to close
 
 **6. Error Handling:**
+
 - User-friendly error messages
 - Validation on both client and server side
 - Log errors server-side for debugging
@@ -365,6 +409,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 ## Notes
 
 **File Structure:**
+
 - Backend API: `src/Mireya.Api/`
 - Controllers: `src/Mireya.Api/Controllers/`
 - Services: `src/Mireya.Api/Services/Asset/`
@@ -373,6 +418,7 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - Upload Directory: `src/Mireya.Api/uploads/`
 
 **Key Files:**
+
 - `AssetController.cs` - REST API endpoints
 - `AssetService.cs` - Business logic for asset operations
 - `Asset.cs` - Database model
@@ -380,15 +426,18 @@ Improve Assets Management for Mireya Digital Signage system by implementing:
 - `Upload.cshtml/.cs` - Asset upload page
 
 **Asset Types Supported:**
+
 - Image = 1
 - Video = 2
 - Website = 3
 
 **Technical Stack:**
+
 - .NET 8 / ASP.NET Core
 - Entity Framework Core
 - Razor Pages with Tailwind CSS
 - SQLite (dev) / PostgreSQL (prod)
 
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._
