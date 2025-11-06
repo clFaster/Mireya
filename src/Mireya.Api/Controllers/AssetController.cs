@@ -64,4 +64,18 @@ public class AssetController(IAssetService assetService) : ControllerBase
             return NotFound();
         }
     }
+
+    [HttpPost("website")]
+    public async Task<ActionResult<AssetSummary>> CreateWebsiteAsset([FromBody] CreateWebsiteAssetRequest request)
+    {
+        try
+        {
+            var result = await assetService.CreateWebsiteAssetAsync(request.Url, request.Name, request.Description);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }
