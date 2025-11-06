@@ -184,7 +184,7 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
         if (name.Length > 200)
             throw new ArgumentException("Name cannot exceed 200 characters", nameof(name));
 
-        if (description != null && description.Length > 1000)
+        if (description is { Length: > 1000 })
             throw new ArgumentException("Description cannot exceed 1000 characters", nameof(description));
 
         var asset = new Database.Models.Asset
