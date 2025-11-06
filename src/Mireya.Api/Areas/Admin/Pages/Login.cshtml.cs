@@ -66,7 +66,7 @@ public class LoginModel : PageModel
             
             if (result.Succeeded)
             {
-                _logger.LogInformation("User logged in.");
+                _logger.LogInformation("User logged in");
                 return LocalRedirect(returnUrl);
             }
             if (result.RequiresTwoFactor)
@@ -76,15 +76,13 @@ public class LoginModel : PageModel
             }
             if (result.IsLockedOut)
             {
-                _logger.LogWarning("User account locked out.");
+                _logger.LogWarning("User account locked out");
                 ErrorMessage = "Your account has been locked out. Please try again later.";
                 return Page();
             }
-            else
-            {
-                ErrorMessage = "Invalid login attempt.";
-                return Page();
-            }
+
+            ErrorMessage = "Invalid login attempt.";
+            return Page();
         }
 
         // If we got this far, something failed, redisplay form
