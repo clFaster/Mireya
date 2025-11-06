@@ -45,8 +45,20 @@
         </div>
     }
 
+    <!-- Tab Navigation -->
+    <div class="border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8">
+            <button type="button" onclick="showTab('upload')" id="upload-tab" class="tab-button border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600">
+                Upload Files
+            </button>
+            <button type="button" onclick="showTab('website')" id="website-tab" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Add Website
+            </button>
+        </nav>
+    </div>
+
     <!-- Upload Form -->
-    <div class="bg-white shadow rounded-lg p-6">
+    <div id="upload-content" class="tab-content bg-white shadow rounded-lg p-6">
         <form method="post" enctype="multipart/form-data">
             <div class="space-y-6">
                 <!-- File Upload Area -->
@@ -67,7 +79,7 @@
                                 <p class="pl-1">or drag and drop</p>
                             </div>
                             <p class="text-xs text-gray-500">
-                                Images (PNG, JPG, GIF) and Videos (MP4, WebM) up to 100MB each
+                                Images (up to 10MB) and Videos (up to 100MB)
                             </p>
                         </div>
                     </div>
@@ -95,23 +107,104 @@
         </form>
     </div>
 
+    <!-- Website Form -->
+    <div id="website-content" class="tab-content hidden bg-white shadow rounded-lg p-6">
+        <form method="post" asp-page-handler="Website">
+            <div class="space-y-6">
+                <div>
+                    <label for="website-url" class="block text-sm font-medium text-gray-700 mb-2">
+                        Website URL *
+                    </label>
+                    <input type="url" id="website-url" name="Url" required 
+                           placeholder="https://example.com"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p class="text-xs text-gray-500 mt-1">Enter a valid HTTP or HTTPS URL</p>
+                </div>
+
+                <div>
+                    <label for="website-name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Name *
+                    </label>
+                    <input type="text" id="website-name" name="Name" required maxlength="200"
+                           placeholder="My Website"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p class="text-xs text-gray-500 mt-1">Max 200 characters</p>
+                </div>
+
+                <div>
+                    <label for="website-description" class="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                    </label>
+                    <textarea id="website-description" name="Description" rows="3" maxlength="1000"
+                              placeholder="Optional description"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Optional, max 1000 characters</p>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <a href="/Admin/Assets" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                        Add Website
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
     <!-- Supported Formats Info -->
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div id="upload-info" class="tab-content bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 class="text-sm font-medium text-blue-900 mb-2">Supported Formats</h3>
-        <div class="text-sm text-blue-800">
-            <p><strong>Images:</strong> JPEG, PNG, GIF, WebP</p>
-            <p><strong>Videos:</strong> MP4, WebM, MOV</p>
-            <p><strong>Maximum file size:</strong> 100 MB per file</p>
+        <div class="text-sm text-blue-800 space-y-1">
+            <p><strong>Images:</strong> JPEG, PNG, GIF, WebP (max 10 MB each)</p>
+            <p><strong>Videos:</strong> MP4, WebM, AVI, MOV (max 100 MB each)</p>
+        </div>
+    </div>
+    
+    <div id="website-info" class="tab-content hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-blue-900 mb-2">Website Assets</h3>
+        <div class="text-sm text-blue-800 space-y-1">
+            <p>Add external websites to display on your digital signage screens.</p>
+            <p>Only HTTP and HTTPS URLs are supported.</p>
+            <p class="text-xs mt-2 text-blue-700">Note: Some websites may prevent embedding in iframes.</p>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // File upload preview
+        // Tab switching
+        function showTab(tab) {
+            const tabs = ['upload', 'website'];
+            tabs.forEach(t => {
+                const content = document.getElementById(t + '-content');
+                const info = document.getElementById(t + '-info');
+                const button = document.getElementById(t + '-tab');
+                
+                if (t === tab) {
+                    content?.classList.remove('hidden');
+                    info?.classList.remove('hidden');
+                    button?.classList.remove('border-transparent', 'text-gray-500');
+                    button?.classList.add('border-blue-500', 'text-blue-600');
+                } else {
+                    content?.classList.add('hidden');
+                    info?.classList.add('hidden');
+                    button?.classList.add('border-transparent', 'text-gray-500');
+                    button?.classList.remove('border-blue-500', 'text-blue-600');
+                }
+            });
+        }
+        
+        // File upload preview with validation and thumbnails
         const fileInput = document.getElementById('file-upload');
         const fileList = document.getElementById('file-list');
         const fileListItems = document.getElementById('file-list-items');
+        
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        const videoExtensions = ['.mp4', '.webm', '.avi', '.mov'];
+        const maxImageSize = 10 * 1024 * 1024; // 10 MB
+        const maxVideoSize = 100 * 1024 * 1024; // 100 MB
 
         fileInput.addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
@@ -120,26 +213,96 @@
                 fileList.classList.remove('hidden');
                 fileListItems.innerHTML = '';
                 
-                files.forEach(file => {
+                files.forEach((file, index) => {
                     const li = document.createElement('li');
-                    li.className = 'px-4 py-3 flex items-center justify-between';
+                    li.className = 'px-4 py-3 flex items-center gap-3';
                     
+                    // Preview thumbnail
+                    const preview = document.createElement('div');
+                    preview.className = 'w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center overflow-hidden';
+                    
+                    const ext = '.' + file.name.split('.').pop().toLowerCase();
+                    const isImage = imageExtensions.includes(ext);
+                    const isVideo = videoExtensions.includes(ext);
+                    
+                    if (isImage) {
+                        // Create image thumbnail
+                        const img = document.createElement('img');
+                        img.className = 'w-full h-full object-cover';
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            img.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                        preview.appendChild(img);
+                    } else if (isVideo) {
+                        // Video icon
+                        preview.innerHTML = '<svg class="w-8 h-8 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" /></svg>';
+                    } else {
+                        // Unknown file icon
+                        preview.innerHTML = '<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>';
+                    }
+                    
+                    // File info
                     const fileInfo = document.createElement('div');
-                    fileInfo.className = 'flex items-center';
+                    fileInfo.className = 'flex-1 min-w-0';
                     
-                    const icon = document.createElement('svg');
-                    icon.className = 'h-5 w-5 text-gray-400 mr-3';
-                    icon.setAttribute('fill', 'currentColor');
-                    icon.setAttribute('viewBox', '0 0 20 20');
-                    icon.innerHTML = '<path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />';
+                    const fileName = document.createElement('p');
+                    fileName.className = 'text-sm font-medium text-gray-900 truncate';
+                    fileName.textContent = file.name;
                     
-                    const text = document.createElement('div');
-                    text.innerHTML = `<p class="text-sm font-medium text-gray-900">${file.name}</p>
-                                     <p class="text-sm text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</p>`;
+                    const fileSize = document.createElement('p');
+                    fileSize.className = 'text-sm text-gray-500';
+                    const sizeMB = file.size / 1024 / 1024;
+                    fileSize.textContent = `${sizeMB.toFixed(2)} MB`;
                     
-                    fileInfo.appendChild(icon);
-                    fileInfo.appendChild(text);
+                    // Validation
+                    const validation = document.createElement('p');
+                    validation.className = 'text-xs mt-1';
+                    
+                    if (!isImage && !isVideo) {
+                        validation.className += ' text-red-600';
+                        validation.textContent = '❌ Unsupported file type';
+                    } else if (isImage && file.size > maxImageSize) {
+                        validation.className += ' text-red-600';
+                        validation.textContent = '❌ Image exceeds 10 MB limit';
+                    } else if (isVideo && file.size > maxVideoSize) {
+                        validation.className += ' text-red-600';
+                        validation.textContent = '❌ Video exceeds 100 MB limit';
+                    } else {
+                        validation.className += ' text-green-600';
+                        validation.textContent = '✓ Valid file';
+                    }
+                    
+                    fileInfo.appendChild(fileName);
+                    fileInfo.appendChild(fileSize);
+                    fileInfo.appendChild(validation);
+                    
+                    // Remove button
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'text-red-600 hover:text-red-800 flex-shrink-0';
+                    removeBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
+                    removeBtn.onclick = function() {
+                        // Remove from list
+                        li.remove();
+                        
+                        // Remove from file input (create new FileList without this file)
+                        const dt = new DataTransfer();
+                        Array.from(fileInput.files).forEach((f, i) => {
+                            if (i !== index) dt.items.add(f);
+                        });
+                        fileInput.files = dt.files;
+                        
+                        // Hide list if empty
+                        if (fileInput.files.length === 0) {
+                            fileList.classList.add('hidden');
+                        }
+                    };
+                    
+                    li.appendChild(preview);
                     li.appendChild(fileInfo);
+                    li.appendChild(removeBtn);
                     fileListItems.appendChild(li);
                 });
             } else {

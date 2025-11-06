@@ -56,4 +56,32 @@ public class UploadModel : PageModel
             return Page();
         }
     }
+
+    public async Task<IActionResult> OnPostWebsiteAsync(string url, string name, string? description)
+    {
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(name))
+        {
+            ErrorMessage = "URL and Name are required.";
+            return Page();
+        }
+
+        try
+        {
+            await _assetService.CreateWebsiteAssetAsync(url, name, description);
+            SuccessMessage = $"Successfully added website '{name}'.";
+            return Page();
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid website asset creation attempt");
+            ErrorMessage = ex.Message;
+            return Page();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating website asset");
+            ErrorMessage = "An error occurred while adding the website. Please try again.";
+            return Page();
+        }
+    }
 }

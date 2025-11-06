@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Mireya.Api.Services.Asset;
 using Mireya.Database;
 using Mireya.Database.Models;
 
@@ -9,11 +10,13 @@ namespace Mireya.Api.Areas.Admin.Pages.Assets;
 public class AssetsIndexModel : PageModel
 {
     private readonly MireyaDbContext _context;
+    private readonly IAssetService _assetService;
     private readonly ILogger<AssetsIndexModel> _logger;
 
-    public AssetsIndexModel(MireyaDbContext context, ILogger<AssetsIndexModel> logger)
+    public AssetsIndexModel(MireyaDbContext context, IAssetService assetService, ILogger<AssetsIndexModel> logger)
     {
         _context = context;
+        _assetService = assetService;
         _logger = logger;
     }
 
@@ -28,6 +31,12 @@ public class AssetsIndexModel : PageModel
     public int PageSize { get; set; } = 12;
     public int TotalAssets { get; set; }
     public int TotalPages { get; set; }
+
+    [TempData]
+    public string? SuccessMessage { get; set; }
+
+    [TempData]
+    public string? ErrorMessage { get; set; }
 
     public async Task OnGetAsync()
     {
@@ -61,5 +70,55 @@ public class AssetsIndexModel : PageModel
             _logger.LogError(ex, "Error loading assets list");
             Assets = new List<Asset>();
         }
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(Guid id)
+    {
+        try
+        {
+            await _assetService.DeleteAssetAsync(id);
+            SuccessMessage = "Asset deleted successfully.";
+            _logger.LogInformation("Asset {AssetId} deleted successfully", id);
+        }
+        catch (KeyNotFoundException)
+        {
+            ErrorMessage = "Asset not found.";
+            _logger.LogWarning("Attempted to delete non-existent asset {AssetId}", id);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "An error occurred while deleting the asset. Please try again.";
+            _logger.LogError(ex, "Error deleting asset {AssetId}", id);
+        }
+
+        return RedirectToPage(new { TypeFilter, CurrentPage });
+    }
+
+    public async Task<IActionResult> OnPostEditAsync(Guid assetId, string name, string? description)
+    {
+        try
+        {
+            var request = new UpdateAssetMetadataRequest
+            {
+                Name = name,
+                Description = description
+            };
+
+            await _assetService.UpdateAssetMetadataAsync(assetId, request);
+            SuccessMessage = "Asset updated successfully.";
+            _logger.LogInformation("Asset {AssetId} updated successfully", assetId);
+        }
+        catch (KeyNotFoundException)
+        {
+            ErrorMessage = "Asset not found.";
+            _logger.LogWarning("Attempted to update non-existent asset {AssetId}", assetId);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "An error occurred while updating the asset. Please try again.";
+            _logger.LogError(ex, "Error updating asset {AssetId}", assetId);
+        }
+
+        return RedirectToPage(new { TypeFilter, CurrentPage });
     }
 }
