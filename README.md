@@ -21,7 +21,6 @@ flowchart LR
 
 - **Web Frontend (Razor Pages):**  
   The admin interface, built with ASP.NET Core Razor Pages, allows administrators to configure screens, manage assets, and monitor the system. It uses cookie-based authentication with ASP.NET Core Identity for seamless integration with the backend.
-  
 - **Client Application (Android TV):**  
   The client app runs on Android TV devices, connecting to the server using WebSocket for efficient, real-time content delivery and screen updates.
 
@@ -57,12 +56,14 @@ The admin interface is integrated directly into the Mireya.Api project using ASP
 ### Access the Admin Interface
 
 1. Start the API server:
+
    ```bash
    cd src/Mireya.Api
    dotnet run
    ```
 
 2. Navigate to the admin interface:
+
    ```
    https://localhost:5001/Admin/Login
    ```
@@ -74,7 +75,7 @@ The admin interface is integrated directly into the Mireya.Api project using ASP
 ### Admin Features
 
 - **Dashboard**: Overview of system status, screens, and assets
-- **Screen Management**: 
+- **Screen Management**:
   - View all registered displays
   - Approve/reject new screen registrations
   - Edit screen details and settings
@@ -88,6 +89,7 @@ The admin interface is integrated directly into the Mireya.Api project using ASP
 ### Development
 
 The admin interface uses:
+
 - **ASP.NET Core Razor Pages** for server-side rendering
 - **Tailwind CSS** (via CDN) for styling
 - **Cookie-based authentication** with ASP.NET Core Identity
