@@ -24,9 +24,9 @@ builder.Services.AddControllers();
 builder.Services.AddRazorPages(options =>
 {
     // Require authentication for all pages in the Admin area by default
-    options.Conventions.AuthorizeAreaFolder("Admin", "/", Roles.Admin);
-    // Allow anonymous access to the login page
-    options.Conventions.AllowAnonymousToAreaPage("Admin", "/Login");
+    options.Conventions
+        .AuthorizeAreaFolder("Admin", "/", Roles.Admin)
+        .AllowAnonymousToAreaPage("Admin", "/Login");
 });
 builder.Services.AddEndpointsApiExplorer();
 
@@ -70,7 +70,13 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 .AddEntityFrameworkStores<MireyaDbContext>()
 .AddDefaultTokenProviders();
 
-builder.Services.AddAuthentication();
+// Add default authentication scheme (cookies) for Razor Pages
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+});
+
 builder.Services.AddAuthorization(options =>
 {
     // Add policy for Admin role
@@ -83,6 +89,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Admin/Login";
     options.AccessDeniedPath = "/Admin/Login";
     options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(24);
 });
 
 // Register services
@@ -133,6 +140,9 @@ if (app.Environment.IsDevelopment())
     
     app.UseCors("Development");
 }
+
+// Establish routing context (required for authentication/authorization to work with Razor Pages)
+app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
