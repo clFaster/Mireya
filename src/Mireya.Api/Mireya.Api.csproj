@@ -16,6 +16,11 @@
         <PackageReference Include="Nanoid" Version="3.1.0" />
         <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <Content Update="Areas\**\*.css" CopyToOutputDirectory="PreserveNewest" />
+      <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Mireya.Database.Postgres\Mireya.Database.Postgres.csproj" />

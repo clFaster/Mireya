@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Mireya.Api;
+using Mireya.Api.Constants;
 using Mireya.Api.Extensions;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
@@ -20,6 +21,13 @@ var config = builder.Configuration
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddRazorPages(options =>
+{
+    // Require authentication for all pages in the Admin area by default
+    options.Conventions
+        .AuthorizeAreaFolder("Admin", "/", Roles.Admin)
+        .AllowAnonymousToAreaPage("Admin", "/Login");
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // Add NSwag OpenAPI document generation
@@ -62,8 +70,27 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 .AddEntityFrameworkStores<MireyaDbContext>()
 .AddDefaultTokenProviders();
 
-builder.Services.AddAuthentication();
-builder.Services.AddAuthorization();
+// Add default authentication scheme (cookies) for Razor Pages
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    // Add policy for Admin role
+    options.AddPolicy(Roles.Admin, policy => policy.RequireRole(Roles.Admin));
+});
+
+// Configure cookie authentication to redirect to login page on unauthorized access
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Admin/Login";
+    options.AccessDeniedPath = "/Admin/Login";
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+});
 
 // Register services
 builder.Services.AddScoped<IInitializerService, InitializerService>();
@@ -114,8 +141,14 @@ if (app.Environment.IsDevelopment())
     app.UseCors("Development");
 }
 
+// Establish routing context (required for authentication/authorization to work with Razor Pages)
+app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Serve static files for Razor Pages (CSS, JS, images)
+app.UseStaticFiles();
 
 // Serve uploaded files
 // Erstelle das Verzeichnis "uploads", falls es nicht existiert
@@ -130,6 +163,10 @@ app.UseStaticFiles(new StaticFileOptions
 app.MapIdentityApi<User>();
 app.MapIdentityApiAdditionalEndpoints<User>();
 
+// Map Controllers and Razor Pages
 app.MapControllers();
+app.MapRazorPages();
+
+// Root page is handled by Pages/Index.cshtml (no redirect needed)
 
 app.Run();

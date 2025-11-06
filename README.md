@@ -19,9 +19,8 @@ flowchart LR
 - **Server (.NET Core):**  
   The backend is developed with .NET Core, responsible for managing screens, user authentication, and content distribution. It exposes a REST API for standard operations and uses SignalR for real-time updates and communication.
 
-- **Web Frontend (Next.js):**  
-  The web interface, built with Next.js, allows users to configure screens, design templates, and schedule content. It interacts with the .NET backend via REST APIs and receives live updates through SignalR.
-
+- **Web Frontend (Razor Pages):**  
+  The admin interface, built with ASP.NET Core Razor Pages, allows administrators to configure screens, manage assets, and monitor the system. It uses cookie-based authentication with ASP.NET Core Identity for seamless integration with the backend.
 - **Client Application (Android TV):**  
   The client app runs on Android TV devices, connecting to the server using WebSocket for efficient, real-time content delivery and screen updates.
 
@@ -50,7 +49,57 @@ dotnet ef database update --project .\src\Mireya.Database.Sqlite --startup-proje
 dotnet ef database update --project .\src\Mireya.Database.Postgres --startup-project .\src\Mireya.Api -- --provider Postgres
 ```
 
-## Mireya Web
+## Mireya Admin (Razor Pages)
+
+The admin interface is integrated directly into the Mireya.Api project using ASP.NET Core Razor Pages with Tailwind CSS.
+
+### Access the Admin Interface
+
+1. Start the API server:
+
+   ```bash
+   cd src/Mireya.Api
+   dotnet run
+   ```
+
+2. Navigate to the admin interface:
+
+   ```
+   https://localhost:5001/Admin/Login
+   ```
+
+3. Default admin credentials:
+   - Email: `admin@mireya.local`
+   - Password: (set via environment variables or user secrets)
+
+### Admin Features
+
+- **Dashboard**: Overview of system status, screens, and assets
+- **Screen Management**:
+  - View all registered displays
+  - Approve/reject new screen registrations
+  - Edit screen details and settings
+  - Monitor screen status and last seen time
+- **Asset Management**:
+  - Upload images and videos
+  - View asset gallery with previews
+  - Delete assets
+  - Filter by asset type
+
+### Development
+
+The admin interface uses:
+
+- **ASP.NET Core Razor Pages** for server-side rendering
+- **Tailwind CSS** (via CDN) for styling
+- **Cookie-based authentication** with ASP.NET Core Identity
+- **Role-based authorization** (Admin role required)
+
+All admin pages are located in: `src/Mireya.Api/Areas/Admin/Pages/`
+
+## Mireya Web (Deprecated)
+
+> **⚠️ Deprecated**: This Next.js frontend is being phased out in favor of Razor Pages. It will be removed in a future release.
 
 ### Api Generation
 
