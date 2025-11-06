@@ -16,6 +16,35 @@
         </a>
     </div>
 
+    <!-- Success/Error Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="rounded-md bg-green-50 p-4">
+            <div class="flex">
+                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">@Model.SuccessMessage</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="rounded-md bg-red-50 p-4">
+            <div class="flex">
+                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">@Model.ErrorMessage</p>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Filters -->
     <div class="bg-white shadow rounded-lg p-4">
         <form method="get" class="flex flex-wrap gap-4 items-end">
@@ -25,6 +54,7 @@
                     <option value="">All Types</option>
                     <option value="Image">Images</option>
                     <option value="Video">Videos</option>
+                    <option value="Website">Websites</option>
                 </select>
             </div>
             
@@ -61,9 +91,18 @@
                             </div>
                             <video src="@asset.Source" class="w-full h-full object-cover"></video>
                         }
+                        else if (asset.Type == AssetType.Website)
+                        {
+                            <div class="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-100 to-gray-200">
+                                <svg class="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                </svg>
+                                <p class="text-xs text-gray-600 mt-2 text-center truncate w-full px-2">@asset.Source</p>
+                            </div>
+                        }
                         
                         <!-- Type Badge -->
-                        <span class="absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded @(asset.Type == AssetType.Image ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800")">
+                        <span class="absolute top-2 right-2 px-2 py-1 text-xs font-semibold rounded @(asset.Type == AssetType.Image ? "bg-blue-100 text-blue-800" : asset.Type == AssetType.Video ? "bg-purple-100 text-purple-800" : "bg-green-100 text-green-800")">
                             @asset.Type
                         </span>
                     </div>
@@ -86,9 +125,23 @@
                             }
                         </p>
                         <div class="mt-3 flex justify-between items-center">
-                            <a href="@asset.Source" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                View
-                            </a>
+                            <div class="flex gap-2">
+                                <button type="button"
+                                        class="text-blue-600 hover:text-blue-800 text-sm font-medium preview-btn"
+                                        data-id="@asset.Id"
+                                        data-name="@asset.Name"
+                                        data-source="@asset.Source"
+                                        data-type="@asset.Type">
+                                    Preview
+                                </button>
+                                <button type="button" 
+                                        class="text-green-600 hover:text-green-800 text-sm font-medium edit-btn"
+                                        data-id="@asset.Id"
+                                        data-name="@asset.Name"
+                                        data-description="@(asset.Description ?? "")">
+                                    Edit
+                                </button>
+                            </div>
                             <form method="post" asp-page-handler="Delete" asp-route-id="@asset.Id" class="inline" onsubmit="return confirm('Are you sure you want to delete this asset?');">
                                 <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">
                                     Delete
@@ -134,14 +187,14 @@
                         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                             @if (Model.CurrentPage > 1)
                             {
-                                <a href="?page=@(Model.CurrentPage - 1)&TypeFilter=@Model.TypeFilter" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?CurrentPage=@(Model.CurrentPage - 1)&TypeFilter=@Model.TypeFilter" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     Previous
                                 </a>
                             }
                             
                             @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
                             {
-                                <a href="?page=@i&TypeFilter=@Model.TypeFilter" 
+                                <a href="?CurrentPage=@i&TypeFilter=@Model.TypeFilter" 
                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium @(i == Model.CurrentPage ? "bg-blue-50 border-blue-500 text-blue-600 z-10" : "bg-white text-gray-700 hover:bg-gray-50")">
                                     @i
                                 </a>
@@ -149,7 +202,7 @@
                             
                             @if (Model.CurrentPage < Model.TotalPages)
                             {
-                                <a href="?page=@(Model.CurrentPage + 1)&TypeFilter=@Model.TypeFilter" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?CurrentPage=@(Model.CurrentPage + 1)&TypeFilter=@Model.TypeFilter" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     Next
                                 </a>
                             }
@@ -175,3 +228,212 @@
         </div>
     }
 </div>
+
+<!-- Preview Modal -->
+<div id="previewModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-90 overflow-y-auto h-full w-full z-50">
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+        <!-- Close button -->
+        <button onclick="closePreviewModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        
+        <!-- Content container -->
+        <div class="relative max-w-7xl w-full">
+            <!-- Asset title -->
+            <h2 id="previewTitle" class="text-white text-2xl font-bold mb-4 text-center"></h2>
+            
+            <!-- Preview content -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-2xl">
+                <!-- Image preview -->
+                <div id="imagePreview" class="hidden">
+                    <img id="previewImage" src="" alt="" class="w-full h-auto max-h-[80vh] object-contain" />
+                </div>
+                
+                <!-- Video preview -->
+                <div id="videoPreview" class="hidden">
+                    <video id="previewVideo" controls class="w-full h-auto max-h-[80vh]">
+                        <source src="" type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                
+                <!-- Website preview -->
+                <div id="websitePreview" class="hidden">
+                    <div class="p-4 bg-gray-100 border-b">
+                        <a id="websiteLink" href="" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium break-all">
+                            Open in new tab →
+                        </a>
+                    </div>
+                    <iframe id="previewIframe" src="" class="w-full h-[80vh] border-0"></iframe>
+                    <div id="iframeError" class="hidden p-8 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p class="text-gray-600">This website cannot be displayed in a preview.</p>
+                        <p class="text-sm text-gray-500 mt-2">Some websites prevent embedding for security reasons.</p>
+                        <a id="websiteLinkFallback" href="" target="_blank" class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Open in New Tab
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation hint -->
+            <p class="text-white text-center mt-4 text-sm">Press ESC to close</p>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Asset Modal -->
+<div id="editModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit Asset</h3>
+            <form method="post" asp-page-handler="Edit">
+                <input type="hidden" id="editAssetId" name="assetId" />
+                
+                <div class="mb-4">
+                    <label for="editName" class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                    <input type="text" id="editName" name="name" required maxlength="200"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                
+                <div class="mb-4">
+                    <label for="editDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="editDescription" name="description" rows="3" maxlength="1000"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Optional, max 1000 characters</p>
+                </div>
+                
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeEditModal()"
+                            class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Preview button click handler
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.preview-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const name = this.getAttribute('data-name');
+                    const source = this.getAttribute('data-source');
+                    const type = this.getAttribute('data-type');
+                    openPreviewModal(name, source, type);
+                });
+            });
+            
+            // Edit button click handler
+            document.querySelectorAll('.edit-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const description = this.getAttribute('data-description');
+                    openEditModal(id, name, description);
+                });
+            });
+        });
+        
+        function openPreviewModal(name, source, type) {
+            // Set title
+            document.getElementById('previewTitle').textContent = name;
+            
+            // Hide all preview types
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('videoPreview').classList.add('hidden');
+            document.getElementById('websitePreview').classList.add('hidden');
+            
+            // Show appropriate preview
+            if (type === 'Image') {
+                document.getElementById('previewImage').src = source;
+                document.getElementById('previewImage').alt = name;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            } else if (type === 'Video') {
+                const video = document.getElementById('previewVideo');
+                video.querySelector('source').src = source;
+                video.load();
+                document.getElementById('videoPreview').classList.remove('hidden');
+            } else if (type === 'Website') {
+                const iframe = document.getElementById('previewIframe');
+                const link = document.getElementById('websiteLink');
+                const linkFallback = document.getElementById('websiteLinkFallback');
+                
+                link.href = source;
+                link.textContent = source;
+                linkFallback.href = source;
+                
+                // Try to load in iframe
+                iframe.src = source;
+                document.getElementById('iframeError').classList.add('hidden');
+                
+                // Handle iframe load errors
+                iframe.onerror = function() {
+                    document.getElementById('iframeError').classList.remove('hidden');
+                };
+                
+                document.getElementById('websitePreview').classList.remove('hidden');
+            }
+            
+            // Show modal
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+        
+        function closePreviewModal() {
+            // Stop video if playing
+            const video = document.getElementById('previewVideo');
+            video.pause();
+            video.currentTime = 0;
+            
+            // Clear iframe
+            document.getElementById('previewIframe').src = '';
+            
+            // Hide modal
+            document.getElementById('previewModal').classList.add('hidden');
+        }
+        
+        function openEditModal(id, name, description) {
+            document.getElementById('editAssetId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editDescription').value = description;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+        
+        // Close modals on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closePreviewModal();
+            }
+        });
+        
+        // Close edit modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+        
+        // Close preview modal when clicking outside
+        document.getElementById('previewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreviewModal();
+            }
+        });
+    </script>
+}
