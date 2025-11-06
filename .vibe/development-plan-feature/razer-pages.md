@@ -150,10 +150,14 @@ Remove the deprecated Mireya.Web project (Next.js) from the solution and delete 
 - [ ] Confirmed no dependencies on the project
 
 ### Tasks
-- [ ] Remove Mireya.Web project reference from MireyaDigitalSignage.sln
-- [ ] Delete the Mireya.Web folder and all its contents
+- [x] Remove Mireya.Web project reference from MireyaDigitalSignage.sln
+- [x] Delete the Mireya.Web folder and all its contents
+- [x] Update README.md to remove deprecation note
 
 ### Completed
+- [x] Removed project entry and configuration from .sln file
+- [x] Deleted src/Mireya.Web folder recursively
+- [x] Updated README.md to remove deprecation note
 
 ## Finalize
 
