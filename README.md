@@ -22,8 +22,6 @@ flowchart LR
 - **Web Frontend (Razor Pages):**  
   The admin interface, built with ASP.NET Core Razor Pages, allows administrators to configure screens, manage assets, and monitor the system. It uses cookie-based authentication with ASP.NET Core Identity for seamless integration with the backend.
   
-  > **Note:** The Next.js web frontend (`Mireya.Web`) is deprecated and will be removed in a future release. New admin features are being implemented in Razor Pages within the `Mireya.Api` project.
-
 - **Client Application (Android TV):**  
   The client app runs on Android TV devices, connecting to the server using WebSocket for efficient, real-time content delivery and screen updates.
 
