@@ -71,7 +71,19 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication();
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Add policy for Admin role
+    options.AddPolicy(Roles.Admin, policy => policy.RequireRole(Roles.Admin));
+});
+
+// Configure cookie authentication to redirect to login page on unauthorized access
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Admin/Login";
+    options.AccessDeniedPath = "/Admin/Login";
+    options.SlidingExpiration = true;
+});
 
 // Register services
 builder.Services.AddScoped<IInitializerService, InitializerService>();
@@ -141,7 +153,10 @@ app.UseStaticFiles(new StaticFileOptions
 app.MapIdentityApi<User>();
 app.MapIdentityApiAdditionalEndpoints<User>();
 
+// Map Controllers and Razor Pages
 app.MapControllers();
 app.MapRazorPages();
+
+// Root page is handled by Pages/Index.cshtml (no redirect needed)
 
 app.Run();
