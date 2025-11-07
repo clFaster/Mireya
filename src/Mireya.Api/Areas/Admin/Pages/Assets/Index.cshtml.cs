@@ -7,19 +7,9 @@ using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages.Assets;
 
-public class AssetsIndexModel : PageModel
+public class AssetsIndexModel(MireyaDbContext context, IAssetService assetService, ILogger<AssetsIndexModel> logger)
+    : PageModel
 {
-    private readonly MireyaDbContext _context;
-    private readonly IAssetService _assetService;
-    private readonly ILogger<AssetsIndexModel> _logger;
-
-    public AssetsIndexModel(MireyaDbContext context, IAssetService assetService, ILogger<AssetsIndexModel> logger)
-    {
-        _context = context;
-        _assetService = assetService;
-        _logger = logger;
-    }
-
     public List<Asset> Assets { get; set; } = new();
     
     [BindProperty(SupportsGet = true)]
@@ -42,7 +32,7 @@ public class AssetsIndexModel : PageModel
     {
         try
         {
-            var query = _context.Assets.AsQueryable();
+            var query = context.Assets.AsQueryable();
 
             // Apply type filter
             if (!string.IsNullOrEmpty(TypeFilter) && Enum.TryParse<AssetType>(TypeFilter, out var type))
@@ -67,7 +57,7 @@ public class AssetsIndexModel : PageModel
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading assets list");
+            logger.LogError(ex, "Error loading assets list");
             Assets = new List<Asset>();
         }
     }
@@ -76,19 +66,19 @@ public class AssetsIndexModel : PageModel
     {
         try
         {
-            await _assetService.DeleteAssetAsync(id);
+            await assetService.DeleteAssetAsync(id);
             SuccessMessage = "Asset deleted successfully.";
-            _logger.LogInformation("Asset {AssetId} deleted successfully", id);
+            logger.LogInformation("Asset {AssetId} deleted successfully", id);
         }
         catch (KeyNotFoundException)
         {
             ErrorMessage = "Asset not found.";
-            _logger.LogWarning("Attempted to delete non-existent asset {AssetId}", id);
+            logger.LogWarning("Attempted to delete non-existent asset {AssetId}", id);
         }
         catch (Exception ex)
         {
             ErrorMessage = "An error occurred while deleting the asset. Please try again.";
-            _logger.LogError(ex, "Error deleting asset {AssetId}", id);
+            logger.LogError(ex, "Error deleting asset {AssetId}", id);
         }
 
         return RedirectToPage(new { TypeFilter, CurrentPage });
@@ -104,19 +94,19 @@ public class AssetsIndexModel : PageModel
                 Description = description
             };
 
-            await _assetService.UpdateAssetMetadataAsync(assetId, request);
+            await assetService.UpdateAssetMetadataAsync(assetId, request);
             SuccessMessage = "Asset updated successfully.";
-            _logger.LogInformation("Asset {AssetId} updated successfully", assetId);
+            logger.LogInformation("Asset {AssetId} updated successfully", assetId);
         }
         catch (KeyNotFoundException)
         {
             ErrorMessage = "Asset not found.";
-            _logger.LogWarning("Attempted to update non-existent asset {AssetId}", assetId);
+            logger.LogWarning("Attempted to update non-existent asset {AssetId}", assetId);
         }
         catch (Exception ex)
         {
             ErrorMessage = "An error occurred while updating the asset. Please try again.";
-            _logger.LogError(ex, "Error updating asset {AssetId}", assetId);
+            logger.LogError(ex, "Error updating asset {AssetId}", assetId);
         }
 
         return RedirectToPage(new { TypeFilter, CurrentPage });

@@ -4,17 +4,8 @@ using Mireya.Api.Services.Asset;
 
 namespace Mireya.Api.Areas.Admin.Pages.Assets;
 
-public class UploadModel : PageModel
+public class UploadModel(IAssetService assetService, ILogger<UploadModel> logger) : PageModel
 {
-    private readonly IAssetService _assetService;
-    private readonly ILogger<UploadModel> _logger;
-
-    public UploadModel(IAssetService assetService, ILogger<UploadModel> logger)
-    {
-        _assetService = assetService;
-        _logger = logger;
-    }
-
     [BindProperty]
     public List<IFormFile> Files { get; set; } = new();
 
@@ -35,7 +26,7 @@ public class UploadModel : PageModel
 
         try
         {
-            var uploadedAssets = await _assetService.UploadAssetsAsync(Files);
+            var uploadedAssets = await assetService.UploadAssetsAsync(Files);
             SuccessMessage = $"Successfully uploaded {uploadedAssets.Count} asset(s).";
             
             // Clear the form
@@ -45,13 +36,13 @@ public class UploadModel : PageModel
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid file upload attempt");
+            logger.LogWarning(ex, "Invalid file upload attempt");
             ErrorMessage = ex.Message;
             return Page();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error uploading assets");
+            logger.LogError(ex, "Error uploading assets");
             ErrorMessage = "An error occurred while uploading files. Please try again.";
             return Page();
         }
@@ -67,19 +58,19 @@ public class UploadModel : PageModel
 
         try
         {
-            await _assetService.CreateWebsiteAssetAsync(url, name, description);
+            await assetService.CreateWebsiteAssetAsync(url, name, description);
             SuccessMessage = $"Successfully added website '{name}'.";
             return Page();
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid website asset creation attempt");
+            logger.LogWarning(ex, "Invalid website asset creation attempt");
             ErrorMessage = ex.Message;
             return Page();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating website asset");
+            logger.LogError(ex, "Error creating website asset");
             ErrorMessage = "An error occurred while adding the website. Please try again.";
             return Page();
         }

@@ -6,17 +6,9 @@ using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages.Screens;
 
-public class PendingModel : PageModel
+public class PendingModel(MireyaDbContext context, ILogger<PendingModel> logger) : PageModel
 {
     private const string PendingPageRoute = "./Pending";
-    private readonly MireyaDbContext _context;
-    private readonly ILogger<PendingModel> _logger;
-
-    public PendingModel(MireyaDbContext context, ILogger<PendingModel> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
 
     public List<Display> Screens { get; set; } = new();
     
@@ -36,7 +28,7 @@ public class PendingModel : PageModel
     {
         try
         {
-            var query = _context.Displays.AsQueryable();
+            var query = context.Displays.AsQueryable();
 
             // Apply status filter
             if (!string.IsNullOrEmpty(StatusFilter) && Enum.TryParse<ApprovalStatus>(StatusFilter, out var status))
@@ -50,8 +42,8 @@ public class PendingModel : PageModel
             }
 
             // Get counts for filter badges
-            PendingCount = await _context.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
-            RejectedCount = await _context.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Rejected);
+            PendingCount = await context.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
+            RejectedCount = await context.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Rejected);
 
             // Get total count for pagination
             TotalScreens = await query.CountAsync();
@@ -70,7 +62,7 @@ public class PendingModel : PageModel
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading pending/rejected screens list");
+            logger.LogError(ex, "Error loading pending/rejected screens list");
             Screens = new List<Display>();
         }
     }
@@ -79,7 +71,7 @@ public class PendingModel : PageModel
     {
         try
         {
-            var screen = await _context.Displays.FindAsync(id);
+            var screen = await context.Displays.FindAsync(id);
             if (screen == null)
             {
                 return NotFound();
@@ -87,15 +79,15 @@ public class PendingModel : PageModel
 
             screen.ApprovalStatus = ApprovalStatus.Approved;
             screen.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
-            _logger.LogInformation("Screen {ScreenId} approved via Pending page", id);
+            logger.LogInformation("Screen {ScreenId} approved via Pending page", id);
             
             return RedirectToPage(PendingPageRoute, new { StatusFilter, CurrentPage });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error approving screen {ScreenId}", id);
+            logger.LogError(ex, "Error approving screen {ScreenId}", id);
             return RedirectToPage(PendingPageRoute, new { StatusFilter, CurrentPage });
         }
     }
@@ -104,7 +96,7 @@ public class PendingModel : PageModel
     {
         try
         {
-            var screen = await _context.Displays.FindAsync(id);
+            var screen = await context.Displays.FindAsync(id);
             if (screen == null)
             {
                 return NotFound();
@@ -112,15 +104,15 @@ public class PendingModel : PageModel
 
             screen.ApprovalStatus = ApprovalStatus.Rejected;
             screen.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
-            _logger.LogInformation("Screen {ScreenId} rejected via Pending page", id);
+            logger.LogInformation("Screen {ScreenId} rejected via Pending page", id);
             
             return RedirectToPage(PendingPageRoute, new { StatusFilter, CurrentPage });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error rejecting screen {ScreenId}", id);
+            logger.LogError(ex, "Error rejecting screen {ScreenId}", id);
             return RedirectToPage(PendingPageRoute, new { StatusFilter, CurrentPage });
         }
     }
