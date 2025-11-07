@@ -6,17 +6,8 @@ using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages.Screens;
 
-public class ScreensIndexModel : PageModel
+public class ScreensIndexModel(MireyaDbContext context, ILogger<ScreensIndexModel> logger) : PageModel
 {
-    private readonly MireyaDbContext _context;
-    private readonly ILogger<ScreensIndexModel> _logger;
-
-    public ScreensIndexModel(MireyaDbContext context, ILogger<ScreensIndexModel> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-
     public List<Display> Screens { get; set; } = new();
     
     [BindProperty(SupportsGet = true)]
@@ -32,11 +23,11 @@ public class ScreensIndexModel : PageModel
         try
         {
             // Main overview shows only Approved screens
-            var query = _context.Displays
+            var query = context.Displays
                 .Where(d => d.ApprovalStatus == ApprovalStatus.Approved);
 
             // Get count of pending screens for badge
-            PendingCount = await _context.Displays
+            PendingCount = await context.Displays
                 .CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
 
             // Get total count for pagination
@@ -56,7 +47,7 @@ public class ScreensIndexModel : PageModel
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading screens list");
+            logger.LogError(ex, "Error loading screens list");
             Screens = new List<Display>();
         }
     }
