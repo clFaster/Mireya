@@ -7,17 +7,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Mireya.Api.Areas.Admin.Pages;
 
-public class LoginModel : PageModel
+public class LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> logger)
+    : PageModel
 {
-    private readonly SignInManager<User> _signInManager;
-    private readonly ILogger<LoginModel> _logger;
-
-    public LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> logger)
-    {
-        _signInManager = signInManager;
-        _logger = logger;
-    }
-
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
@@ -62,11 +54,11 @@ public class LoginModel : PageModel
         {
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-            var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+            var result = await signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
             
             if (result.Succeeded)
             {
-                _logger.LogInformation("User logged in");
+                logger.LogInformation("User logged in");
                 return LocalRedirect(returnUrl);
             }
             if (result.RequiresTwoFactor)
@@ -76,7 +68,7 @@ public class LoginModel : PageModel
             }
             if (result.IsLockedOut)
             {
-                _logger.LogWarning("User account locked out");
+                logger.LogWarning("User account locked out");
                 ErrorMessage = "Your account has been locked out. Please try again later.";
                 return Page();
             }
