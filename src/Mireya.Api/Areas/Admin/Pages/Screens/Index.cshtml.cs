@@ -20,26 +20,24 @@ public class ScreensIndexModel : PageModel
     public List<Display> Screens { get; set; } = new();
     
     [BindProperty(SupportsGet = true)]
-    public string? StatusFilter { get; set; }
-    
-    [BindProperty(SupportsGet = true)]
     public int CurrentPage { get; set; } = 1;
     
     public int PageSize { get; set; } = 10;
     public int TotalScreens { get; set; }
     public int TotalPages { get; set; }
+    public int PendingCount { get; set; }
 
     public async Task OnGetAsync()
     {
         try
         {
-            var query = _context.Displays.AsQueryable();
+            // Main overview shows only Approved screens
+            var query = _context.Displays
+                .Where(d => d.ApprovalStatus == ApprovalStatus.Approved);
 
-            // Apply status filter
-            if (!string.IsNullOrEmpty(StatusFilter) && Enum.TryParse<ApprovalStatus>(StatusFilter, out var status))
-            {
-                query = query.Where(d => d.ApprovalStatus == status);
-            }
+            // Get count of pending screens for badge
+            PendingCount = await _context.Displays
+                .CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
 
             // Get total count for pagination
             TotalScreens = await query.CountAsync();
