@@ -10,7 +10,7 @@ namespace Mireya.Api.Areas.Admin.Pages.Assets;
 public class AssetsIndexModel(MireyaDbContext context, IAssetService assetService, ILogger<AssetsIndexModel> logger)
     : PageModel
 {
-    public List<Asset> Assets { get; set; } = new();
+    public List<Asset> Assets { get; set; } = [];
     
     [BindProperty(SupportsGet = true)]
     public string? TypeFilter { get; set; }
@@ -58,7 +58,7 @@ public class AssetsIndexModel(MireyaDbContext context, IAssetService assetServic
         catch (Exception ex)
         {
             logger.LogError(ex, "Error loading assets list");
-            Assets = new List<Asset>();
+            Assets = [];
         }
     }
 
