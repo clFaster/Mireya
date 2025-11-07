@@ -8,7 +8,7 @@ namespace Mireya.Api.Areas.Admin.Pages.Screens;
 
 public class ScreensIndexModel(MireyaDbContext context, ILogger<ScreensIndexModel> logger) : PageModel
 {
-    public List<Display> Screens { get; set; } = new();
+    public List<Display> Screens { get; set; } = [];
     
     [BindProperty(SupportsGet = true)]
     public int CurrentPage { get; set; } = 1;
@@ -48,7 +48,7 @@ public class ScreensIndexModel(MireyaDbContext context, ILogger<ScreensIndexMode
         catch (Exception ex)
         {
             logger.LogError(ex, "Error loading screens list");
-            Screens = new List<Display>();
+            Screens = [];
         }
     }
 }

@@ -10,7 +10,7 @@ public class PendingModel(MireyaDbContext context, ILogger<PendingModel> logger)
 {
     private const string PendingPageRoute = "./Pending";
 
-    public List<Display> Screens { get; set; } = new();
+    public List<Display> Screens { get; set; } = [];
     
     [BindProperty(SupportsGet = true)]
     public string? StatusFilter { get; set; }
@@ -63,7 +63,7 @@ public class PendingModel(MireyaDbContext context, ILogger<PendingModel> logger)
         catch (Exception ex)
         {
             logger.LogError(ex, "Error loading pending/rejected screens list");
-            Screens = new List<Display>();
+            Screens = [];
         }
     }
 

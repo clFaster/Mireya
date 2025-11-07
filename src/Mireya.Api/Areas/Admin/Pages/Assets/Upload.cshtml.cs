@@ -7,7 +7,7 @@ namespace Mireya.Api.Areas.Admin.Pages.Assets;
 public class UploadModel(IAssetService assetService, ILogger<UploadModel> logger) : PageModel
 {
     [BindProperty]
-    public List<IFormFile> Files { get; set; } = new();
+    public List<IFormFile> Files { get; set; } = [];
 
     public string? SuccessMessage { get; set; }
     public string? ErrorMessage { get; set; }
@@ -30,7 +30,7 @@ public class UploadModel(IAssetService assetService, ILogger<UploadModel> logger
             SuccessMessage = $"Successfully uploaded {uploadedAssets.Count} asset(s).";
             
             // Clear the form
-            Files = new();
+            Files = [];
             
             return Page();
         }
