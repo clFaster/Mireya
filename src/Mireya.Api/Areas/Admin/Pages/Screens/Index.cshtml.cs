@@ -6,21 +6,9 @@ using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages.Screens;
 
-public class ScreensIndexModel : PageModel
+public class ScreensIndexModel(MireyaDbContext context, ILogger<ScreensIndexModel> logger) : PageModel
 {
-    private readonly MireyaDbContext _context;
-    private readonly ILogger<ScreensIndexModel> _logger;
-
-    public ScreensIndexModel(MireyaDbContext context, ILogger<ScreensIndexModel> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
-
-    public List<Display> Screens { get; set; } = new();
-    
-    [BindProperty(SupportsGet = true)]
-    public string? StatusFilter { get; set; }
+    public List<Display> Screens { get; set; } = [];
     
     [BindProperty(SupportsGet = true)]
     public int CurrentPage { get; set; } = 1;
@@ -28,18 +16,19 @@ public class ScreensIndexModel : PageModel
     public int PageSize { get; set; } = 10;
     public int TotalScreens { get; set; }
     public int TotalPages { get; set; }
+    public int PendingCount { get; set; }
 
     public async Task OnGetAsync()
     {
         try
         {
-            var query = _context.Displays.AsQueryable();
+            // Main overview shows only Approved screens
+            var query = context.Displays
+                .Where(d => d.ApprovalStatus == ApprovalStatus.Approved);
 
-            // Apply status filter
-            if (!string.IsNullOrEmpty(StatusFilter) && Enum.TryParse<ApprovalStatus>(StatusFilter, out var status))
-            {
-                query = query.Where(d => d.ApprovalStatus == status);
-            }
+            // Get count of pending screens for badge
+            PendingCount = await context.Displays
+                .CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
 
             // Get total count for pagination
             TotalScreens = await query.CountAsync();
@@ -58,8 +47,8 @@ public class ScreensIndexModel : PageModel
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading screens list");
-            Screens = new List<Display>();
+            logger.LogError(ex, "Error loading screens list");
+            Screens = [];
         }
     }
 }

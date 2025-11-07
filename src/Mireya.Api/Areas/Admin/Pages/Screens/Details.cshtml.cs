@@ -5,20 +5,13 @@ using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages.Screens;
 
-public class DetailsModel : PageModel
+public class DetailsModel(MireyaDbContext context) : PageModel
 {
-    private readonly MireyaDbContext _context;
-
-    public DetailsModel(MireyaDbContext context)
-    {
-        _context = context;
-    }
-
     public Display? Screen { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
-        Screen = await _context.Displays.FindAsync(id);
+        Screen = await context.Displays.FindAsync(id);
         if (Screen == null)
         {
             return NotFound();
