@@ -8,13 +8,16 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
 {
     public DbSet<Display> Displays { get; set; }
     public DbSet<Asset> Assets { get; set; }
+    public DbSet<Campaign> Campaigns { get; set; }
+    public DbSet<CampaignAsset> CampaignAssets { get; set; }
+    public DbSet<CampaignAssignment> CampaignAssignments { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(builder);
 
         // Configure Display entity
-        modelBuilder.Entity<Display>(entity =>
+        builder.Entity<Display>(entity =>
         {
             entity.HasIndex(e => e.ScreenIdentifier).IsUnique();
             entity.HasIndex(e => e.Name);
@@ -23,9 +26,52 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
         });
 
         // Configure Asset entity
-        modelBuilder.Entity<Asset>(entity =>
+        builder.Entity<Asset>(entity =>
         {
             entity.HasIndex(e => e.Type);
+        });
+
+        // Configure Campaign entity
+        builder.Entity<Campaign>(entity =>
+        {
+            entity.HasIndex(e => e.Name);
+            entity.HasIndex(e => e.CreatedAt);
+        });
+
+        // Configure CampaignAsset entity
+        builder.Entity<CampaignAsset>(entity =>
+        {
+            entity.HasIndex(e => e.CampaignId);
+            entity.HasIndex(e => e.AssetId);
+            entity.HasIndex(e => new { e.CampaignId, e.Position }).IsUnique();
+
+            entity.HasOne(ca => ca.Campaign)
+                .WithMany(c => c.CampaignAssets)
+                .HasForeignKey(ca => ca.CampaignId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ca => ca.Asset)
+                .WithMany()
+                .HasForeignKey(ca => ca.AssetId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent asset deletion if used in campaigns
+        });
+
+        // Configure CampaignAssignment entity
+        builder.Entity<CampaignAssignment>(entity =>
+        {
+            entity.HasIndex(e => e.CampaignId);
+            entity.HasIndex(e => e.DisplayId);
+            entity.HasIndex(e => new { e.CampaignId, e.DisplayId }).IsUnique();
+
+            entity.HasOne(ca => ca.Campaign)
+                .WithMany(c => c.CampaignAssignments)
+                .HasForeignKey(ca => ca.CampaignId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ca => ca.Display)
+                .WithMany(d => d.CampaignAssignments)
+                .HasForeignKey(ca => ca.DisplayId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
