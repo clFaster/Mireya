@@ -91,41 +91,70 @@ public class EditModel(MireyaDbContext context, ILogger<EditModel> logger) : Pag
             return Page();
         }
 
-        var screen = await context.Displays
-            .Include(d => d.CampaignAssignments)
-            .FirstOrDefaultAsync(d => d.Id == id);
-            
-        if (screen == null)
-        {
-            return NotFound();
-        }
-
-        screen.Name = Input.Name;
-        screen.Location = Input.Location ?? string.Empty;
-        screen.Description = Input.Description;
-        screen.ApprovalStatus = Input.ApprovalStatus;
-        // IsActive is set by the device, not editable here
-
-        // Update campaign assignments
-        // Remove old assignments
-        context.CampaignAssignments.RemoveRange(screen.CampaignAssignments);
-
-        // Add new assignments
-        foreach (var campaignId in SelectedCampaignIds)
-        {
-            screen.CampaignAssignments.Add(new CampaignAssignment
-            {
-                CampaignId = campaignId,
-                DisplayId = id,
-                CreatedAt = DateTime.UtcNow
-            });
-        }
-
         try
         {
+            // Step 1: Update the Display entity directly (separate from assignments)
+            var screen = await context.Displays
+                .Where(d => d.Id == id)
+                .FirstOrDefaultAsync();
+                
+            if (screen == null)
+            {
+                return NotFound();
+            }
+
+            screen.Name = Input.Name;
+            screen.Location = Input.Location ?? string.Empty;
+            screen.Description = Input.Description;
+            screen.ApprovalStatus = Input.ApprovalStatus;
+            screen.UpdatedAt = DateTime.UtcNow;
+            
+            // Save the display changes first
             await context.SaveChangesAsync();
+            
+            // Step 2: Handle campaign assignments separately
+            // Get current assignments
+            var currentAssignmentIds = await context.CampaignAssignments
+                .Where(ca => ca.DisplayId == id)
+                .Select(ca => ca.CampaignId)
+                .ToListAsync();
+
+            var selectedCampaignIds = SelectedCampaignIds.ToHashSet();
+            var currentCampaignIds = currentAssignmentIds.ToHashSet();
+
+            // Step 3: Delete assignments that are no longer selected
+            var campaignIdsToRemove = currentCampaignIds
+                .Where(cid => !selectedCampaignIds.Contains(cid))
+                .ToList();
+
+            if (campaignIdsToRemove.Any())
+            {
+                await context.CampaignAssignments
+                    .Where(ca => ca.DisplayId == id && campaignIdsToRemove.Contains(ca.CampaignId))
+                    .ExecuteDeleteAsync();
+            }
+
+            // Step 4: Add new assignments
+            var campaignIdsToAdd = selectedCampaignIds
+                .Where(cid => !currentCampaignIds.Contains(cid))
+                .ToList();
+
+            if (campaignIdsToAdd.Any())
+            {
+                var newAssignments = campaignIdsToAdd.Select(campaignId => new CampaignAssignment
+                {
+                    CampaignId = campaignId,
+                    DisplayId = id,
+                    CreatedAt = DateTime.UtcNow
+                }).ToList();
+
+                context.CampaignAssignments.AddRange(newAssignments);
+                await context.SaveChangesAsync();
+            }
+
             logger.LogInformation("Screen {ScreenId} updated successfully with {CampaignCount} campaign assignments", 
                 id, SelectedCampaignIds.Count);
+            
             return RedirectToPage("./Details", new { id });
         }
         catch (Exception ex)
