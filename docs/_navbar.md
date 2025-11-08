@@ -1,2 +1,2 @@
-* [Home](/)
-* [Development](development.md)
+- [Home](/)
+- [Development](development.md)
