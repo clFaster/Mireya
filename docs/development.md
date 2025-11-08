@@ -42,12 +42,14 @@ SQLite is used by default for local development and requires no additional setup
 #### PostgreSQL (Production-like Setup)
 
 1. Install PostgreSQL and create a database:
+
 ```bash
 # Create database (adjust connection string as needed)
 createdb mireya_dev
 ```
 
 2. Configure the connection string in `src/Mireya.Api/appsettings.Development.json`:
+
 ```json
 {
   "ConnectionStrings": {
@@ -74,17 +76,20 @@ dotnet run
 ```
 
 The API will be available at:
+
 - HTTP: `http://localhost:5000`
 - HTTPS: `https://localhost:5001`
 
 ### 5. Access the Admin Interface
 
 Once the API is running, access the admin interface at:
+
 ```
 https://localhost:5001/Admin/Login
 ```
 
 Default admin credentials:
+
 - **Email:** `admin@mireya.local`
 - **Password:** Check your environment variables or user secrets configuration
 
@@ -120,6 +125,7 @@ npm run ios
 1. Modify controllers, models, or services in `src/Mireya.Api/`
 2. Update database models in `src/Mireya.Database/`
 3. Create and run migrations if database schema changes:
+
 ```bash
 # Add migration
 dotnet ef migrations add YourMigrationName --project src/Mireya.Database.Sqlite --startup-project src/Mireya.Api
@@ -131,6 +137,7 @@ dotnet ef database update --project src/Mireya.Database.Sqlite --startup-project
 ### Admin Interface Development
 
 The admin interface uses ASP.NET Core Razor Pages with Tailwind CSS. Files are located in:
+
 - `src/Mireya.Api/Areas/Admin/Pages/` - Razor pages
 - `src/Mireya.Api/wwwroot/css/` - Custom styles
 - `src/Mireya.Api/wwwroot/js/` - JavaScript files
@@ -138,11 +145,13 @@ The admin interface uses ASP.NET Core Razor Pages with Tailwind CSS. Files are l
 ### Client Development
 
 #### Avalonia Desktop Client
+
 - ViewModels: `src/Mireya.Client.Avalonia/ViewModels/`
 - Views: `src/Mireya.Client.Avalonia/Views/`
 - Services: `src/Mireya.Client.Avalonia/Services/`
 
 #### React Native TV Client
+
 - Main app: `src/Mireya.Tv/App.tsx`
 - Components: `src/Mireya.Tv/src/components/`
 - Screens: `src/Mireya.Tv/src/screens/`
@@ -161,18 +170,21 @@ This uses NSwag to generate `src/lib/api/generated/client.ts` from the API's Ope
 ## Building for Production
 
 ### API
+
 ```bash
 cd src/Mireya.Api
 dotnet publish -c Release -o ./publish
 ```
 
 ### Desktop Client
+
 ```bash
 cd src/Mireya.Client.Avalonia
 dotnet publish -c Release -r win-x64 -o ./publish
 ```
 
 ### React Native
+
 ```bash
 cd src/Mireya.Tv
 npm run android -- --mode=release
