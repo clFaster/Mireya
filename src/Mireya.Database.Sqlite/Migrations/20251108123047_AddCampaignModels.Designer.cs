@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Mireya.Database;
 
@@ -10,9 +11,11 @@ using Mireya.Database;
 namespace Mireya.Database.Sqlite.Migrations
 {
     [DbContext(typeof(MireyaDbContext))]
-    partial class MireyaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251108123047_AddCampaignModels")]
+    partial class AddCampaignModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -487,7 +490,7 @@ namespace Mireya.Database.Sqlite.Migrations
                         .IsRequired();
 
                     b.HasOne("Mireya.Database.Models.Display", "Display")
-                        .WithMany("CampaignAssignments")
+                        .WithMany()
                         .HasForeignKey("DisplayId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -501,11 +504,6 @@ namespace Mireya.Database.Sqlite.Migrations
                 {
                     b.Navigation("CampaignAssets");
 
-                    b.Navigation("CampaignAssignments");
-                });
-
-            modelBuilder.Entity("Mireya.Database.Models.Display", b =>
-                {
                     b.Navigation("CampaignAssignments");
                 });
 #pragma warning restore 612, 618
