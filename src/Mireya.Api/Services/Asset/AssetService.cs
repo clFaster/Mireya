@@ -133,6 +133,21 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
         if (asset == null)
             throw new KeyNotFoundException("Asset not found");
 
+        // Check if asset is used in any campaigns
+        var campaignsUsingAsset = await db.CampaignAssets
+            .Where(ca => ca.AssetId == id)
+            .Include(ca => ca.Campaign)
+            .Select(ca => ca.Campaign.Name)
+            .Distinct()
+            .ToListAsync();
+
+        if (campaignsUsingAsset.Any())
+        {
+            var campaignList = string.Join(", ", campaignsUsingAsset);
+            throw new InvalidOperationException(
+                $"Cannot delete asset. It is used in the following campaigns: {campaignList}");
+        }
+
         // Delete the file if it exists
         var filePath = Path.Combine(_uploadsFolder, asset.Source["/uploads/".Length..]);
         if (!string.IsNullOrEmpty(filePath) && asset.Source.StartsWith("/uploads/") && File.Exists(filePath))
