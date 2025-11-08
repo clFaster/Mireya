@@ -1,0 +1,281 @@
+@page
+@model EditModel
+@{
+    ViewData["Title"] = "Edit Campaign";
+}
+
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Edit Campaign</h1>
+            <p class="text-gray-600 mt-1">Modify campaign settings and assignments</p>
+        </div>
+        <a href="/Admin/Campaigns" class="text-gray-600 hover:text-gray-900">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </a>
+    </div>
+
+    <!-- Error Message -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="rounded-md bg-red-50 p-4">
+            <div class="flex">
+                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">@Model.ErrorMessage</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <form method="post" class="space-y-6">
+        <input type="hidden" name="Id" value="@Model.Id">
+        
+        <!-- Basic Information -->
+        <div class="bg-white shadow rounded-lg p-6 space-y-4">
+            <h2 class="text-lg font-medium text-gray-900">Basic Information</h2>
+            
+            <div>
+                <label for="Name" class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <input type="text" id="Name" name="Name" asp-for="Name" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <div>
+                <label for="Description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea id="Description" name="Description" asp-for="Description" rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+            </div>
+        </div>
+
+        <!-- Asset Selection -->
+        <div class="bg-white shadow rounded-lg p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-medium text-gray-900">Campaign Assets</h2>
+                <button type="button" onclick="openAssetPicker()" class="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                    Add Assets
+                </button>
+            </div>
+
+            <div id="selectedAssets" class="space-y-2 min-h-[100px]">
+                <p class="text-gray-500 text-sm">Loading...</p>
+            </div>
+
+            <input type="hidden" id="SelectedAssetsJson" name="SelectedAssetsJson" asp-for="SelectedAssetsJson">
+            <p class="text-sm text-gray-500">
+                <strong>Note:</strong> To assign this campaign to screens, edit the screen and select this campaign from the Assigned Campaigns section.
+            </p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end space-x-3">
+            <a href="/Admin/Campaigns" class="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">
+                Update Campaign
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Asset Picker Modal (same as Create page) -->
+<div id="assetPickerModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Select Assets</h3>
+            <button type="button" onclick="closeAssetPicker()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-96 overflow-y-auto mb-4">
+            @foreach (var asset in Model.AvailableAssets)
+            {
+                <div class="border rounded-lg p-3 hover:border-blue-500 cursor-pointer transition-colors"
+                     data-asset-id="@asset.Id"
+                     data-asset-name="@asset.Name"
+                     data-asset-type="@asset.Type"
+                     data-asset-source="@asset.Source"
+                     data-asset-duration="@asset.DurationSeconds"
+                     onclick="addAssetToSelectionFromData(this)">
+                    <div class="aspect-video bg-gray-200 rounded mb-2 flex items-center justify-center overflow-hidden">
+                        @if (asset.Type == AssetType.Image)
+                        {
+                            <img src="@asset.Source" alt="@asset.Name" class="w-full h-full object-cover">
+                        }
+                        else if (asset.Type == AssetType.Video)
+                        {
+                            <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                        }
+                    </div>
+                    <div class="text-sm font-medium text-gray-900 truncate">@asset.Name</div>
+                    <div class="text-xs text-gray-500">@asset.Type</div>
+                </div>
+            }
+        </div>
+        
+        <div class="flex justify-end">
+            <button type="button" onclick="closeAssetPicker()" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">
+                Done
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize with existing assets from server
+    let selectedAssets = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ExistingAssets.Select(a => new {
+        assetId = a.AssetId,
+        name = a.Name,
+        type = a.Type.ToString(),
+        source = a.Source,
+        intrinsicDuration = a.IntrinsicDuration,
+        durationSeconds = a.Type == AssetType.Video ? a.IntrinsicDuration : (a.DurationSeconds ?? 10)
+    })));
+
+    // Initialize UI on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSelectedAssetsUI();
+    });
+
+    function openAssetPicker() {
+        document.getElementById('assetPickerModal').classList.remove('hidden');
+    }
+
+    function closeAssetPicker() {
+        document.getElementById('assetPickerModal').classList.add('hidden');
+    }
+
+    function addAssetToSelectionFromData(element) {
+        const id = element.getAttribute('data-asset-id');
+        const name = element.getAttribute('data-asset-name');
+        const type = element.getAttribute('data-asset-type');
+        const source = element.getAttribute('data-asset-source');
+        const duration = element.getAttribute('data-asset-duration');
+        addAssetToSelection(id, name, type, source, duration ? parseInt(duration) : null);
+    }
+
+    function addAssetToSelection(id, name, type, source, intrinsicDuration) {
+        if (selectedAssets.some(a => a.assetId === id)) {
+            return;
+        }
+
+        const asset = {
+            assetId: id,
+            name: name,
+            type: type,
+            source: source,
+            intrinsicDuration: intrinsicDuration,
+            durationSeconds: type === 'Video' ? intrinsicDuration : 10
+        };
+
+        selectedAssets.push(asset);
+        updateSelectedAssetsUI();
+        updateHiddenInput();
+    }
+
+    function removeAsset(id) {
+        selectedAssets = selectedAssets.filter(a => a.assetId !== id);
+        updateSelectedAssetsUI();
+        updateHiddenInput();
+    }
+
+    function updateAssetDuration(id, duration) {
+        const asset = selectedAssets.find(a => a.assetId === id);
+        if (asset) {
+            asset.durationSeconds = duration ? parseInt(duration) : null;
+            updateHiddenInput();
+        }
+    }
+
+    function moveAssetUp(id) {
+        const index = selectedAssets.findIndex(a => a.assetId === id);
+        if (index > 0) {
+            [selectedAssets[index - 1], selectedAssets[index]] = [selectedAssets[index], selectedAssets[index - 1]];
+            updateSelectedAssetsUI();
+            updateHiddenInput();
+        }
+    }
+
+    function moveAssetDown(id) {
+        const index = selectedAssets.findIndex(a => a.assetId === id);
+        if (index < selectedAssets.length - 1) {
+            [selectedAssets[index], selectedAssets[index + 1]] = [selectedAssets[index + 1], selectedAssets[index]];
+            updateSelectedAssetsUI();
+            updateHiddenInput();
+        }
+    }
+
+    function updateSelectedAssetsUI() {
+        const container = document.getElementById('selectedAssets');
+        
+        if (selectedAssets.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No assets added yet. Click "Add Assets" to get started.</p>';
+            return;
+        }
+
+        container.innerHTML = selectedAssets.map((asset, index) => `
+            <div class="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                <div class="flex flex-col space-y-1">
+                    <button type="button" onclick="moveAssetUp('${asset.assetId}')" 
+                            class="text-gray-400 hover:text-gray-600 ${index === 0 ? 'invisible' : ''}"
+                            ${index === 0 ? 'disabled' : ''}>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </button>
+                    <button type="button" onclick="moveAssetDown('${asset.assetId}')" 
+                            class="text-gray-400 hover:text-gray-600 ${index === selectedAssets.length - 1 ? 'invisible' : ''}"
+                            ${index === selectedAssets.length - 1 ? 'disabled' : ''}>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-gray-900 truncate">${asset.name}</div>
+                    <div class="text-sm text-gray-500">${asset.type}</div>
+                </div>
+                ${asset.type !== 'Video' ? `
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm text-gray-700">Duration (s):</label>
+                    <input type="number" value="${asset.durationSeconds || 10}" min="1" 
+                           onchange="updateAssetDuration('${asset.assetId}', this.value)"
+                           class="w-20 px-2 py-1 border border-gray-300 rounded text-sm">
+                </div>
+                ` : `
+                <div class="text-sm text-gray-500">Duration: ${asset.intrinsicDuration || '?'}s</div>
+                `}
+                <button type="button" onclick="removeAsset('${asset.assetId}')" class="text-red-600 hover:text-red-900">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function updateHiddenInput() {
+        const data = selectedAssets.map(a => ({
+            assetId: a.assetId,
+            durationSeconds: a.type === 'Video' ? null : (a.durationSeconds || 10)
+        }));
+        document.getElementById('SelectedAssetsJson').value = JSON.stringify(data);
+    }
+</script>
