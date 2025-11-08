@@ -1,5 +1,10 @@
 version = 1
 
+exclude_patterns = [
+  "/src/Mireya.Database.Postgres/**",
+  "/src/Mireya.Database.Sqlite/**"
+]
+
 [[analyzers]]
 name = "javascript"
 
@@ -15,8 +20,3 @@ name = "dotnet-format"
 
 [[transformers]]
 name = "prettier"
-
-exclude_patterns = [
-  "src/Mireya.Database.Postgres/**",
-  "src/Mireya.Database.Sqlite/**",
-]
