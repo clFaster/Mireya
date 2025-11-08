@@ -6,6 +6,7 @@ using Mireya.Api.Constants;
 using Mireya.Api.Extensions;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
+using Mireya.Api.Services.Campaign;
 using Mireya.Api.Services.ScreenManagement;
 using Mireya.Api.Startup;
 using Mireya.Database;
@@ -96,6 +97,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<IInitializerService, InitializerService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
+builder.Services.AddScoped<ICampaignService, CampaignService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>

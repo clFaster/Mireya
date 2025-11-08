@@ -133,17 +133,79 @@
         </div>
     </div>
 
-    <!-- Content Section (Placeholder for future feature) -->
+    <!-- Content Section -->
     <div class="bg-white shadow rounded-lg overflow-hidden">
         <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Assigned Content</h2>
         </div>
-        <div class="px-6 py-8 text-center">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
-            </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-900">No content assigned</h3>
-            <p class="mt-1 text-sm text-gray-500">Content management coming soon.</p>
-        </div>
+        @if (Model.CampaignAssets.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Campaign
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Asset
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Type
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Position
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Duration
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach (var item in Model.CampaignAssets)
+                        {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    @item.CampaignName
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    @item.AssetName
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @{
+                                        var typeClass = item.AssetType switch
+                                        {
+                                            AssetType.Image => "bg-blue-100 text-blue-800",
+                                            AssetType.Video => "bg-purple-100 text-purple-800",
+                                            AssetType.Website => "bg-green-100 text-green-800",
+                                            _ => "bg-gray-100 text-gray-800"
+                                        };
+                                    }
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @typeClass">
+                                        @item.AssetType
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @item.Position
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @item.DurationSeconds seconds
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="px-6 py-8 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No content assigned</h3>
+                <p class="mt-1 text-sm text-gray-500">Assign campaigns to this screen to display content.</p>
+            </div>
+        }
     </div>
 </div>
