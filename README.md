@@ -6,8 +6,9 @@ Mireya is an open, flexible digital-signage platform: a web admin backend to man
 lightweight clients (Android TV, Avalonia desktop, Raspberry Pi planned) that auto-register, cache assets, and play
 scheduled content.
 
-[**Vision — detailed page**](https://mireya.moritzreis.dev/#/?id=mireya) · [**Technical documentation
-**](https://mireya.moritzreis.dev/#/development)
+[**Vision: detailed page**](https://mireya.moritzreis.dev/#/?id=mireya)
+
+[**Technical documentation**](https://mireya.moritzreis.dev/#/development)
 
 ---
 
