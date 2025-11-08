@@ -1,10 +1,12 @@
 # Development Plan: Mireya (17-campaign-editor-create-ui-api-for-managing-campaigns-assets-durations-scheduling branch)
 
-*Generated on 2025-11-08 by Vibe Feature MCP*
-*Workflow: [epcc](https://mrsimpson.github.io/responsible-vibe-mcp/workflows/epcc)*
+_Generated on 2025-11-08 by Vibe Feature MCP_
+_Workflow: [epcc](https://mrsimpson.github.io/responsible-vibe-mcp/workflows/epcc)_
 
 ## Goal
+
 Implement a Campaign Editor to let admins create and manage Campaigns — a planned collection of media rotations and scheduling rules assigned to one or more screens. This includes:
+
 - Data models for Campaign and CampaignAsset
 - API endpoints for CRUD operations on campaigns
 - Admin UI for campaign management
@@ -12,9 +14,11 @@ Implement a Campaign Editor to let admins create and manage Campaigns — a plan
 - Display assignment for campaigns
 
 ## Explore
+
 ### Tasks
+
 - [x] Review existing Asset model structure
-- [x] Review existing Display model structure  
+- [x] Review existing Display model structure
 - [x] Understand DbContext configuration and patterns
 - [x] Analyze API controller patterns (AssetController)
 - [x] Review service layer pattern (IAssetService, AssetService)
@@ -25,12 +29,14 @@ Implement a Campaign Editor to let admins create and manage Campaigns — a plan
 - [x] Confirm approach with user
 
 ### Completed
+
 - [x] Created development plan file
 - [x] Reviewed existing codebase patterns and structure
 
 ## Plan
 
 ### Phase Entrance Criteria:
+
 - [x] Existing codebase structure and patterns are understood
 - [x] Current Asset and Display models are reviewed
 - [x] Database context and migration approach is identified
@@ -39,6 +45,7 @@ Implement a Campaign Editor to let admins create and manage Campaigns — a plan
 - [x] Requirements are clearly documented in the plan
 
 ### Tasks
+
 - [x] Define database models and relationships
 - [x] Design API endpoint structure and DTOs
 - [x] Plan service layer architecture
@@ -48,7 +55,8 @@ Implement a Campaign Editor to let admins create and manage Campaigns — a plan
 - [x] Plan asset deletion prevention logic
 
 ### Completed
-*Planning tasks completed - see detailed design below*
+
+_Planning tasks completed - see detailed design below_
 
 ---
 
@@ -57,22 +65,23 @@ Implement a Campaign Editor to let admins create and manage Campaigns — a plan
 ### 1. Database Models
 
 #### Campaign.cs
+
 ```csharp
 public class Campaign
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
     [Required]
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
-    
+
     [MaxLength(1000)]
     public string? Description { get; set; }
-    
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    
+
     // Navigation properties
     public ICollection<CampaignAsset> CampaignAssets { get; set; } = new List<CampaignAsset>();
     public ICollection<CampaignAssignment> CampaignAssignments { get; set; } = new List<CampaignAssignment>();
@@ -80,24 +89,25 @@ public class Campaign
 ```
 
 #### CampaignAsset.cs
+
 ```csharp
 public class CampaignAsset
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
     [Required]
     public Guid CampaignId { get; set; }
-    
+
     [Required]
     public Guid AssetId { get; set; }
-    
+
     [Required]
     public int Position { get; set; }
-    
+
     // Nullable - only for Image/Website assets; null means use asset's intrinsic duration or default
     public int? DurationSeconds { get; set; }
-    
+
     // Navigation properties
     public Campaign Campaign { get; set; } = null!;
     public Asset Asset { get; set; } = null!;
@@ -105,20 +115,21 @@ public class CampaignAsset
 ```
 
 #### CampaignAssignment.cs
+
 ```csharp
 public class CampaignAssignment
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
-    
+
     [Required]
     public Guid CampaignId { get; set; }
-    
+
     [Required]
     public Guid DisplayId { get; set; }
-    
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     // Navigation properties
     public Campaign Campaign { get; set; } = null!;
     public Display Display { get; set; } = null!;
@@ -126,6 +137,7 @@ public class CampaignAssignment
 ```
 
 #### DbContext Updates
+
 - Add `DbSet<Campaign> Campaigns`
 - Add `DbSet<CampaignAsset> CampaignAssets`
 - Add `DbSet<CampaignAssignment> CampaignAssignments`
@@ -134,6 +146,7 @@ public class CampaignAssignment
 ### 2. API Layer
 
 #### DTOs
+
 ```csharp
 // Request DTOs
 public record CreateCampaignRequest(
@@ -196,6 +209,7 @@ public record DisplayInfo(
 ```
 
 #### CampaignController.cs
+
 ```csharp
 [ApiController]
 [Authorize(Roles = Roles.Admin)]
@@ -205,18 +219,18 @@ public class CampaignController(ICampaignService campaignService) : ControllerBa
     [HttpGet]
     Task<ActionResult<List<CampaignSummary>>> GetCampaigns(
         [FromQuery] Guid? displayId = null);
-    
+
     [HttpGet("{id:guid}")]
     Task<ActionResult<CampaignDetail>> GetCampaign(Guid id);
-    
+
     [HttpPost]
     Task<ActionResult<CampaignDetail>> CreateCampaign(
         [FromBody] CreateCampaignRequest request);
-    
+
     [HttpPut("{id:guid}")]
     Task<ActionResult<CampaignDetail>> UpdateCampaign(
         Guid id, [FromBody] UpdateCampaignRequest request);
-    
+
     [HttpDelete("{id:guid}")]
     Task<ActionResult> DeleteCampaign(Guid id);
 }
@@ -225,6 +239,7 @@ public class CampaignController(ICampaignService campaignService) : ControllerBa
 ### 3. Service Layer
 
 #### ICampaignService Interface
+
 ```csharp
 public interface ICampaignService
 {
@@ -238,18 +253,21 @@ public interface ICampaignService
 ```
 
 #### CampaignService Implementation
+
 - CRUD operations with validation
 - Calculate resolved durations (asset duration > campaign override > 10s default)
 - Handle asset and display assignments
 - Transaction management for create/update operations
 
 #### Update AssetService
+
 - Add method `GetCampaignsUsingAssetAsync(Guid assetId)`
 - Modify `DeleteAssetAsync` to check if asset is in use and throw exception with campaign list
 
 ### 4. Admin UI
 
 #### Pages Structure
+
 ```
 Areas/Admin/Pages/Campaigns/
 ├── Index.cshtml         // List campaigns
@@ -261,6 +279,7 @@ Areas/Admin/Pages/Campaigns/
 ```
 
 #### UI Features
+
 1. **Index Page**:
    - Table/card view of campaigns
    - Show: Name, Asset count, Display count, Last updated
@@ -302,10 +321,11 @@ Areas/Admin/Pages/Campaigns/
 ### 6. Migration Strategy
 
 1. Create migrations for both Postgres and Sqlite:
+
    ```bash
    # Postgres
    dotnet ef migrations add AddCampaignModels --project src/Mireya.Database.Postgres --startup-project src/Mireya.Api
-   
+
    # Sqlite
    dotnet ef migrations add AddCampaignModels --project src/Mireya.Database.Sqlite --startup-project src/Mireya.Api
    ```
@@ -315,13 +335,14 @@ Areas/Admin/Pages/Campaigns/
 ### 7. Asset Deletion Prevention
 
 Update `AssetService.DeleteAssetAsync`:
+
 ```csharp
 public async Task DeleteAssetAsync(Guid id)
 {
     var asset = await db.Assets.FindAsync(id);
     if (asset == null)
         throw new KeyNotFoundException("Asset not found");
-    
+
     // Check if asset is used in any campaigns
     var campaignsUsingAsset = await db.CampaignAssets
         .Where(ca => ca.AssetId == id)
@@ -329,14 +350,14 @@ public async Task DeleteAssetAsync(Guid id)
         .Select(ca => ca.Campaign.Name)
         .Distinct()
         .ToListAsync();
-    
+
     if (campaignsUsingAsset.Any())
     {
         var campaignList = string.Join(", ", campaignsUsingAsset);
         throw new InvalidOperationException(
             $"Cannot delete asset. It is used in the following campaigns: {campaignList}");
     }
-    
+
     // ... existing deletion logic
 }
 ```
@@ -346,6 +367,7 @@ public async Task DeleteAssetAsync(Guid id)
 ## Code
 
 ### Phase Entrance Criteria:
+
 - [x] Implementation plan is complete and approved
 - [x] Database schema design is finalized
 - [x] API endpoint specifications are defined
@@ -353,7 +375,9 @@ public async Task DeleteAssetAsync(Guid id)
 - [x] Edge cases and validation rules are documented
 
 ### Tasks
+
 #### Database Layer
+
 - [x] Create `Campaign.cs` model
 - [x] Create `CampaignAsset.cs` model
 - [x] Create `CampaignAssignment.cs` model
@@ -363,6 +387,7 @@ public async Task DeleteAssetAsync(Guid id)
 - [x] Test migration application
 
 #### Service Layer
+
 - [x] Create `ICampaignService` interface
 - [x] Implement `CampaignService` class
 - [x] Add campaign CRUD methods
@@ -372,6 +397,7 @@ public async Task DeleteAssetAsync(Guid id)
 - [x] Register services in `Program.cs`
 
 #### API Layer
+
 - [x] Create DTO records (request/response)
 - [x] Create `CampaignController.cs`
 - [x] Implement GET /api/campaigns endpoint
@@ -382,6 +408,7 @@ public async Task DeleteAssetAsync(Guid id)
 - [x] Add validation and error handling
 
 #### Admin UI
+
 - [x] Create Campaigns folder in Areas/Admin/Pages
 - [x] Implement Index.cshtml (list view)
 - [x] Implement Index.cshtml.cs (list logic)
@@ -395,8 +422,9 @@ public async Task DeleteAssetAsync(Guid id)
 - [ ] Update navigation/menu to include Campaigns link
 
 #### Testing & Validation
+
 - [ ] Test campaign creation via API
-- [ ] Test campaign update via API  
+- [ ] Test campaign update via API
 - [ ] Test campaign deletion via API
 - [ ] Test asset deletion prevention
 - [ ] Test campaign list filtering
@@ -405,6 +433,7 @@ public async Task DeleteAssetAsync(Guid id)
 - [ ] Test edge cases (empty campaigns, many assets, etc.)
 
 ### Completed
+
 - Database models created and migrated successfully
 - Service layer fully implemented with CRUD operations
 - API controller with all 5 REST endpoints
@@ -417,6 +446,7 @@ public async Task DeleteAssetAsync(Guid id)
 ## Implementation Summary
 
 ### Files Created (15 new files):
+
 1. **Database Models** (3 files):
    - `src/Mireya.Database/Models/Campaign.cs`
    - `src/Mireya.Database/Models/CampaignAsset.cs`
@@ -442,12 +472,14 @@ public async Task DeleteAssetAsync(Guid id)
    - Postgres migration: `AddCampaignModels`
 
 ### Files Modified (4 files):
+
 1. `src/Mireya.Database/MireyaDbContext.cs` - Added Campaign DbSets and configurations
 2. `src/Mireya.Api/Services/Asset/AssetService.cs` - Added deletion prevention logic
 3. `src/Mireya.Api/Program.cs` - Registered ICampaignService
 4. `src/Mireya.Api/Areas/Admin/Pages/_Layout.cshtml` - Added Campaigns navigation link
 
 ### Key Features Implemented:
+
 ✅ Campaign CRUD operations (Create, Read, Update, Delete)
 ✅ CampaignAsset with position ordering and duration control
 ✅ CampaignAssignment for display assignments
@@ -458,11 +490,12 @@ public async Task DeleteAssetAsync(Guid id)
 ✅ Multi-select display assignment
 ✅ Full API with validation and error handling
 ✅ Database migrations for both Postgres and Sqlite
-*None yet*
+_None yet_
 
 ## Commit
 
 ### Phase Entrance Criteria:
+
 - [ ] All code implementation tasks are complete
 - [ ] Database migrations are created and tested
 - [ ] API endpoints are implemented and functional
@@ -471,14 +504,18 @@ public async Task DeleteAssetAsync(Guid id)
 - [ ] Existing tests still pass
 
 ### Tasks
-- [ ] *To be added when this phase becomes active*
+
+- [ ] _To be added when this phase becomes active_
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ## Key Decisions
+
 ### Codebase Patterns Identified:
-1. **Database Structure**: 
+
+1. **Database Structure**:
    - EF Core with provider-specific migrations (Postgres/Sqlite)
    - Models in `Mireya.Database/Models/`
    - DbContext: `MireyaDbContext.cs`
@@ -503,6 +540,7 @@ public async Task DeleteAssetAsync(Guid id)
    - **Display**: Id (Guid), Name, Description, Location, ScreenIdentifier (unique), ApprovalStatus, UserId, Resolution, IsActive, LastSeenAt, timestamps
 
 ### Requirements from Issue #17:
+
 - Create Campaign model (Id, Name, Description, timestamps)
 - Create CampaignAsset model (Id, CampaignId, AssetId, Position, DurationSeconds nullable)
 - Create join table for Campaign-Display mapping
@@ -515,7 +553,9 @@ public async Task DeleteAssetAsync(Guid id)
 - Asset deletion warning if used in campaigns
 
 ## Notes
+
 ### Edge Cases to Consider:
+
 1. **Asset Deletion**: When an asset is deleted, need to:
    - Check if it's used in any campaigns
    - Show warning message listing affected campaigns
@@ -525,7 +565,7 @@ public async Task DeleteAssetAsync(Guid id)
    - Video assets: Use intrinsic duration (from Asset.DurationSeconds)
    - Image/Website assets: Use CampaignAsset.DurationSeconds if provided, else default to 10 seconds
 
-3. **Large Campaigns**: 
+3. **Large Campaigns**:
    - Consider pagination for campaigns with many assets
    - Optimize API responses
 
@@ -540,9 +580,11 @@ public async Task DeleteAssetAsync(Guid id)
    - Duration must be positive if provided
 
 ### Technical Decisions Made:
+
 - [x] **Campaign-Display Join Table**: Use `CampaignAssignment` to represent the assignment of campaigns to displays
 - [x] **Asset Deletion**: Prevent deletion with warning message showing which campaigns use the asset (advanced handling can be implemented later)
 - [x] **Campaign Asset Ordering**: Use sequential integers (1, 2, 3...). New assets added at the end of the sequence
 
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._
