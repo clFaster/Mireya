@@ -1,10 +1,12 @@
 # Development Plan: Mireya (20-poc-cross-platform-mireya-client-avalonia-scaffold-app-to-enter-backend-url branch)
 
-*Generated on 2025-11-07 by Vibe Feature MCP*
-*Workflow: [epcc](https://mrsimpson.github.io/responsible-vibe-mcp/workflows/epcc)*
+_Generated on 2025-11-07 by Vibe Feature MCP_
+_Workflow: [epcc](https://mrsimpson.github.io/responsible-vibe-mcp/workflows/epcc)_
 
 ## Goal
+
 Create a proof-of-concept (PoC) cross-platform Mireya Client using Avalonia that:
+
 - Provides a simple UI to enter and persist the Mireya Backend URL
 - Runs on Windows, Linux, and macOS (desktop-first approach)
 - Investigates feasibility for TV platforms (Android TV, Apple TV/tvOS, TizenOS)
@@ -13,9 +15,11 @@ Create a proof-of-concept (PoC) cross-platform Mireya Client using Avalonia that
 Related to GitHub Issue #20
 
 ## Explore
+
 ### Tasks
 
 ### Completed
+
 - [x] Created development plan file
 - [x] Decided on project location (subfolder in current repo)
 - [x] Research Avalonia framework capabilities and cross-platform support
@@ -28,6 +32,7 @@ Related to GitHub Issue #20
 ## Plan
 
 ### Phase Entrance Criteria:
+
 - [x] Requirements and scope are clearly defined
 - [x] Avalonia framework capabilities are understood
 - [x] Cross-platform toolchain requirements are documented
@@ -38,25 +43,29 @@ Related to GitHub Issue #20
 ### Tasks
 
 ### Completed
+
 - [x] Define project structure and dependencies
 - [x] Design settings persistence mechanism
 - [x] Plan UI layout and XAML structure
 - [x] Identify build and packaging requirements for each platform
 - [x] Create tasks for Code phase
-- [ ] *To be added when this phase becomes active*
+- [ ] _To be added when this phase becomes active_
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ## Code
 
 ### Phase Entrance Criteria:
+
 - [x] Implementation plan with actionable tasks is complete
 - [x] Technology stack and architecture approach are decided
 - [x] API client strategy is selected
 - [x] Project structure and scaffolding approach are defined
 
 ### Tasks
+
 1. **Project Setup**
    - [x] ~~Install Avalonia templates~~ (already complete)
    - [x] ~~Create Avalonia MVVM project~~ (already complete)
@@ -102,19 +111,22 @@ Related to GitHub Issue #20
    - [x] Add mobile/TV deployment guide (Android APK, iOS, tvOS, TizenOS)
 
 ### Completed
+
 - Project setup and configuration
 - Settings service with JSON persistence
 - MVVM architecture with CommunityToolkit.Mvvm
 - Complete UI implementation with Avalonia
 - Comprehensive documentation including mobile/TV deployment
-- [ ] *To be added when this phase becomes active*
+- [ ] _To be added when this phase becomes active_
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ## Commit
 
 ### Phase Entrance Criteria:
+
 - [x] All core implementation tasks are complete
 - [x] Application builds successfully on target platforms
 - [x] Settings UI functions correctly (enter/persist URL)
@@ -122,6 +134,7 @@ Related to GitHub Issue #20
 - [x] Research notes are documented
 
 ### Tasks
+
 - [x] Remove or document debug output statements
 - [x] Review code for TODOs/FIXMEs (none found)
 - [x] Remove commented-out code (none found)
@@ -131,22 +144,28 @@ Related to GitHub Issue #20
 - [ ] Update GitHub issue with completion summary (awaiting user)
 
 ### Completed
+
 - Code cleanup and verification
 - Documentation review and finalization
 - Completion summary created
-- [ ] *To be added when this phase becomes active*
+- [ ] _To be added when this phase becomes active_
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ## Key Decisions
 
 ### Project Location
+
 **Decision:** Create as subfolder `src/Mireya.Client.Avalonia` in current repository  
-**Rationale:** Keeps all Mireya components together, easier dependency management and shared code potential  
+**Rationale:** Keeps all Mireya components together, easier dependency management and shared code potential
+
 ### API Client Strategy
+
 **Decision:** Start with **hand-written HttpClient wrapper** for the PoC  
-**Rationale:**  
+**Rationale:**
+
 - PoC only needs to save/retrieve backend URL (minimal API surface)
 - No actual API calls required for this PoC
 - Can upgrade to NSwag-generated client in future phases
@@ -155,6 +174,7 @@ Related to GitHub Issue #20
 **Date:** 2025-11-07
 
 ### Out of Scope for PoC
+
 - Actual API connection/communication implementation
 - Authentication flows
 - Production hardening
@@ -162,8 +182,10 @@ Related to GitHub Issue #20
 - Full TV platform support (focus on desktop first)
 
 ### Architecture Pattern
+
 **Decision:** Use MVVM (Model-View-ViewModel) pattern  
-**Rationale:**  
+**Rationale:**
+
 - Standard pattern for Avalonia/XAML applications
 - Clean separation of concerns
 - Good testability
@@ -173,8 +195,10 @@ Related to GitHub Issue #20
 **Date:** 2025-11-07
 
 ### Settings Storage
+
 **Decision:** JSON file in platform-specific app data folder  
-**Rationale:**  
+**Rationale:**
+
 - Simple and cross-platform compatible
 - Easy to debug and inspect
 - Can be upgraded to encrypted storage later
@@ -183,13 +207,16 @@ Related to GitHub Issue #20
 **Date:** 2025-11-07
 
 ### Template Choice: `avalonia.mvvm` vs `avalonia.xplat`
+
 **Decision:** Used `avalonia.mvvm` for PoC  
-**Rationale:**  
+**Rationale:**
+
 - Simpler project structure for desktop-first validation
 - Cleaner for understanding core Avalonia concepts
 - Adequate for proving desktop cross-platform capability
 
 **Recommendation for Production:** Use `avalonia.xplat` instead
+
 - Includes Android, iOS, Desktop, and Browser projects out of the box
 - Proper shared code structure from the start
 - No migration needed for mobile/TV support
@@ -204,10 +231,12 @@ Related to GitHub Issue #20
 ### Research Findings
 
 #### Avalonia Framework
+
 **Key Features:**
+
 - Open-source, WPF successor
 - **Desktop platforms:** ✅ Windows, macOS, Linux (single codebase)
-- **Mobile platforms:** ✅ iOS, Android  
+- **Mobile platforms:** ✅ iOS, Android
 - **Web:** ✅ WebAssembly support
 - **Embedded:** Linux (FBDev, DRM)
 - XAML-based UI (familiar to WPF developers)
@@ -217,6 +246,7 @@ Related to GitHub Issue #20
 - Trusted by Unity, JetBrains, and thousands of apps
 
 **TV Platform Status:**
+
 - Android TV: Likely supported via Android target (needs verification)
 - Apple TV (tvOS): iOS support exists, tvOS needs specific investigation
 - TizenOS: Not mentioned, likely unsupported
@@ -224,6 +254,7 @@ Related to GitHub Issue #20
 **Conclusion:** Avalonia is an excellent choice for this PoC - mature, well-supported, truly cross-platform.
 
 #### Existing Mireya API
+
 - **Framework:** ASP.NET Core with Identity
 - **OpenAPI:** NSwag configured (document available at `/swagger/v1/swagger.json`)
 - **Authentication:** Identity API endpoints (Bearer tokens + Cookies)
@@ -232,15 +263,17 @@ Related to GitHub Issue #20
 - **File Uploads:** Supports multipart/form-data (IFormFile)
 
 #### API Client Generation Comparison
+
 - **ASP.NET Core SignalR** supports cross-platform .NET clients
 - The `.NET client` runs on any platform supported by ASP.NET Core
 - Package: `Microsoft.AspNetCore.SignalR.Client`
 - **Desktop platforms:** ✅ Windows, macOS, Linux fully supported
-- **Mobile/TV platforms:** 
+- **Mobile/TV platforms:**
   - .NET MAUI can use SignalR for Android and iOS apps
   - tvOS, TizenOS require further investigation
 
 #### API Client Generation Options
+
 From Microsoft documentation and NSwag research:
 
 1. **NSwag** (Recommended for .NET)
@@ -248,16 +281,13 @@ From Microsoft documentation and NSwag research:
    - Built-in ASP.NET Core integration
    - Supports complex scenarios and customization
    - Good for .NET-to-.NET scenarios
-   
 2. **OpenAPI Generator**
    - Multi-language support
    - Alternative to NSwag with different templates
-   
 3. **Refit**
    - Lightweight, interface-based
    - Good for evolving APIs
    - Less auto-sync with OpenAPI
-   
 4. **Hand-written HttpClient**
    - Maximum control
    - Best for small PoC surface
@@ -266,6 +296,7 @@ From Microsoft documentation and NSwag research:
 **Recommendation for PoC:** Start with hand-written HttpClient for simplicity, can upgrade to NSwag later if needed.
 
 #### TV Platform Considerations
+
 - **Android TV:** Possible with .NET MAUI/Xamarin, but needs verification for Avalonia
 - **Apple TV (tvOS):** .NET has some support but Avalonia support unclear
 - **TizenOS:** Limited .NET support exists, Avalonia support needs verification
@@ -275,6 +306,7 @@ From Microsoft documentation and NSwag research:
 ### Implementation Plan
 
 #### Project Structure
+
 ```
 src/Mireya.Client.Avalonia/
 ├── Mireya.Client.Avalonia/           # Main application project
@@ -293,31 +325,38 @@ src/Mireya.Client.Avalonia/
 ```
 
 #### Settings Persistence Strategy
+
 **Option 1: JSON file (Chosen for PoC)**
+
 - Simple, cross-platform compatible
 - Store in user's app data folder
 - `~/.config/mireya/settings.json` (Linux/Mac)
 - `%APPDATA%\Mireya\settings.json` (Windows)
 
 **Option 2: Platform-specific storage**
+
 - Could use later for production
 - Android: SharedPreferences
 - iOS: NSUserDefaults
 
 #### UI Design (MVVM Pattern)
+
 **MainWindow.axaml:**
+
 - Title: "Mireya Client - Settings"
 - TextBox: Backend URL input
 - Buttons: Save, Cancel
 - Status message area for feedback
 
 **MainWindowViewModel:**
+
 - `BackendUrl` property (bound to TextBox)
 - `SaveCommand` - validates and persists URL
 - `CancelCommand` - resets to saved value
 - `StatusMessage` property for user feedback
 
 #### Dependencies
+
 - `Avalonia` (11.x latest stable)
 - `Avalonia.Desktop` - Desktop platform support
 - `Avalonia.Themes.Fluent` - Modern UI theme
@@ -325,30 +364,36 @@ src/Mireya.Client.Avalonia/
 - `System.Text.Json` - For settings serialization
 
 #### Build Requirements
+
 **Windows:**
+
 - .NET 8 SDK
 - `dotnet build`
 - `dotnet run`
 
 **macOS:**
+
 - .NET 8 SDK
 - `dotnet build`
 - `dotnet run`
 - Optional: Create .app bundle with `dotnet publish`
 
 **Linux:**
+
 - .NET 8 SDK
 - `dotnet build`
 - `dotnet run`
 - Dependencies: libX11, libXrandr, libXcursor, libXi (usually pre-installed)
 
 #### Testing Strategy (for PoC)
+
 - Manual testing on available platforms
 - Verify settings persist across app restarts
 - Test URL validation (basic format check)
 - Test UI responsiveness
 
 #### Documentation Requirements (README.md)
+
 1. **Overview** - What is the PoC
 2. **Prerequisites** - .NET 8 SDK installation
 3. **Build Instructions** - Per platform (Windows, macOS, Linux)
@@ -359,4 +404,5 @@ src/Mireya.Client.Avalonia/
 8. **Research Notes** - Link to separate doc with API client and SignalR findings
 
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._
