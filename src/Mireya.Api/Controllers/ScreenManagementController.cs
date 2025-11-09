@@ -31,6 +31,36 @@ public class ScreenManagementController(IScreenManagementService screenManagemen
     }
 
     /// <summary>
+    /// Bonjour endpoint for authenticated screens to fetch their data
+    /// </summary>
+    /// <returns>Screen details for the authenticated user</returns>
+    [HttpGet("bonjour")]
+    [Authorize(Roles = Roles.Screen)]
+    public async Task<ActionResult<BonjourResponse>> Bonjour()
+    {
+        try
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { error = "User ID not found in claims" });
+            }
+            
+            var response = await screenManagementService.GetBonjourAsync(userId);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Get a paginated list of all registered screens
     /// </summary>
     /// <param name="page">Page number (default: 1)</param>
