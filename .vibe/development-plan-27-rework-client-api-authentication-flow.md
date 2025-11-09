@@ -275,19 +275,22 @@ public class ApproveScreenResponse
 
 #### Avalonia Client Integration
 - [x] Add Mireya.ApiClient project reference to Avalonia project
-- [x] Create AvaloniaCredentialStorage implementation (file-based JSON storage)
+- [x] Create ICredentialStorage interface
+- [x] Create AvaloniaCredentialStorage implementation (file-based JSON storage with encryption)
+- [x] Create IAuthenticationService interface with models (RegisterResult, LoginResult, ScreenInfo, AuthenticationState)
+- [x] Create AuthenticationService implementation
 - [x] Configure dependency injection in App.axaml.cs
   - [x] Register HttpClient for API communication
   - [x] Register IMireyaApiClient
-  - [x] Register IdentityApiClient
   - [x] Register ICredentialStorage (Avalonia implementation)
   - [x] Register IAuthenticationService
+  - [x] Register ViewModels
 - [x] Add Microsoft.Extensions packages for DI and logging
+- [x] Add System.Security.Cryptography.ProtectedData for credential encryption
+- [x] Update MainWindowViewModel to use authentication service
+- [x] Add authentication commands to MainWindowViewModel (Register, Login, FetchScreenInfo, Logout)
 - [x] Build Avalonia client successfully
-- [ ] Create AuthenticationViewModel
-- [ ] Create authentication views (Login/Registration UI)
-- [ ] Implement startup authentication flow
-- [ ] Add token to HttpClient Authorization header
+- [ ] Update UI to display authentication status and controls
 - [ ] Test complete flow: register → login → bonjour
 
 ### Completed
