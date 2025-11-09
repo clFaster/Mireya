@@ -8,6 +8,7 @@ namespace Mireya.Client.Avalonia.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ISettingsService _settingsService;
+    private readonly IAuthenticationService _authenticationService;
     
     [ObservableProperty]
     private string? _backendUrl;
@@ -17,18 +18,28 @@ public partial class MainWindowViewModel : ViewModelBase
     
     [ObservableProperty]
     private bool _isStatusError;
+    
+    [ObservableProperty]
+    private string _authStatus = "Not checked";
+    
+    [ObservableProperty]
+    private bool _isAuthenticated;
 
-    public MainWindowViewModel(ISettingsService settingsService)
+    public MainWindowViewModel(
+        ISettingsService settingsService,
+        IAuthenticationService authenticationService)
     {
         _settingsService = settingsService;
-        _ = LoadSettingsAsync();
+        _authenticationService = authenticationService;
+        _ = InitializeAsync();
     }
     
     /// <summary>
-    /// Load settings when view model is created
+    /// Load settings and check authentication status
     /// </summary>
-    private async Task LoadSettingsAsync()
+    private async Task InitializeAsync()
     {
+        // Load backend URL
         BackendUrl = await _settingsService.GetBackendUrlAsync();
         if (string.IsNullOrEmpty(BackendUrl))
         {
@@ -39,6 +50,120 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             StatusMessage = $"Loaded saved URL: {BackendUrl}";
             IsStatusError = false;
+        }
+        
+        // Check authentication state
+        await CheckAuthenticationAsync();
+    }
+    
+    private async Task CheckAuthenticationAsync()
+    {
+        var state = await _authenticationService.GetAuthenticationStateAsync();
+        
+        AuthStatus = state switch
+        {
+            AuthenticationState.NotRegistered => "Not registered - need to register",
+            AuthenticationState.NotAuthenticated => "Credentials found - need to login",
+            AuthenticationState.Authenticated => "Authenticated ✓",
+            AuthenticationState.Failed => "Authentication failed",
+            _ => "Unknown"
+        };
+        
+        IsAuthenticated = state == AuthenticationState.Authenticated;
+    }
+
+    [RelayCommand]
+    private async Task RegisterAsync()
+    {
+        if (string.IsNullOrWhiteSpace(BackendUrl))
+        {
+            StatusMessage = "Please set a backend URL first.";
+            IsStatusError = true;
+            return;
+        }
+
+        StatusMessage = "Registering...";
+        IsStatusError = false;
+        
+        var result = await _authenticationService.RegisterAsync();
+        
+        if (result.Success)
+        {
+            StatusMessage = $"✓ Registered successfully! Screen ID: {result.ScreenIdentifier}";
+            IsStatusError = false;
+            await CheckAuthenticationAsync();
+        }
+        else
+        {
+            StatusMessage = $"Registration failed: {result.ErrorMessage}";
+            IsStatusError = true;
+        }
+    }
+
+    [RelayCommand]
+    private async Task LoginAsync()
+    {
+        if (string.IsNullOrWhiteSpace(BackendUrl))
+        {
+            StatusMessage = "Please set a backend URL first.";
+            IsStatusError = true;
+            return;
+        }
+
+        StatusMessage = "Logging in...";
+        IsStatusError = false;
+        
+        var result = await _authenticationService.LoginAsync();
+        
+        if (result.Success)
+        {
+            StatusMessage = "✓ Login successful!";
+            IsStatusError = false;
+            await CheckAuthenticationAsync();
+        }
+        else
+        {
+            StatusMessage = $"Login failed: {result.ErrorMessage}";
+            IsStatusError = true;
+        }
+    }
+
+    [RelayCommand]
+    private async Task FetchScreenInfoAsync()
+    {
+        StatusMessage = "Fetching screen info...";
+        IsStatusError = false;
+        
+        var screenInfo = await _authenticationService.GetScreenInfoAsync();
+        
+        if (screenInfo != null)
+        {
+            StatusMessage = $"✓ Screen: {screenInfo.ScreenName} ({screenInfo.ScreenIdentifier})\n" +
+                          $"Status: {screenInfo.ApprovalStatus}\n" +
+                          $"Description: {screenInfo.Description ?? "N/A"}";
+            IsStatusError = false;
+        }
+        else
+        {
+            StatusMessage = "Failed to fetch screen info. Are you authenticated?";
+            IsStatusError = true;
+        }
+    }
+
+    [RelayCommand]
+    private async Task LogoutAsync()
+    {
+        try
+        {
+            await _authenticationService.LogoutAsync();
+            StatusMessage = "✓ Logged out successfully";
+            IsStatusError = false;
+            await CheckAuthenticationAsync();
+        }
+        catch
+        {
+            StatusMessage = "Failed to logout";
+            IsStatusError = true;
         }
     }
 
