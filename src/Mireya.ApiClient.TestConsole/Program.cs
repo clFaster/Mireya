@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Mireya.ApiClient;
-using Mireya.ApiClient.Authentication;
 
 // Configure services
 var services = new ServiceCollection();
