@@ -26,8 +26,14 @@ Rework the client-to-API authentication flow to implement a more secure and stre
 ### Phase Entrance Criteria:
 - [x] Development workflow started
 - [x] GitHub issue details reviewed
+- [x] Client-side architecture designed
+- [x] Mireya.ApiClient structure planned
 ### Tasks
 - [x] Review GitHub issue #27 details
+- [x] Design shared API client library approach
+- [x] Plan NSwag integration strategy
+- [x] Design credential storage interface
+- [x] Design authentication service interface
 - [x] Examine Display model structure
 - [x] Examine User model (extends IdentityUser)
 - [x] Review ScreenManagementController endpoints
@@ -78,21 +84,22 @@ Rework the client-to-API authentication flow to implement a more secure and stre
 ## Plan
 
 ### Phase Entrance Criteria:
-- [x] Current codebase structure understood (Display model, User model, ScreenManagement service/controller)
+- [x] Current codebase structure understood
 - [x] Existing authentication implementation reviewed
-- [x] Database context and migrations examined
-- [x] Identity configuration and JWT setup understood
+- [x] Backend API endpoints examined
 - [x] Requirements clarified and documented
 - [x] Technical approach validated
+- [x] NSwag client generation configured
 
 ### Tasks
-- [x] Define database schema changes
-- [x] Design new registration flow
-- [x] Design authentication flow
-- [x] Design Bonjour endpoint specification
-- [x] Plan approval flow changes
-- [x] Identify migration strategy
-- [x] Document implementation approach
+- [x] Define Mireya.ApiClient project structure
+- [x] Plan NSwag configuration for client generation
+- [x] Design authentication models (AuthToken, AuthenticationState, etc.)
+- [x] Design ICredentialStorage interface
+- [x] Design IAuthenticationService interface
+- [x] Plan IdentityApiClient for login/refresh endpoints
+- [x] Plan AuthenticationService implementation
+- [x] Plan Avalonia integration approach
 
 ### Completed
 - [x] Created detailed implementation plan
@@ -247,27 +254,41 @@ public class ApproveScreenResponse
 
 ### Phase Entrance Criteria:
 - [x] Detailed implementation plan created
-- [x] Database model changes defined
-- [x] API endpoint specifications documented
-- [x] Authentication flow design completed
-- [x] Migration strategy planned
-- [x] Testing approach defined
+- [x] NSwag client generation working
+- [x] API client models defined
+- [x] Authentication service interfaces designed
 
-### Tasks
-- [x] Update RegisterScreenRequest to accept Username and Password
-- [x] Update RegisterScreenResponse to include UserId
-- [x] Modify RegisterScreenAsync to create User account immediately
-- [x] Add Screen user to "Screen" role during registration
-- [x] Link Display.UserId to created user during registration
-- [x] Create BonjourResponse DTO
-- [x] Implement GET /api/ScreenManagement/bonjour endpoint
-- [x] Update ApproveScreenAsync to remove user creation logic
-- [x] Update ApproveScreenResponse to remove Password field
-- [x] Build and verify no compilation errors
-- [x] Test registration flow with client credentials
-- [x] Test login flow using Identity API endpoints
-- [x] Test Bonjour endpoint with authenticated user
-- [x] Test approval flow (verify it only changes status)
+### Client-Side Implementation Tasks
+
+#### Mireya.ApiClient Library
+- [x] Create Mireya.ApiClient project
+- [x] Configure NSwag for client generation (nswag.json)
+- [x] Create AuthenticationState enum
+- [x] Create ScreenCredentials record
+- [x] Create AuthToken, RegisterResult, LoginResult models
+- [x] Create ICredentialStorage interface
+- [x] Create CredentialGenerator service
+- [x] Create IAuthenticationService interface
+- [x] Create IdentityApiClient for login/refresh endpoints
+- [x] Implement AuthenticationService with all methods
+- [x] Build Mireya.ApiClient successfully
+
+#### Avalonia Client Integration
+- [x] Add Mireya.ApiClient project reference to Avalonia project
+- [x] Create AvaloniaCredentialStorage implementation (file-based JSON storage)
+- [x] Configure dependency injection in App.axaml.cs
+  - [x] Register HttpClient for API communication
+  - [x] Register IMireyaApiClient
+  - [x] Register IdentityApiClient
+  - [x] Register ICredentialStorage (Avalonia implementation)
+  - [x] Register IAuthenticationService
+- [x] Add Microsoft.Extensions packages for DI and logging
+- [x] Build Avalonia client successfully
+- [ ] Create AuthenticationViewModel
+- [ ] Create authentication views (Login/Registration UI)
+- [ ] Implement startup authentication flow
+- [ ] Add token to HttpClient Authorization header
+- [ ] Test complete flow: register → login → bonjour
 
 ### Completed
 - [x] Updated RegisterScreenRequest to accept Username and Password fields
