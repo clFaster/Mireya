@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.10" />
+    <PackageReference Include="NSwag.MSBuild" Version="14.2.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+  </ItemGroup>
+
+  <!-- NSwag code generation target - runs before compilation -->
+  <Target Name="NSwag" BeforeTargets="CoreCompile" Inputs="nswag.json;../Mireya.Api/Mireya.Api.csproj" Outputs="Generated/MireyaApiClient.cs">
+    <Message Importance="high" Text="Generating API client from OpenAPI spec..." />
+    <Exec Command="$(NSwagExe_Net80) run nswag.json" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
+</Project>
