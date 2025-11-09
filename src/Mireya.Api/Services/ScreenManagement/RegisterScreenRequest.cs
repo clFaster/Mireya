@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Mireya.Api.Services.ScreenManagement;
 
 /// <summary>
@@ -5,6 +7,20 @@ namespace Mireya.Api.Services.ScreenManagement;
 /// </summary>
 public class RegisterScreenRequest
 {
+    /// <summary>
+    /// Client-generated username (GUID or device identifier)
+    /// </summary>
+    [Required]
+    [MaxLength(256)]
+    public required string Username { get; set; }
+    
+    /// <summary>
+    /// Client-generated secure password
+    /// </summary>
+    [Required]
+    [MinLength(9)]
+    public required string Password { get; set; }
+    
     /// <summary>
     /// Optional device Name
     /// </summary>
