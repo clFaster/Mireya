@@ -4,13 +4,22 @@
 *Workflow: [epcc](https://mrsimpson.github.io/responsible-vibe-mcp/workflows/epcc)*
 
 ## Goal
-Rework the client-to-API authentication flow to implement a more secure and streamlined approach where the client generates its own credentials and manages authentication independently. Focus on backend changes first, including:
-- Create ScreenUser model (extending Identity User)
-- Update registration endpoint to accept client-generated credentials
-- Create Bonjour endpoint for authenticated screens to fetch their data
-- Update Display model to link to ScreenUser
-- Decouple admin approval from credential generation
-- Implement JWT-based authentication for screens
+Rework the client-to-API authentication flow to implement a more secure and streamlined approach where the client generates its own credentials and manages authentication independently.
+
+**Phase 1 (COMPLETED):** Backend implementation
+- ✅ Extended User model for Screen users
+- ✅ Updated registration endpoint to accept client-generated credentials
+- ✅ Created Bonjour endpoint for authenticated screens
+- ✅ Linked Display model to User via UserId
+- ✅ Decoupled admin approval from credential generation
+- ✅ Implemented JWT-based authentication for screens
+
+**Phase 2 (CURRENT):** Client-side implementation
+- Create shared Mireya.ApiClient library with NSwag-generated client
+- Implement authentication service with JWT token management
+- Create platform-agnostic credential storage interfaces
+- Update Avalonia client to use new authentication flow
+- Add SignalR client wrapper for real-time communication
 
 ## Explore
 
