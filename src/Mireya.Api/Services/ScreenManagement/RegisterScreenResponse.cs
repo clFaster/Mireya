@@ -8,10 +8,15 @@ public class RegisterScreenResponse
     /// <summary>
     /// The unique identifier for the screen
     /// </summary>
-    public string ScreenIdentifier { get; set; } = string.Empty;
+    public required string ScreenIdentifier { get; set; }
+    
+    /// <summary>
+    /// User ID of the created user account
+    /// </summary>
+    public required string UserId { get; set; }
     
     /// <summary>
     /// Name of the screen
     /// </summary>
-    public string ScreenName { get; set; } = string.Empty;
+    public required string ScreenName { get; set; }
 }
