@@ -72,10 +72,11 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 .AddEntityFrameworkStores<MireyaDbContext>()
 .AddDefaultTokenProviders();
 
-// Add default authentication scheme (cookies) for Razor Pages
+// Configure authentication to support both Bearer tokens (API) and Cookies (Razor Pages)
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    // This ensures Razor Pages get redirected when unauthorized
+    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
     options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
 });
 
