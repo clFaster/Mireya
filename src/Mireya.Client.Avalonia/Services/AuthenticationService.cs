@@ -12,14 +12,17 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly IMireyaApiClient _apiClient;
     private readonly ICredentialStorage _credentialStorage;
+    private readonly IAccessTokenProvider _tokenProvider;
     private string? _accessToken;
 
     public AuthenticationService(
         IMireyaApiClient apiClient,
-        ICredentialStorage credentialStorage)
+        ICredentialStorage credentialStorage,
+        IAccessTokenProvider tokenProvider)
     {
         _apiClient = apiClient;
         _credentialStorage = credentialStorage;
+        _tokenProvider = tokenProvider;
     }
 
     public async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -132,6 +135,7 @@ public class AuthenticationService : IAuthenticationService
 
             // Store tokens
             _accessToken = response.AccessToken;
+            _tokenProvider.SetAccessToken(response.AccessToken);
             // Note: RefreshToken is available in response.RefreshToken if needed for token refresh
 
             return new LoginResult(
@@ -169,8 +173,12 @@ public class AuthenticationService : IAuthenticationService
                 return null;
             }
 
+            Console.WriteLine($"[AuthenticationService] Fetching screen info with token: {_accessToken?.Substring(0, Math.Min(20, _accessToken.Length))}...");
+            
             var response = await _apiClient.ScreenManagement_BonjourAsync();
 
+            Console.WriteLine($"[AuthenticationService] Successfully fetched screen info: {response.ScreenIdentifier}");
+            
             return new ScreenInfo(
                 ScreenIdentifier: response.ScreenIdentifier,
                 ScreenName: response.ScreenName,
@@ -179,12 +187,18 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (ApiException ex)
         {
-            Console.WriteLine($"[AuthenticationService] Failed to fetch screen info: {ex.Message}");
+            Console.WriteLine($"[AuthenticationService] API error fetching screen info:");
+            Console.WriteLine($"  Status Code: {ex.StatusCode}");
+            Console.WriteLine($"  Message: {ex.Message}");
+            Console.WriteLine($"  Response: {ex.Response}");
             return null;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AuthenticationService] Unexpected error fetching screen info: {ex.Message}");
+            Console.WriteLine($"[AuthenticationService] Unexpected error fetching screen info:");
+            Console.WriteLine($"  Type: {ex.GetType().Name}");
+            Console.WriteLine($"  Message: {ex.Message}");
+            Console.WriteLine($"  Stack: {ex.StackTrace}");
             return null;
         }
     }
@@ -195,6 +209,7 @@ public class AuthenticationService : IAuthenticationService
         {
             // Clear tokens
             _accessToken = null;
+            _tokenProvider.SetAccessToken(null);
             
             // Delete stored credentials
             await _credentialStorage.DeleteCredentialsAsync();
