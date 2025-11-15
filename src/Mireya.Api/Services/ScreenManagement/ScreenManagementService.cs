@@ -15,6 +15,11 @@ public interface IScreenManagementService
     Task<RegisterScreenResponse> RegisterScreenAsync(RegisterScreenRequest request);
     
     /// <summary>
+    /// Gets screen details for the authenticated user (Bonjour call)
+    /// </summary>
+    Task<BonjourResponse> GetBonjourAsync(string userId);
+    
+    /// <summary>
     /// Gets a paginated list of screens with optional filtering
     /// </summary>
     Task<PagedScreensResponse> GetScreensAsync(int page, int pageSize, ApprovalStatus? status, string? sortBy);
@@ -47,6 +52,28 @@ public class ScreenManagementService(
 {
     public async Task<RegisterScreenResponse> RegisterScreenAsync(RegisterScreenRequest request)
     {
+        // Create a user account for the screen immediately
+        var screenUser = new User
+        {
+            UserName = request.Username,
+            Email = $"{request.Username}@mireya.local",
+            EmailConfirmed = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        var result = await userManager.CreateAsync(screenUser, request.Password);
+        
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            logger.LogError("Failed to create user for screen registration: {Errors}", errors);
+            throw new InvalidOperationException($"Failed to create user account: {errors}");
+        }
+        
+        // Add the Screen role
+        await userManager.AddToRoleAsync(screenUser, Roles.Screen);
+        
+        // Generate unique screen identifier
         var screenIdentifier = await Nanoid.GenerateAsync(
             size: NanoIdGen.ScreenIdentifierLength, 
             alphabet: NanoIdGen.HexAlphabet);
@@ -59,22 +86,50 @@ public class ScreenManagementService(
         
         var display = new Display
         {
-            Name = string.IsNullOrEmpty(request.DeviceName) ? $"Screen {db.Displays.Count() + 1}" : request.DeviceName,
+            Name = string.IsNullOrEmpty(request.DeviceName) ? $"Screen {await db.Displays.CountAsync() + 1}" : request.DeviceName,
             ScreenIdentifier = screenIdentifier,
+            UserId = screenUser.Id,
             ResolutionWidth = request.ResolutionWidth,
             ResolutionHeight = request.ResolutionHeight,
-            LastSeenAt = DateTime.UtcNow
+            LastSeenAt = DateTime.UtcNow,
+            ApprovalStatus = ApprovalStatus.Pending
         };
         
         db.Displays.Add(display);
         await db.SaveChangesAsync();
         
-        logger.LogInformation("New screen registered with ID {DisplayId}", display.Id);
+        logger.LogInformation("New screen registered with ID {DisplayId} and User {UserId}", display.Id, screenUser.Id);
         
         return new RegisterScreenResponse
         {
             ScreenIdentifier = screenIdentifier,
+            UserId = screenUser.Id,
             ScreenName = display.Name
+        };
+    }
+
+    public async Task<BonjourResponse> GetBonjourAsync(string userId)
+    {
+        var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
+        
+        if (display == null)
+        {
+            throw new KeyNotFoundException($"No screen found for user {userId}");
+        }
+        
+        // Update last seen timestamp
+        display.LastSeenAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        
+        logger.LogInformation("Screen {DisplayId} called bonjour (User: {UserId})", display.Id, userId);
+        
+        return new BonjourResponse
+        {
+            ScreenIdentifier = display.ScreenIdentifier,
+            ScreenName = display.Name,
+            Description = display.Description,
+            ApprovalStatus = display.ApprovalStatus.ToString(),
+            Location = display.Location
         };
     }
 
@@ -176,61 +231,23 @@ public class ScreenManagementService(
         if (display.ApprovalStatus == ApprovalStatus.Approved)
         {
             logger.LogInformation("Screen {DisplayId} is already approved", display.Id);
-            // TODO Fix that at some point...
-            var existingUser = await userManager.FindByIdAsync(display.UserId!);
-            if (existingUser == null)
-            {
-                // Create a new user if the existing one is missing
-            }
-            var newPassword = await Nanoid.GenerateAsync(
-                size: NanoIdGen.ScreenPasswordLength,
-                alphabet: NanoIdGen.ScreenPasswordAlphabet);
-            
-            await userManager.ResetPasswordAsync(existingUser!, 
-                await userManager.GeneratePasswordResetTokenAsync(existingUser!), 
-                newPassword
-                );
-            // TODO Return new password in response
-
-            return new ApproveScreenResponse { Screen = MapToDetailsResponse(display), Password = newPassword };
+            return new ApproveScreenResponse { Screen = MapToDetailsResponse(display) };
         }
         
-        // Create a user account for the screen
-        var screenUser = new User
+        if (string.IsNullOrEmpty(display.UserId))
         {
-            UserName = $"{display.ScreenIdentifier}@mireya.local",
-            Email = $"{display.ScreenIdentifier}@mireya.local",
-            EmailConfirmed = true,
-            CreatedAt = DateTime.UtcNow
-        };
-        
-        // Generate a random password (screen uses token-based auth, not password)
-        // TODO show password in response
-        var randomPassword = await Nanoid.GenerateAsync(
-            size: NanoIdGen.ScreenPasswordLength, 
-            alphabet: NanoIdGen.ScreenPasswordAlphabet);
-        var result = await userManager.CreateAsync(screenUser, randomPassword);
-        
-        if (!result.Succeeded)
-        {
-            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            logger.LogError("Failed to create user for screen {DisplayId}: {Errors}", display.Id, errors);
-            throw new InvalidOperationException($"Failed to create user account: {errors}");
+            throw new InvalidOperationException($"Screen {id} has no associated user account. It may need to be re-registered.");
         }
         
-        // Add the Screen role
-        await userManager.AddToRoleAsync(screenUser, Roles.Screen);
-        
-        // Update display
+        // Simply update the approval status
         display.ApprovalStatus = ApprovalStatus.Approved;
-        display.UserId = screenUser.Id;
         display.UpdatedAt = DateTime.UtcNow;
         
         await db.SaveChangesAsync();
         
-        logger.LogInformation("Screen {DisplayId} approved and user {UserId} created", display.Id, screenUser.Id);
+        logger.LogInformation("Screen {DisplayId} approved (User: {UserId})", display.Id, display.UserId);
 
-        return new ApproveScreenResponse { Screen = MapToDetailsResponse(display), Password = randomPassword };
+        return new ApproveScreenResponse { Screen = MapToDetailsResponse(display) };
     }
 
     public async Task<ScreenDetailsResponse> RejectScreenAsync(Guid id)

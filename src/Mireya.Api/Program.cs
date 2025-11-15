@@ -4,6 +4,7 @@ using Microsoft.Extensions.FileProviders;
 using Mireya.Api;
 using Mireya.Api.Constants;
 using Mireya.Api.Extensions;
+using Mireya.Api.Middleware;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
 using Mireya.Api.Services.Campaign;
@@ -71,10 +72,11 @@ builder.Services.AddIdentityApiEndpoints<User>(options =>
 .AddEntityFrameworkStores<MireyaDbContext>()
 .AddDefaultTokenProviders();
 
-// Add default authentication scheme (cookies) for Razor Pages
+// Configure authentication to support both Bearer tokens (API) and Cookies (Razor Pages)
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    // This ensures Razor Pages get redirected when unauthorized
+    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
     options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
 });
 
@@ -146,6 +148,9 @@ if (app.Environment.IsDevelopment())
 // Establish routing context (required for authentication/authorization to work with Razor Pages)
 app.UseRouting();
 
+// Add response debug middleware (logs unauthorized and error responses)
+app.UseResponseDebug();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -171,4 +176,4 @@ app.MapRazorPages();
 
 // Root page is handled by Pages/Index.cshtml (no redirect needed)
 
-app.Run();
+await app.RunAsync();
