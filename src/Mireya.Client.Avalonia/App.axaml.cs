@@ -54,13 +54,28 @@ public partial class App : Application
             options.BaseUrl = "http://localhost:5000"; // Default, will be overridden by settings
         });
         
-        // Register HttpClient factory
+        // Register platform-specific services
+        services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<ICredentialStorage, AvaloniaCredentialStorage>();
+        services.AddSingleton<IApiClientConfiguration, ApiClientConfiguration>();
+        
+        // Register token provider (singleton to share state)
+        services.AddSingleton<IAccessTokenProvider, AccessTokenProvider>();
+        
+        // Register authentication service
+        services.AddSingleton<IAuthenticationService, AuthenticationService>();
+        
+        // Register the authentication handler
+        services.AddTransient<AuthenticationHandler>();
+        
+        // Register HttpClient factory with authentication handler
         services.AddHttpClient("MireyaApiClient", (sp, client) =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MireyaApiClientOptions>>();
             client.BaseAddress = new System.Uri(options.Value.BaseUrl);
             client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
-        });
+        })
+        .AddHttpMessageHandler<AuthenticationHandler>();
         
         // Register MireyaApiClient
         services.AddTransient<IMireyaApiClient>(sp =>
@@ -70,13 +85,6 @@ public partial class App : Application
             var httpClient = httpClientFactory.CreateClient("MireyaApiClient");
             return new MireyaApiClient(options.Value.BaseUrl, httpClient);
         });
-        
-        // Register platform-specific services
-        services.AddSingleton<ISettingsService, SettingsService>();
-        services.AddSingleton<ICredentialStorage, AvaloniaCredentialStorage>();
-        
-        // Register authentication service
-        services.AddSingleton<IAuthenticationService, AuthenticationService>();
         
         // Register ViewModels
         services.AddTransient<MainWindowViewModel>();

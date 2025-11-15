@@ -9,6 +9,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ISettingsService _settingsService;
     private readonly IAuthenticationService _authenticationService;
+    private readonly IApiClientConfiguration _apiClientConfiguration;
     
     [ObservableProperty]
     private string? _backendUrl;
@@ -27,10 +28,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel(
         ISettingsService settingsService,
-        IAuthenticationService authenticationService)
+        IAuthenticationService authenticationService,
+        IApiClientConfiguration apiClientConfiguration)
     {
         _settingsService = settingsService;
         _authenticationService = authenticationService;
+        _apiClientConfiguration = apiClientConfiguration;
         _ = InitializeAsync();
     }
     
@@ -134,18 +137,35 @@ public partial class MainWindowViewModel : ViewModelBase
         StatusMessage = "Fetching screen info...";
         IsStatusError = false;
         
+        // Check if authenticated first
+        var authState = await _authenticationService.GetAuthenticationStateAsync();
+        if (authState != AuthenticationState.Authenticated)
+        {
+            StatusMessage = $"❌ Cannot fetch screen info: Not authenticated.\nCurrent state: {authState}\n\nPlease login first.";
+            IsStatusError = true;
+            return;
+        }
+        
         var screenInfo = await _authenticationService.GetScreenInfoAsync();
         
         if (screenInfo != null)
         {
-            StatusMessage = $"✓ Screen: {screenInfo.ScreenName} ({screenInfo.ScreenIdentifier})\n" +
-                          $"Status: {screenInfo.ApprovalStatus}\n" +
-                          $"Description: {screenInfo.Description ?? "N/A"}";
+            StatusMessage = $"✓ Screen Information Retrieved:\n\n" +
+                          $"🆔 Screen ID: {screenInfo.ScreenIdentifier}\n" +
+                          $"📝 Name: {screenInfo.ScreenName}\n" +
+                          $"📊 Status: {screenInfo.ApprovalStatus}\n" +
+                          $"📄 Description: {screenInfo.Description ?? "N/A"}\n\n" +
+                          $"💡 Tip: If status is 'Pending', ask an admin to approve this screen in the backend.";
             IsStatusError = false;
         }
         else
         {
-            StatusMessage = "Failed to fetch screen info. Are you authenticated?";
+            StatusMessage = "❌ Failed to fetch screen info.\n\n" +
+                          "Possible causes:\n" +
+                          "• Not authenticated (try logging in again)\n" +
+                          "• Token expired (try logging in again)\n" +
+                          "• Backend not reachable\n" +
+                          "• Check console output for details";
             IsStatusError = true;
         }
     }
@@ -187,6 +207,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             await _settingsService.SaveBackendUrlAsync(BackendUrl);
+            await _apiClientConfiguration.UpdateBaseUrlAsync(BackendUrl);
             StatusMessage = $"✓ Backend URL saved successfully: {BackendUrl}";
             IsStatusError = false;
         }

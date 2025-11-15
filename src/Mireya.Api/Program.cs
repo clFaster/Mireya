@@ -4,6 +4,7 @@ using Microsoft.Extensions.FileProviders;
 using Mireya.Api;
 using Mireya.Api.Constants;
 using Mireya.Api.Extensions;
+using Mireya.Api.Middleware;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
 using Mireya.Api.Services.Campaign;
@@ -146,6 +147,9 @@ if (app.Environment.IsDevelopment())
 // Establish routing context (required for authentication/authorization to work with Razor Pages)
 app.UseRouting();
 
+// Add response debug middleware (logs unauthorized and error responses)
+app.UseResponseDebug();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -171,4 +175,4 @@ app.MapRazorPages();
 
 // Root page is handled by Pages/Index.cshtml (no redirect needed)
 
-app.Run();
+await app.RunAsync();
