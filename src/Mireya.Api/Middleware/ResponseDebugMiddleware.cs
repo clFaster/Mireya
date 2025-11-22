@@ -1,7 +1,3 @@
-using System.Text;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-
 namespace Mireya.Api.Middleware;
 
 /// <summary>
