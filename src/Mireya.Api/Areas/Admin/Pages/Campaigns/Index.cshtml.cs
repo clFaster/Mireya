@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Mireya.Database;
-using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages.Campaigns;
 

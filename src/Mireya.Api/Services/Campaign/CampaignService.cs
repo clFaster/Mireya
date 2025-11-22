@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Mireya.Api.Hubs;
 using Mireya.Database;
 using Mireya.Database.Models;
 
