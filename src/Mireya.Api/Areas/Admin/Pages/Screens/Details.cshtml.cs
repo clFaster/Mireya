@@ -8,22 +8,24 @@ namespace Mireya.Api.Areas.Admin.Pages.Screens;
 
 public class DetailsModel(MireyaDbContext context) : PageModel
 {
-    public Display? Screen { get; set; }
+    public Display Screen { get; set; } = null!;
     public List<CampaignAssetViewModel> CampaignAssets { get; set; } = [];
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
-        Screen = await context.Displays
+        var screen = await context.Displays
             .Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
                     .ThenInclude(c => c.CampaignAssets)
                         .ThenInclude(ca => ca.Asset)
             .FirstOrDefaultAsync(d => d.Id == id);
 
-        if (Screen == null)
+        if (screen == null)
         {
             return NotFound();
         }
+
+        Screen = screen;
 
         // Flatten all campaign assets with campaign information
         CampaignAssets = Screen.CampaignAssignments
