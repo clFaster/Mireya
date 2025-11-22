@@ -1,23 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Mireya.Api.Services;
 using Mireya.Database;
 using Mireya.Database.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace Mireya.Api.Areas.Admin.Pages.Screens;
 
-public class EditModel(MireyaDbContext context, ILogger<EditModel> logger) : PageModel
+public class EditModel(
+    MireyaDbContext context, 
+    ILogger<EditModel> logger,
+    IScreenSynchronizationService syncService) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
     [BindProperty]
-    public List<Guid> SelectedCampaignIds { get; set; } = new();
+    public List<Guid> SelectedCampaignIds { get; set; } = [];
 
     public Guid ScreenId { get; set; }
     public bool IsActive { get; set; }
-    public List<CampaignSummary> AvailableCampaigns { get; set; } = new();
+    public List<CampaignSummary> AvailableCampaigns { get; set; } = [];
 
     public class InputModel
     {
@@ -154,6 +158,9 @@ public class EditModel(MireyaDbContext context, ILogger<EditModel> logger) : Pag
 
             logger.LogInformation("Screen {ScreenId} updated successfully with {CampaignCount} campaign assignments", 
                 id, SelectedCampaignIds.Count);
+            
+            // Trigger SignalR sync to notify the screen
+            await syncService.SyncScreenAsync(id);
             
             return RedirectToPage("./Details", new { id });
         }

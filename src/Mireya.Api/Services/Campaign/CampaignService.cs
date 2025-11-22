@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Mireya.Api.Hubs;
 using Mireya.Database;
 using Mireya.Database.Models;
 
@@ -14,7 +16,7 @@ public interface ICampaignService
     Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId);
 }
 
-public class CampaignService(MireyaDbContext db) : ICampaignService
+public class CampaignService(MireyaDbContext db, IScreenSynchronizationService syncService) : ICampaignService
 {
     private const int DefaultDurationSeconds = 10;
 
@@ -165,7 +167,10 @@ public class CampaignService(MireyaDbContext db) : ICampaignService
 
         await db.SaveChangesAsync();
 
-        return await GetCampaignAsync(campaign.Id);
+        var campaignDetail = await GetCampaignAsync(campaign.Id);
+        await syncService.SyncScreensAsync(request.DisplayIds);
+
+        return campaignDetail;
     }
 
     public async Task<CampaignDetail> UpdateCampaignAsync(Guid id, UpdateCampaignRequest request)
@@ -187,6 +192,8 @@ public class CampaignService(MireyaDbContext db) : ICampaignService
 
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
+
+        var oldDisplayIds = campaign.CampaignAssignments.Select(ca => ca.DisplayId).ToList();
 
         // Verify assets exist
         var assetIds = request.Assets.Select(a => a.AssetId).Distinct().ToList();
@@ -247,7 +254,13 @@ public class CampaignService(MireyaDbContext db) : ICampaignService
 
         await db.SaveChangesAsync();
 
-        return await GetCampaignAsync(campaign.Id);
+        var campaignDetail = await GetCampaignAsync(campaign.Id);
+        
+        // Notify all affected displays (both new and removed)
+        var allAffectedDisplayIds = oldDisplayIds.Union(request.DisplayIds).ToList();
+        await syncService.SyncScreensAsync(allAffectedDisplayIds);
+
+        return campaignDetail;
     }
 
     public async Task DeleteCampaignAsync(Guid id)
@@ -271,11 +284,10 @@ public class CampaignService(MireyaDbContext db) : ICampaignService
 
     private static int ResolveAssetDuration(Database.Models.Asset asset, int? campaignDuration)
     {
-        // Priority: campaign override > asset intrinsic duration > default
-        if (campaignDuration.HasValue && campaignDuration.Value > 0)
+        if (campaignDuration > 0)
             return campaignDuration.Value;
 
-        if (asset.Type == AssetType.Video && asset.DurationSeconds.HasValue && asset.DurationSeconds.Value > 0)
+        if (asset.Type == AssetType.Video && asset.DurationSeconds > 0)
             return asset.DurationSeconds.Value;
 
         return DefaultDurationSeconds;
