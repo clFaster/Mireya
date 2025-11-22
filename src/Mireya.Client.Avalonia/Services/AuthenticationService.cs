@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
+using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.Services;
 
@@ -13,16 +14,19 @@ public class AuthenticationService : IAuthenticationService
     private readonly IMireyaApiClient _apiClient;
     private readonly ICredentialStorage _credentialStorage;
     private readonly IAccessTokenProvider _tokenProvider;
+    private readonly IScreenHubService _hubService;
     private string? _accessToken;
 
     public AuthenticationService(
         IMireyaApiClient apiClient,
         ICredentialStorage credentialStorage,
-        IAccessTokenProvider tokenProvider)
+        IAccessTokenProvider tokenProvider,
+        IScreenHubService hubService)
     {
         _apiClient = apiClient;
         _credentialStorage = credentialStorage;
         _tokenProvider = tokenProvider;
+        _hubService = hubService;
     }
 
     public async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -136,6 +140,10 @@ public class AuthenticationService : IAuthenticationService
             // Store tokens
             _accessToken = response.AccessToken;
             _tokenProvider.SetAccessToken(response.AccessToken);
+            
+            // Connect to SignalR Hub
+            await _hubService.ConnectAsync();
+
             // Note: RefreshToken is available in response.RefreshToken if needed for token refresh
 
             return new LoginResult(
@@ -207,6 +215,9 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
+            // Disconnect from SignalR Hub
+            await _hubService.DisconnectAsync();
+
             // Clear tokens
             _accessToken = null;
             _tokenProvider.SetAccessToken(null);

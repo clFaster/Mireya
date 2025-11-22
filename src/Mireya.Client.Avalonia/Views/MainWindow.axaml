@@ -128,15 +128,22 @@
                                     HorizontalContentAlignment="Center"
                                     Foreground="#5632A8"
                                     ToolTip.Tip="Get screen details from backend (requires authentication)"/>
-                            <Button Content="🚪 Logout" 
-                                    Command="{Binding LogoutCommand}"
+                            <Button Content="🔄 Test SignalR" 
+                                    Command="{Binding TestSyncCommand}"
                                     Grid.Row="1" Grid.Column="1"
                                     Height="45"
                                     FontSize="14"
                                     HorizontalContentAlignment="Center"
                                     Foreground="#5632A8"
-                                    ToolTip.Tip="Clear credentials and logout"/>
+                                    ToolTip.Tip="Test SignalR connection status"/>
                         </Grid>
+                        <Button Content="🚪 Logout" 
+                                Command="{Binding LogoutCommand}"
+                                Height="45"
+                                FontSize="14"
+                                HorizontalContentAlignment="Center"
+                                Foreground="#5632A8"
+                                ToolTip.Tip="Clear credentials and logout"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

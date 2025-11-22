@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mireya.ApiClient.Services;
 using Mireya.Client.Avalonia.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
@@ -10,6 +11,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly IAuthenticationService _authenticationService;
     private readonly IApiClientConfiguration _apiClientConfiguration;
+    private readonly IScreenHubService _hubService;
     
     [ObservableProperty]
     private string? _backendUrl;
@@ -29,12 +31,27 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(
         ISettingsService settingsService,
         IAuthenticationService authenticationService,
-        IApiClientConfiguration apiClientConfiguration)
+        IApiClientConfiguration apiClientConfiguration,
+        IScreenHubService hubService)
     {
         _settingsService = settingsService;
         _authenticationService = authenticationService;
         _apiClientConfiguration = apiClientConfiguration;
+        _hubService = hubService;
+        
+        _hubService.OnConfigurationUpdateReceived += OnConfigurationUpdateReceived;
+        
         _ = InitializeAsync();
+    }
+
+    private void OnConfigurationUpdateReceived(Mireya.ApiClient.Models.ScreenConfiguration config)
+    {
+        System.Console.WriteLine($"[MainWindowViewModel] Received configuration update for {config.ScreenName}");
+        global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            StatusMessage = $"Received Config Update: {config.ScreenName} ({config.Campaigns.Count} campaigns)";
+            IsStatusError = false;
+        });
     }
     
     /// <summary>
@@ -129,6 +146,18 @@ public partial class MainWindowViewModel : ViewModelBase
             StatusMessage = $"Login failed: {result.ErrorMessage}";
             IsStatusError = true;
         }
+    }
+
+    [RelayCommand]
+    private async Task TestSyncAsync()
+    {
+        StatusMessage = "Testing SignalR sync...";
+        IsStatusError = false;
+        
+        System.Console.WriteLine($"[MainWindowViewModel] Testing SignalR sync - Hub connected: {_hubService.IsConnected}");
+        
+        StatusMessage = $"SignalR Connection Status: {(_hubService.IsConnected ? "✓ Connected" : "✗ Not Connected")}";
+        IsStatusError = !_hubService.IsConnected;
     }
 
     [RelayCommand]

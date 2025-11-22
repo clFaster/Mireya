@@ -1,20 +1,6 @@
-namespace Mireya.Client.Avalonia.Services;
+using Mireya.ApiClient.Services;
 
-/// <summary>
-/// Simple token accessor to break circular dependency between AuthenticationHandler and AuthenticationService
-/// </summary>
-public interface IAccessTokenProvider
-{
-    /// <summary>
-    /// Get the current access token
-    /// </summary>
-    string? GetAccessToken();
-    
-    /// <summary>
-    /// Set the current access token
-    /// </summary>
-    void SetAccessToken(string? token);
-}
+namespace Mireya.Client.Avalonia.Services;
 
 /// <summary>
 /// Thread-safe implementation of access token provider

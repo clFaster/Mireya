@@ -1,6 +1,4 @@
 using System.Threading.Tasks;
-using Mireya.ApiClient.Generated;
-using Mireya.ApiClient.Models;
 
 namespace Mireya.Client.Avalonia.Services;
 
