@@ -9,7 +9,7 @@ namespace Mireya.Api.Areas.Admin.Pages.Screens;
 public class DetailsModel(MireyaDbContext context) : PageModel
 {
     public Display? Screen { get; set; }
-    public List<CampaignAssetViewModel> CampaignAssets { get; set; } = new();
+    public List<CampaignAssetViewModel> CampaignAssets { get; set; } = [];
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
