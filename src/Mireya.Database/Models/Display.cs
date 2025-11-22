@@ -3,12 +3,12 @@ using System.ComponentModel.DataAnnotations;
 namespace Mireya.Database.Models;
 
 /// <summary>
-/// Represents a digital signage display device
+/// Represents a digital signage Screen
 /// </summary>
 public class Display
 {
     [Key]
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; init; } = Guid.NewGuid();
 
     [Required]
     [MaxLength(200)]
@@ -26,7 +26,7 @@ public class Display
     /// </summary>
     [Required]
     [MaxLength(10)]
-    public string ScreenIdentifier { get; set; } = string.Empty;
+    public string ScreenIdentifier { get; init; } = string.Empty;
 
     /// <summary>
     /// Approval status of the display
@@ -37,32 +37,32 @@ public class Display
     /// User ID of the associated user account (created upon approval)
     /// </summary>
     [MaxLength(64)]
-    public string? UserId { get; set; }
+    public string? UserId { get; init; }
 
     /// <summary>
     /// Screen resolution width in pixels
     /// </summary>
-    public int? ResolutionWidth { get; set; }
+    public int? ResolutionWidth { get; init; }
 
     /// <summary>
     /// Screen resolution height in pixels
     /// </summary>
-    public int? ResolutionHeight { get; set; }
+    public int? ResolutionHeight { get; init; }
 
     /// <summary>
-    /// Indicates if the display is currently active/online
+    /// Indicates if the display is currently online or offline
     /// </summary>
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 
     /// <summary>
     /// Last time the display checked in or was seen online
     /// </summary>
     public DateTime? LastSeenAt { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    public ICollection<CampaignAssignment> CampaignAssignments { get; set; } = [];
+    public ICollection<CampaignAssignment> CampaignAssignments { get; init; } = [];
 }

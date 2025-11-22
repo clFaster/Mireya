@@ -9,6 +9,7 @@ namespace Mireya.Api.Areas.Admin.Pages.Screens;
 public class DetailsModel(MireyaDbContext context) : PageModel
 {
     public Display Screen { get; set; } = null!;
+    public bool IsOnline { get; set; }
     public List<CampaignAssetViewModel> CampaignAssets { get; set; } = [];
 
     public async Task<IActionResult> OnGetAsync(Guid id)
@@ -26,6 +27,9 @@ public class DetailsModel(MireyaDbContext context) : PageModel
         }
 
         Screen = screen;
+        
+        // Check if screen is currently online using IsActive
+        IsOnline = screen.IsActive;
 
         // Flatten all campaign assets with campaign information
         CampaignAssets = Screen.CampaignAssignments
@@ -49,10 +53,10 @@ public class DetailsModel(MireyaDbContext context) : PageModel
 
 public class CampaignAssetViewModel
 {
-    public string CampaignName { get; set; } = string.Empty;
+    public string CampaignName { get; init; } = string.Empty;
     public Guid AssetId { get; set; }
-    public string AssetName { get; set; } = string.Empty;
-    public AssetType AssetType { get; set; }
-    public int Position { get; set; }
-    public int DurationSeconds { get; set; }
+    public string AssetName { get; init; } = string.Empty;
+    public AssetType AssetType { get; init; }
+    public int Position { get; init; }
+    public int DurationSeconds { get; init; }
 }

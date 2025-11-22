@@ -53,22 +53,28 @@
 
                 <div>
                     <dt class="text-sm font-medium text-gray-500">Location</dt>
-                    <dd class="mt-1 text-sm text-gray-900">@(Model.Screen.Location ?? "Not specified")</dd>
+                    <dd class="mt-1 text-sm text-gray-900">@Model.Screen.Location</dd>
                 </div>
 
                 <div>
-                    <dt class="text-sm font-medium text-gray-500">Active Status</dt>
-                    <dd class="mt-1">
+                    <dt class="text-sm font-medium text-gray-500">Connection Status</dt>
+                    <dd class="mt-1" id="connection-status">
                         @if (Model.Screen.IsActive)
                         {
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Active
+                                <svg class="w-2 h-2 mr-1 mt-0.5" fill="currentColor" viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                Online
                             </span>
                         }
                         else
                         {
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                Inactive
+                                <svg class="w-2 h-2 mr-1 mt-0.5" fill="currentColor" viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                Offline
                             </span>
                         }
                     </dd>
@@ -114,7 +120,7 @@
                 <div>
                     <dt class="text-sm font-medium text-gray-500">Resolution</dt>
                     <dd class="mt-1 text-sm text-gray-900">
-                        @if (Model.Screen.ResolutionWidth.HasValue && Model.Screen.ResolutionHeight.HasValue)
+                        @if (Model.Screen is { ResolutionWidth: not null, ResolutionHeight: not null })
                         {
                             @($"{Model.Screen.ResolutionWidth}x{Model.Screen.ResolutionHeight}")
                         }
@@ -204,8 +210,63 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path>
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-gray-900">No content assigned</h3>
-                <p class="mt-1 text-sm text-gray-500">Assign campaigns to this screen to display content.</p>
+                <p class="mt-1 text-sm text-gray-500">This screen has no campaigns assigned yet.</p>
             </div>
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const screenId = '@Model.Screen.Id';
+        
+        // Poll for screen status updates every 3 seconds
+        async function updateScreenStatus() {
+            try {
+                const response = await fetch(`/api/ScreenManagement/${screenId}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const screen = await response.json();
+                    const statusElement = document.getElementById('connection-status');
+                    
+                    if (statusElement) {
+                        const currentlyOnline = statusElement.querySelector('.bg-green-100') !== null;
+                        
+                        if (screen.isActive && !currentlyOnline) {
+                            // Changed to online
+                            statusElement.innerHTML = `
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    <svg class="w-2 h-2 mr-1 mt-0.5" fill="currentColor" viewBox="0 0 8 8">
+                                        <circle cx="4" cy="4" r="3" />
+                                    </svg>
+                                    Online
+                                </span>`;
+                        } else if (!screen.isActive && currentlyOnline) {
+                            // Changed to offline
+                            statusElement.innerHTML = `
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    <svg class="w-2 h-2 mr-1 mt-0.5" fill="currentColor" viewBox="0 0 8 8">
+                                        <circle cx="4" cy="4" r="3" />
+                                    </svg>
+                                    Offline
+                                </span>`;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating screen status:', error);
+            }
+        }
+
+        // Update immediately on load
+        updateScreenStatus();
+        
+        // Then update every 3 seconds
+        setInterval(updateScreenStatus, 3000);
+    </script>
+}
+
