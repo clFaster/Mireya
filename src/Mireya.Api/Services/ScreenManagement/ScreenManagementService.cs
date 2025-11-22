@@ -48,7 +48,8 @@ public interface IScreenManagementService
 public class ScreenManagementService(
     MireyaDbContext db,
     UserManager<User> userManager,
-    ILogger<ScreenManagementService> logger) : IScreenManagementService
+    ILogger<ScreenManagementService> logger,
+    IScreenSynchronizationService syncService) : IScreenManagementService
 {
     public async Task<RegisterScreenResponse> RegisterScreenAsync(RegisterScreenRequest request)
     {
@@ -216,6 +217,9 @@ public class ScreenManagementService(
         
         logger.LogInformation("Screen {DisplayId} updated", display.Id);
         
+        // Notify screen of updates
+        await syncService.SyncScreenAsync(display.Id);
+
         return MapToDetailsResponse(display);
     }
 
@@ -246,6 +250,9 @@ public class ScreenManagementService(
         await db.SaveChangesAsync();
         
         logger.LogInformation("Screen {DisplayId} approved (User: {UserId})", display.Id, display.UserId);
+
+        // Notify screen of approval
+        await syncService.SyncScreenAsync(display.Id);
 
         return new ApproveScreenResponse { Screen = MapToDetailsResponse(display) };
     }

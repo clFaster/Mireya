@@ -4,6 +4,7 @@ using Microsoft.Extensions.FileProviders;
 using Mireya.Api;
 using Mireya.Api.Constants;
 using Mireya.Api.Extensions;
+using Mireya.Api.Hubs;
 using Mireya.Api.Middleware;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
@@ -98,8 +99,13 @@ builder.Services.ConfigureApplicationCookie(options =>
 // Register services
 builder.Services.AddScoped<IInitializerService, InitializerService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true; // Enable detailed errors for debugging
+});
 builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
+builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>
@@ -173,6 +179,7 @@ app.MapIdentityApiAdditionalEndpoints<User>();
 // Map Controllers and Razor Pages
 app.MapControllers();
 app.MapRazorPages();
+app.MapHub<ScreenHub>("/hubs/screen");
 
 // Root page is handled by Pages/Index.cshtml (no redirect needed)
 
