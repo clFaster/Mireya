@@ -16,7 +16,7 @@ scheduled content.
 
 - **Backend (Mireya.Api)** — Admin UI + ASP.NET Core Web API: register/manage screens, upload assets, create/assign
   campaigns, monitor playback.
-- **Client (Mireya.Client / Mireya.Tv)** — Display apps that register to the backend, receive campaigns, cache assets,
+- **Client (Mireya.Client.Avalonia)** — Display apps that register to the backend, receive campaigns, cache assets,
   and loop playback. Minimal setup: only the backend URL is required on first start.
 - **Campaigns** — Ordered lists of assets (images, videos, URLs). Images/web pages use a configured display duration;
   videos use their own runtime. Assets loop; scheduling rules are planned.
@@ -45,10 +45,8 @@ scheduled content.
 
 **Requirements:**
 
-- .NET 9 SDK
-- Node.js 20+
-- (Optional) PostgreSQL
-- Git
+- .NET 10 SDK
+- sqlite or PostgreSQL
 
 ---
 
