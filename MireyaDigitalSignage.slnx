@@ -1,0 +1,14 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="src/Mireya.Api/Mireya.Api.csproj" />
+  <Project Path="src/Mireya.ApiClient.TestConsole/Mireya.ApiClient.TestConsole.csproj" />
+  <Project Path="src/Mireya.ApiClient/Mireya.ApiClient.csproj" />
+  <Project Path="src/Mireya.Client.Avalonia/Mireya.Client.Avalonia.csproj" />
+  <Project Path="src/Mireya.Database.Postgres/Mireya.Database.Postgres.csproj" />
+  <Project Path="src/Mireya.Database.Sqlite/Mireya.Database.Sqlite.csproj" />
+  <Project Path="src/Mireya.Database/Mireya.Database.csproj" />
+</Solution>
