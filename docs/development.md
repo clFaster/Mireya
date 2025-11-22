@@ -6,10 +6,8 @@ This page contains information for developers who want to contribute to Mireya o
 
 Before you begin, ensure you have the following installed:
 
-- **.NET 9.0 SDK** - Download from [Microsoft's .NET website](https://dotnet.microsoft.com/download/dotnet/9.0)
-- **Node.js 20+** - Download from [nodejs.org](https://nodejs.org/)
-- **PostgreSQL** (optional, for production-like setup) - Download from [postgresql.org](https://www.postgresql.org/download/)
-- **Git** - For cloning the repository
+- **.NET 10.0 SDK** - Download from [Microsoft's .NET website](https://dotnet.microsoft.com/download/dotnet/10.0)
+- **PostgreSQL** (optional, for production-like setup) - Download from [postgresql.org](https://www.postgresql.org/download/) or use Docker Image
 
 ## Project Structure
 
@@ -19,8 +17,8 @@ Mireya consists of several components:
 - **Mireya.Database** - Entity Framework Core database models
 - **Mireya.Database.Sqlite** - SQLite database provider (development)
 - **Mireya.Database.Postgres** - PostgreSQL database provider (production)
+- **Mireya.ApiClient** - Api Wrapper to be used in clients
 - **Mireya.Client.Avalonia** - PoC Desktop client application (Windows/macOS/Linux)
-- **Mireya.Tv** - (deprecate) React Native TV application (Android TV, Apple TV)
 
 ## Running Mireya Locally
 
@@ -100,24 +98,6 @@ cd src/Mireya.Client.Avalonia
 dotnet run
 ```
 
-### 7. Run the TV Client (Optional)
-
-For Android TV development:
-
-```bash
-cd src/Mireya.Tv
-npm install
-npm run android
-```
-
-For iOS/tvOS development (macOS only):
-
-```bash
-cd src/Mireya.Tv
-npm install
-npm run ios
-```
-
 ## Development Workflow
 
 ### Making API Changes
@@ -150,23 +130,6 @@ The admin interface uses ASP.NET Core Razor Pages with Tailwind CSS. Files are l
 - Views: `src/Mireya.Client.Avalonia/Views/`
 - Services: `src/Mireya.Client.Avalonia/Services/`
 
-#### React Native TV Client
-
-- Main app: `src/Mireya.Tv/App.tsx`
-- Components: `src/Mireya.Tv/src/components/`
-- Screens: `src/Mireya.Tv/src/screens/`
-
-### API Client Generation
-
-If you modify API endpoints, regenerate the TypeScript client:
-
-```bash
-cd src/Mireya.Tv
-npm run generate:api
-```
-
-This uses NSwag to generate `src/lib/api/generated/client.ts` from the API's OpenAPI specification.
-
 ## Building for Production
 
 ### API
@@ -183,15 +146,6 @@ cd src/Mireya.Client.Avalonia
 dotnet publish -c Release -r win-x64 -o ./publish
 ```
 
-### React Native
-
-```bash
-cd src/Mireya.Tv
-npm run android -- --mode=release
-# or
-npm run ios -- --mode=release
-```
-
 ## Troubleshooting
 
 ### Common Issues
@@ -199,7 +153,6 @@ npm run ios -- --mode=release
 1. **Database connection errors**: Ensure your connection string is correct and the database exists
 2. **Migration errors**: Make sure you're using the correct database provider project
 3. **Admin login fails**: Check that the database is seeded with the default admin user
-4. **React Native build fails**: Ensure Android SDK/iOS development environment is properly configured
 
 ### Getting Help
 
