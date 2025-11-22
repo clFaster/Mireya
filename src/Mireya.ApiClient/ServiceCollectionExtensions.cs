@@ -1,6 +1,4 @@
-﻿using System.Net;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Options;
