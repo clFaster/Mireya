@@ -18,6 +18,7 @@ Mireya consists of two main components:
    - Monitor screen status and playback activity
 
    ![Mireya Admin Dashboard](img/mireya-admin-dashboard.png)
+
 2. **Mireya Client (Display App)** – A lightweight application designed to run on display devices such as Android TVs (and later Raspberry Pi or other embedded devices).
    - On first startup, the client only needs the Mireya backend URL
    - The screen automatically registers itself with the backend
