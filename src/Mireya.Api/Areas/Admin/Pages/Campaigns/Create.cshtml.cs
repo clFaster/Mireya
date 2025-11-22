@@ -68,7 +68,7 @@ public class CreateModel(MireyaDbContext context, ICampaignService campaignServi
                     index + 1, // Position is 1-based
                     a.DurationSeconds
                 )).ToList(),
-                new List<Guid>() // Empty display list - displays are assigned from the screen edit page
+                [] // Empty display list - displays are assigned from the screen edit page
             );
 
             await campaignService.CreateCampaignAsync(request);

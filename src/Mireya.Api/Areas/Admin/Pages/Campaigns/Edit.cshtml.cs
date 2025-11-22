@@ -102,7 +102,7 @@ public class EditModel(MireyaDbContext context, ICampaignService campaignService
                     index + 1, // Position is 1-based
                     a.DurationSeconds
                 )).ToList(),
-                new List<Guid>() // Empty display list - displays are assigned from the screen edit page
+                [] // Empty display list - displays are assigned from the screen edit page
             );
 
             await campaignService.UpdateCampaignAsync(Id, request);
