@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Mireya.Api.Constants;
+using Mireya.Api.Services;
 using Mireya.Api.Services.ScreenManagement;
 using Mireya.Database.Models;
 
@@ -8,7 +9,9 @@ namespace Mireya.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ScreenManagementController(IScreenManagementService screenManagementService) : ControllerBase
+public class ScreenManagementController(
+    IScreenManagementService screenManagementService,
+    IScreenConnectionTracker connectionTracker) : ControllerBase
 {
     /// <summary>
     /// Anonymous endpoint for a screen to register itself the first time it connects
@@ -66,7 +69,7 @@ public class ScreenManagementController(IScreenManagementService screenManagemen
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10, max: 100)</param>
     /// <param name="status">Filter by approval status</param>
-    /// <param name="sortBy">Sort by field (name, location, status, lastseen, default: created date)</param>
+    /// <param name="sortBy">Sort by field (name, location, status, last-seen, default: created date)</param>
     /// <returns>Paginated list of screens</returns>
     [HttpGet]
     [Authorize(Roles = Roles.Admin)]
@@ -186,5 +189,17 @@ public class ScreenManagementController(IScreenManagementService screenManagemen
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Get the count of currently online screens connected via SignalR
+    /// </summary>
+    /// <returns>Online screen count</returns>
+    [HttpGet("online/count")]
+    [Authorize(Roles = Roles.Admin)]
+    public ActionResult<int> GetOnlineScreenCount()
+    {
+        var count = connectionTracker.GetOnlineScreenCount();
+        return Ok(count);
     }
 }

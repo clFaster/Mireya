@@ -103,6 +103,7 @@ builder.Services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true; // Enable detailed errors for debugging
 });
+builder.Services.AddSingleton<IScreenConnectionTracker, ScreenConnectionTracker>();
 builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
