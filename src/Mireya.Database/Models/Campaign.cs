@@ -22,6 +22,6 @@ public class Campaign
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    public ICollection<CampaignAsset> CampaignAssets { get; set; } = new List<CampaignAsset>();
-    public ICollection<CampaignAssignment> CampaignAssignments { get; set; } = new List<CampaignAssignment>();
+    public ICollection<CampaignAsset> CampaignAssets { get; set; } = [];
+    public ICollection<CampaignAssignment> CampaignAssignments { get; set; } = [];
 }

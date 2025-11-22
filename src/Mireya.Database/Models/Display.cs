@@ -64,5 +64,5 @@ public class Display
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    public ICollection<CampaignAssignment> CampaignAssignments { get; set; } = new List<CampaignAssignment>();
+    public ICollection<CampaignAssignment> CampaignAssignments { get; set; } = [];
 }
