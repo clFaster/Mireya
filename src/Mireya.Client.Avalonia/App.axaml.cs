@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Options;
+using Mireya.ApiClient.Services;
 using Mireya.Client.Avalonia.Services;
 using Mireya.Client.Avalonia.ViewModels;
 using Mireya.Client.Avalonia.Views;
@@ -85,6 +86,9 @@ public partial class App : Application
             var httpClient = httpClientFactory.CreateClient("MireyaApiClient");
             return new MireyaApiClient(options.Value.BaseUrl, httpClient);
         });
+        
+        // Register SignalR Hub Service
+        services.AddSingleton<IScreenHubService, ScreenHubService>();
         
         // Register ViewModels
         services.AddTransient<MainWindowViewModel>();
