@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Mireya.Database;
 using Mireya.Database.Models;
+using Xabe.FFmpeg;
 
 namespace Mireya.Api.Services.Asset;
 
@@ -84,12 +85,29 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
                 await file.CopyToAsync(stream);
             }
 
+            int? videoDurationSeconds = null;
+            if (isVideo)
+            {
+                try
+                {
+                    var mediaInfo = await FFmpeg.GetMediaInfo(filePath);
+                    var duration = mediaInfo.Duration;
+                    videoDurationSeconds = (int)Math.Round(duration.TotalSeconds);
+                }
+                catch
+                {
+                    // Log but don't fail upload if duration extraction fails
+                    errors.Add($"{file.FileName}: Could not extract duration (will use default)");
+                }
+            }
+
             var asset = new Database.Models.Asset
             {
                 Name = Path.GetFileNameWithoutExtension(file.FileName),
                 Type = isImage ? AssetType.Image : AssetType.Video,
                 Source = $"/uploads/{fileName}",
                 FileSizeBytes = file.Length,
+                DurationSeconds = videoDurationSeconds,
             };
             assets.Add(asset);
         }
@@ -201,6 +219,13 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
 
         if (request.Description != null)
             asset.Description = request.Description;
+
+        if (request.DurationSeconds.HasValue)
+            asset.DurationSeconds =
+                request.DurationSeconds.Value > 0 ? request.DurationSeconds.Value : null;
+
+        if (request.IsMuted.HasValue)
+            asset.IsMuted = request.IsMuted.Value;
 
         asset.UpdatedAt = DateTime.UtcNow;
 

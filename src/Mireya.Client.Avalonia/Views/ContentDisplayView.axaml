@@ -25,7 +25,8 @@
                                       IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Image}}" />
 
         <!-- Video display -->
-        <components:VideoAssetDisplay Grid.Row="0"
+        <components:VideoAssetDisplay x:Name="VideoDisplay"
+                                      Grid.Row="0"
                                       DataContext="{Binding}"
                                       IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Video}}" />
 

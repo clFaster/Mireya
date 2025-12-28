@@ -15,7 +15,7 @@ namespace Mireya.Client.Avalonia.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
 
             modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendAsset", b =>
                 {
@@ -162,6 +162,9 @@ namespace Mireya.Client.Avalonia.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsMuted")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

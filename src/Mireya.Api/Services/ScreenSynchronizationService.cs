@@ -66,7 +66,8 @@ public class ScreenSynchronizationService(
                         a.Asset.Source,
                         a.Position,
                         a.DurationSeconds,
-                        ResolveAssetDuration(a.Asset, a.DurationSeconds)
+                        ResolveAssetDuration(a.Asset, a.DurationSeconds),
+                        a.Asset.IsMuted
                     ))
                     .ToList(),
                 [], // Displays list not needed for screen client
