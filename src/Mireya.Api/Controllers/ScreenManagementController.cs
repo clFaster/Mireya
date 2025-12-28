@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Mireya.Api.Constants;
 using Mireya.Api.Services;
@@ -11,16 +12,19 @@ namespace Mireya.Api.Controllers;
 [Route("api/[controller]")]
 public class ScreenManagementController(
     IScreenManagementService screenManagementService,
-    IScreenConnectionTracker connectionTracker) : ControllerBase
+    IScreenConnectionTracker connectionTracker
+) : ControllerBase
 {
     /// <summary>
-    /// Anonymous endpoint for a screen to register itself the first time it connects
+    ///     Anonymous endpoint for a screen to register itself the first time it connects
     /// </summary>
     /// <param name="request">Registration request containing device information</param>
     /// <returns>Unique token for the screen to use for authentication</returns>
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<ActionResult<RegisterScreenResponse>> RegisterScreen([FromBody] RegisterScreenRequest request)
+    public async Task<ActionResult<RegisterScreenResponse>> RegisterScreen(
+        [FromBody] RegisterScreenRequest request
+    )
     {
         try
         {
@@ -34,7 +38,7 @@ public class ScreenManagementController(
     }
 
     /// <summary>
-    /// Bonjour endpoint for authenticated screens to fetch their data
+    ///     Bonjour endpoint for authenticated screens to fetch their data
     /// </summary>
     /// <returns>Screen details for the authenticated user</returns>
     [HttpGet("bonjour")]
@@ -43,13 +47,11 @@ public class ScreenManagementController(
     {
         try
         {
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             if (string.IsNullOrEmpty(userId))
-            {
                 return Unauthorized(new { error = "User ID not found in claims" });
-            }
-            
+
             var response = await screenManagementService.GetBonjourAsync(userId);
             return Ok(response);
         }
@@ -64,7 +66,7 @@ public class ScreenManagementController(
     }
 
     /// <summary>
-    /// Get a paginated list of all registered screens
+    ///     Get a paginated list of all registered screens
     /// </summary>
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10, max: 100)</param>
@@ -77,11 +79,17 @@ public class ScreenManagementController(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] ApprovalStatus? status = null,
-        [FromQuery] string? sortBy = null)
+        [FromQuery] string? sortBy = null
+    )
     {
         try
         {
-            var response = await screenManagementService.GetScreensAsync(page, pageSize, status, sortBy);
+            var response = await screenManagementService.GetScreensAsync(
+                page,
+                pageSize,
+                status,
+                sortBy
+            );
             return Ok(response);
         }
         catch (Exception ex)
@@ -91,7 +99,7 @@ public class ScreenManagementController(
     }
 
     /// <summary>
-    /// Get details of a specific screen by ID
+    ///     Get details of a specific screen by ID
     /// </summary>
     /// <param name="id">Screen ID</param>
     /// <returns>Screen details</returns>
@@ -115,14 +123,17 @@ public class ScreenManagementController(
     }
 
     /// <summary>
-    /// Update screen details (name, location, description)
+    ///     Update screen details (name, location, description)
     /// </summary>
     /// <param name="id">Screen ID</param>
     /// <param name="request">Update request with new values</param>
     /// <returns>Updated screen details</returns>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = Roles.Admin)]
-    public async Task<ActionResult<ScreenDetailsResponse>> UpdateScreen(Guid id, [FromBody] UpdateScreenRequest request)
+    public async Task<ActionResult<ScreenDetailsResponse>> UpdateScreen(
+        Guid id,
+        [FromBody] UpdateScreenRequest request
+    )
     {
         try
         {
@@ -140,7 +151,7 @@ public class ScreenManagementController(
     }
 
     /// <summary>
-    /// Approve a screen registration and create a user account for it
+    ///     Approve a screen registration and create a user account for it
     /// </summary>
     /// <param name="id">Screen ID</param>
     /// <returns>Updated screen details with approval status</returns>
@@ -168,7 +179,7 @@ public class ScreenManagementController(
     }
 
     /// <summary>
-    /// Reject a screen registration
+    ///     Reject a screen registration
     /// </summary>
     /// <param name="id">Screen ID</param>
     /// <returns>Updated screen details with rejection status</returns>
@@ -192,7 +203,7 @@ public class ScreenManagementController(
     }
 
     /// <summary>
-    /// Get the count of currently online screens connected via SignalR
+    ///     Get the count of currently online screens connected via SignalR
     /// </summary>
     /// <returns>Online screen count</returns>
     [HttpGet("online/count")]

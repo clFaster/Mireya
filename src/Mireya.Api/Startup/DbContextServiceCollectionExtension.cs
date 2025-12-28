@@ -14,12 +14,14 @@ public static class DbContextServiceCollectionExtension
                 options.UseSqlite(
                     config.GetConnectionString(Provider.Sqlite.Name)!,
                     x => x.MigrationsAssembly(Provider.Sqlite.Assembly)
-                ));
+                )
+            );
         else if (provider == Provider.Postgres.Name)
             services.AddDbContext<MireyaDbContext>(options =>
                 options.UseNpgsql(
                     config.GetConnectionString(Provider.Postgres.Name)!,
                     x => x.MigrationsAssembly(Provider.Postgres.Assembly)
-                ));
+                )
+            );
     }
 }

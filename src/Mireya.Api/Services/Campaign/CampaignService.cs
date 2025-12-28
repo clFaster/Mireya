@@ -14,41 +14,42 @@ public interface ICampaignService
     Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId);
 }
 
-public class CampaignService(MireyaDbContext db, IScreenSynchronizationService syncService) : ICampaignService
+public class CampaignService(MireyaDbContext db, IScreenSynchronizationService syncService)
+    : ICampaignService
 {
     private const int DefaultDurationSeconds = 10;
 
     public async Task<List<CampaignSummary>> GetCampaignsAsync(Guid? displayId = null)
     {
-        var query = db.Campaigns
-            .Include(c => c.CampaignAssets)
+        var query = db
+            .Campaigns.Include(c => c.CampaignAssets)
             .Include(c => c.CampaignAssignments)
             .AsQueryable();
 
         if (displayId.HasValue)
-        {
-            query = query.Where(c => c.CampaignAssignments.Any(ca => ca.DisplayId == displayId.Value));
-        }
+            query = query.Where(c =>
+                c.CampaignAssignments.Any(ca => ca.DisplayId == displayId.Value)
+            );
 
-        var campaigns = await query
-            .OrderByDescending(c => c.UpdatedAt)
-            .ToListAsync();
+        var campaigns = await query.OrderByDescending(c => c.UpdatedAt).ToListAsync();
 
-        return campaigns.Select(c => new CampaignSummary(
-            c.Id,
-            c.Name,
-            c.Description,
-            c.CampaignAssets.Count,
-            c.CampaignAssignments.Count,
-            c.CreatedAt,
-            c.UpdatedAt
-        )).ToList();
+        return campaigns
+            .Select(c => new CampaignSummary(
+                c.Id,
+                c.Name,
+                c.Description,
+                c.CampaignAssets.Count,
+                c.CampaignAssignments.Count,
+                c.CreatedAt,
+                c.UpdatedAt
+            ))
+            .ToList();
     }
 
     public async Task<CampaignDetail> GetCampaignAsync(Guid id)
     {
-        var campaign = await db.Campaigns
-            .Include(c => c.CampaignAssets)
+        var campaign = await db
+            .Campaigns.Include(c => c.CampaignAssets)
                 .ThenInclude(ca => ca.Asset)
             .Include(c => c.CampaignAssignments)
                 .ThenInclude(ca => ca.Display)
@@ -57,8 +58,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
-        var assets = campaign.CampaignAssets
-            .OrderBy(ca => ca.Position)
+        var assets = campaign
+            .CampaignAssets.OrderBy(ca => ca.Position)
             .Select(ca => new CampaignAssetDetail(
                 ca.Id,
                 ca.AssetId,
@@ -71,8 +72,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             ))
             .ToList();
 
-        var displays = campaign.CampaignAssignments
-            .Select(ca => new DisplayInfo(
+        var displays = campaign
+            .CampaignAssignments.Select(ca => new DisplayInfo(
                 ca.Display.Id,
                 ca.Display.Name,
                 ca.Display.Location
@@ -107,21 +108,21 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         if (assetIds.Count != request.Assets.Count)
             throw new ArgumentException("Duplicate assets are not allowed in a campaign");
 
-        var existingAssets = await db.Assets
-            .Where(a => assetIds.Contains(a.Id))
-            .ToListAsync();
+        var existingAssets = await db.Assets.Where(a => assetIds.Contains(a.Id)).ToListAsync();
 
         if (existingAssets.Count != assetIds.Count)
         {
             var missingIds = assetIds.Except(existingAssets.Select(a => a.Id)).ToList();
-            throw new ArgumentException($"One or more assets do not exist. Missing asset IDs: {string.Join(", ", missingIds)}");
+            throw new ArgumentException(
+                $"One or more assets do not exist. Missing asset IDs: {string.Join(", ", missingIds)}"
+            );
         }
 
         // Verify displays exist
         if (request.DisplayIds.Any())
         {
-            var existingDisplays = await db.Displays
-                .Where(d => request.DisplayIds.Contains(d.Id))
+            var existingDisplays = await db
+                .Displays.Where(d => request.DisplayIds.Contains(d.Id))
                 .CountAsync();
 
             if (existingDisplays != request.DisplayIds.Distinct().Count())
@@ -134,7 +135,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             Name = request.Name,
             Description = request.Description,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
         };
 
         db.Campaigns.Add(campaign);
@@ -147,7 +148,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 CampaignId = campaign.Id,
                 AssetId = assetDto.AssetId,
                 Position = assetDto.Position,
-                DurationSeconds = assetDto.DurationSeconds
+                DurationSeconds = assetDto.DurationSeconds,
             };
             db.CampaignAssets.Add(campaignAsset);
         }
@@ -158,7 +159,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             var campaignAssignment = new CampaignAssignment
             {
                 CampaignId = campaign.Id,
-                DisplayId = displayId
+                DisplayId = displayId,
             };
             db.CampaignAssignments.Add(campaignAssignment);
         }
@@ -183,8 +184,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         if (request.Assets.Any(a => a.DurationSeconds.HasValue && a.DurationSeconds.Value <= 0))
             throw new ArgumentException("Duration must be positive if provided");
 
-        var campaign = await db.Campaigns
-            .Include(c => c.CampaignAssets)
+        var campaign = await db
+            .Campaigns.Include(c => c.CampaignAssets)
             .Include(c => c.CampaignAssignments)
             .FirstOrDefaultAsync(c => c.Id == id);
 
@@ -198,21 +199,21 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         if (assetIds.Count != request.Assets.Count)
             throw new ArgumentException("Duplicate assets are not allowed in a campaign");
 
-        var existingAssets = await db.Assets
-            .Where(a => assetIds.Contains(a.Id))
-            .ToListAsync();
+        var existingAssets = await db.Assets.Where(a => assetIds.Contains(a.Id)).ToListAsync();
 
         if (existingAssets.Count != assetIds.Count)
         {
             var missingIds = assetIds.Except(existingAssets.Select(a => a.Id)).ToList();
-            throw new ArgumentException($"One or more assets do not exist. Missing asset IDs: {string.Join(", ", missingIds)}");
+            throw new ArgumentException(
+                $"One or more assets do not exist. Missing asset IDs: {string.Join(", ", missingIds)}"
+            );
         }
 
         // Verify displays exist
         if (request.DisplayIds.Any())
         {
-            var existingDisplays = await db.Displays
-                .Where(d => request.DisplayIds.Contains(d.Id))
+            var existingDisplays = await db
+                .Displays.Where(d => request.DisplayIds.Contains(d.Id))
                 .CountAsync();
 
             if (existingDisplays != request.DisplayIds.Distinct().Count())
@@ -233,7 +234,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 CampaignId = campaign.Id,
                 AssetId = assetDto.AssetId,
                 Position = assetDto.Position,
-                DurationSeconds = assetDto.DurationSeconds
+                DurationSeconds = assetDto.DurationSeconds,
             };
             db.CampaignAssets.Add(campaignAsset);
         }
@@ -245,7 +246,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             var campaignAssignment = new CampaignAssignment
             {
                 CampaignId = campaign.Id,
-                DisplayId = displayId
+                DisplayId = displayId,
             };
             db.CampaignAssignments.Add(campaignAssignment);
         }
@@ -253,7 +254,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         await db.SaveChangesAsync();
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
-        
+
         // Notify all affected displays (both new and removed)
         var allAffectedDisplayIds = oldDisplayIds.Union(request.DisplayIds).ToList();
         await syncService.SyncScreensAsync(allAffectedDisplayIds);
@@ -273,8 +274,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
     public async Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId)
     {
-        return await db.CampaignAssets
-            .Where(ca => ca.AssetId == assetId)
+        return await db
+            .CampaignAssets.Where(ca => ca.AssetId == assetId)
             .Select(ca => ca.CampaignId)
             .Distinct()
             .ToListAsync();

@@ -17,7 +17,7 @@ namespace Mireya.Database.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -194,6 +194,48 @@ namespace Mireya.Database.Postgres.Migrations
                     b.HasIndex("Type");
 
                     b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.AssetSyncStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DisplayId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SyncState")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("DisplayId");
+
+                    b.HasIndex("SyncState");
+
+                    b.HasIndex("DisplayId", "AssetId")
+                        .IsUnique();
+
+                    b.ToTable("AssetSyncStatuses");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.Campaign", b =>
@@ -466,6 +508,25 @@ namespace Mireya.Database.Postgres.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.AssetSyncStatus", b =>
+                {
+                    b.HasOne("Mireya.Database.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Mireya.Database.Models.Display", "Display")
+                        .WithMany()
+                        .HasForeignKey("DisplayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("Display");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.CampaignAsset", b =>

@@ -1,22 +1,22 @@
 ﻿namespace Mireya.Api.Services.ScreenManagement;
 
 /// <summary>
-/// Request payload for updating screen details
+///     Request payload for updating screen details
 /// </summary>
 public class UpdateScreenRequest
 {
     /// <summary>
-    /// Screen name
+    ///     Screen name
     /// </summary>
     public string? Name { get; set; }
-    
+
     /// <summary>
-    /// Screen description
+    ///     Screen description
     /// </summary>
     public string? Description { get; set; }
-    
+
     /// <summary>
-    /// Screen location
+    ///     Screen location
     /// </summary>
     public string? Location { get; set; }
 }

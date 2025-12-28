@@ -10,17 +10,19 @@ public interface IAssetService
     Task<AssetSummary> CreateWebsiteAssetAsync(string url, string name, string? description);
     Task<PagedAssets> GetAssetsAsync(int page, int pageSize, AssetType? type, string sortBy);
     Task DeleteAssetAsync(Guid id);
-    Task<Database.Models.Asset> UpdateAssetMetadataAsync(Guid id, UpdateAssetMetadataRequest request);
+    Task<Database.Models.Asset> UpdateAssetMetadataAsync(
+        Guid id,
+        UpdateAssetMetadataRequest request
+    );
 }
 
 public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetService
 {
-    private readonly string _uploadsFolder = Path.Combine(env.ContentRootPath, "uploads");
-    private static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-    private static readonly string[] VideoExtensions = [".mp4", ".webm", ".avi", ".mov"];
-    
     private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
     private const long MaxVideoSizeBytes = 100 * 1024 * 1024; // 100 MB
+    private static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    private static readonly string[] VideoExtensions = [".mp4", ".webm", ".avi", ".mov"];
+    private readonly string _uploadsFolder = Path.Combine(env.ContentRootPath, "uploads");
 
     public async Task<List<AssetSummary>> UploadAssetsAsync(List<IFormFile> files)
     {
@@ -31,15 +33,16 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
 
         var assets = new List<Database.Models.Asset>();
         var errors = new List<string>();
-        
+
         foreach (var file in files)
         {
-            if (file.Length == 0) continue;
+            if (file.Length == 0)
+                continue;
 
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             var isImage = ImageExtensions.Contains(extension);
             var isVideo = VideoExtensions.Contains(extension);
-            
+
             if (!isImage && !isVideo)
             {
                 errors.Add($"{file.FileName}: Unsupported file type");
@@ -52,7 +55,7 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
                 errors.Add($"{file.FileName}: Image exceeds maximum size of 10 MB");
                 continue;
             }
-            
+
             if (isVideo && file.Length > MaxVideoSizeBytes)
             {
                 errors.Add($"{file.FileName}: Video exceeds maximum size of 100 MB");
@@ -66,7 +69,7 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
                 errors.Add($"{file.FileName}: Invalid image file (MIME type mismatch)");
                 continue;
             }
-            
+
             if (isVideo && !contentType.StartsWith("video/"))
             {
                 errors.Add($"{file.FileName}: Invalid video file (MIME type mismatch)");
@@ -86,15 +89,15 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
                 Name = Path.GetFileNameWithoutExtension(file.FileName),
                 Type = isImage ? AssetType.Image : AssetType.Video,
                 Source = $"/uploads/{fileName}",
-                FileSizeBytes = file.Length
+                FileSizeBytes = file.Length,
             };
             assets.Add(asset);
         }
 
         if (assets.Count == 0)
         {
-            var errorMessage = errors.Any() 
-                ? $"No valid files uploaded. Errors: {string.Join("; ", errors)}" 
+            var errorMessage = errors.Any()
+                ? $"No valid files uploaded. Errors: {string.Join("; ", errors)}"
                 : "No valid image or video files provided";
             throw new ArgumentException(errorMessage);
         }
@@ -102,13 +105,27 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
         db.Assets.AddRange(assets);
         await db.SaveChangesAsync();
 
-        return assets.Select(a => new AssetSummary { Id = a.Id, Name = a.Name, Source = a.Source }).ToList();
+        return assets
+            .Select(a => new AssetSummary
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Source = a.Source,
+            })
+            .ToList();
     }
 
-    public async Task<PagedAssets> GetAssetsAsync(int page, int pageSize, AssetType? type, string sortBy)
+    public async Task<PagedAssets> GetAssetsAsync(
+        int page,
+        int pageSize,
+        AssetType? type,
+        string sortBy
+    )
     {
-        if (page < 1) page = 1;
-        if (pageSize is < 1 or > 100) pageSize = 10;
+        if (page < 1)
+            page = 1;
+        if (pageSize is < 1 or > 100)
+            pageSize = 10;
 
         var query = db.Assets.AsQueryable();
 
@@ -118,13 +135,19 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
         query = sortBy.ToLower() switch
         {
             "date" => query.OrderByDescending(a => a.CreatedAt),
-            _ => query.OrderBy(a => a.Name)
+            _ => query.OrderBy(a => a.Name),
         };
 
         var total = await query.CountAsync();
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        return new PagedAssets { Total = total, Page = page, PageSize = pageSize, Items = items };
+        return new PagedAssets
+        {
+            Total = total,
+            Page = page,
+            PageSize = pageSize,
+            Items = items,
+        };
     }
 
     public async Task DeleteAssetAsync(Guid id)
@@ -134,8 +157,8 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
             throw new KeyNotFoundException("Asset not found");
 
         // Check if asset is used in any campaigns
-        var campaignsUsingAsset = await db.CampaignAssets
-            .Where(ca => ca.AssetId == id)
+        var campaignsUsingAsset = await db
+            .CampaignAssets.Where(ca => ca.AssetId == id)
             .Include(ca => ca.Campaign)
             .Select(ca => ca.Campaign.Name)
             .Distinct()
@@ -145,21 +168,27 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
         {
             var campaignList = string.Join(", ", campaignsUsingAsset);
             throw new InvalidOperationException(
-                $"Cannot delete asset. It is used in the following campaigns: {campaignList}");
+                $"Cannot delete asset. It is used in the following campaigns: {campaignList}"
+            );
         }
 
         // Delete the file if it exists
         var filePath = Path.Combine(_uploadsFolder, asset.Source["/uploads/".Length..]);
-        if (!string.IsNullOrEmpty(filePath) && asset.Source.StartsWith("/uploads/") && File.Exists(filePath))
-        {
+        if (
+            !string.IsNullOrEmpty(filePath)
+            && asset.Source.StartsWith("/uploads/")
+            && File.Exists(filePath)
+        )
             File.Delete(filePath);
-        }
 
         db.Assets.Remove(asset);
         await db.SaveChangesAsync();
     }
 
-    public async Task<Database.Models.Asset> UpdateAssetMetadataAsync(Guid id, UpdateAssetMetadataRequest request)
+    public async Task<Database.Models.Asset> UpdateAssetMetadataAsync(
+        Guid id,
+        UpdateAssetMetadataRequest request
+    )
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -179,7 +208,12 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
 
         return asset;
     }
-    public async Task<AssetSummary> CreateWebsiteAssetAsync(string url, string name, string? description)
+
+    public async Task<AssetSummary> CreateWebsiteAssetAsync(
+        string url,
+        string name,
+        string? description
+    )
     {
         if (string.IsNullOrWhiteSpace(url))
             throw new ArgumentException("URL is required", nameof(url));
@@ -200,14 +234,17 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
             throw new ArgumentException("Name cannot exceed 200 characters", nameof(name));
 
         if (description is { Length: > 1000 })
-            throw new ArgumentException("Description cannot exceed 1000 characters", nameof(description));
+            throw new ArgumentException(
+                "Description cannot exceed 1000 characters",
+                nameof(description)
+            );
 
         var asset = new Database.Models.Asset
         {
             Name = name,
             Description = description,
             Type = AssetType.Website,
-            Source = url
+            Source = url,
         };
 
         db.Assets.Add(asset);
@@ -217,7 +254,7 @@ public class AssetService(MireyaDbContext db, IWebHostEnvironment env) : IAssetS
         {
             Id = asset.Id,
             Name = asset.Name,
-            Source = asset.Source
+            Source = asset.Source,
         };
     }
 }

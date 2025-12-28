@@ -11,7 +11,8 @@
             <h1 class="text-3xl font-bold text-gray-900">Pending & Rejected Screens</h1>
             <p class="text-gray-600 mt-1">Review and manage screens awaiting approval</p>
         </div>
-        <a href="/Admin/Screens" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+        <a href="/Admin/Screens"
+           class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
             ← Back to Approved Screens
         </a>
     </div>
@@ -21,18 +22,21 @@
         <form method="get" class="flex flex-wrap gap-4 items-end">
             <div class="flex-1 min-w-[200px]">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select id="status" name="statusFilter" asp-for="StatusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select id="status" name="statusFilter" asp-for="StatusFilter"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Non-Approved (@(Model.PendingCount + Model.RejectedCount))</option>
                     <option value="Pending">Pending Only (@Model.PendingCount)</option>
                     <option value="Rejected">Rejected Only (@Model.RejectedCount)</option>
                 </select>
             </div>
-            
+
             <div class="flex gap-2">
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                     Apply Filter
                 </button>
-                <a href="/Admin/Screens/Pending" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+                <a href="/Admin/Screens/Pending"
+                   class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
                     Clear
                 </a>
             </div>
@@ -45,98 +49,109 @@
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Screen Name
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Location
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Approval State
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Registered
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
+                <tr>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Screen Name
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Approval State
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Registered
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach (var screen in Model.Screens)
-                    {
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">@screen.Name</div>
-                                <div class="text-sm text-gray-500">@screen.ScreenIdentifier</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">@screen.Location</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @{
-                                    var statusClass = screen.ApprovalStatus switch
-                                    {
-                                        ApprovalStatus.Pending => "bg-yellow-100 text-yellow-800",
-                                        ApprovalStatus.Rejected => "bg-red-100 text-red-800",
-                                        _ => "bg-gray-100 text-gray-800"
-                                    };
-                                }
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @statusClass">
+                @foreach (var screen in Model.Screens)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">@screen.Name</div>
+                            <div class="text-sm text-gray-500">@screen.ScreenIdentifier</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">@screen.Location</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @{
+                                var statusClass = screen.ApprovalStatus switch
+                                {
+                                    ApprovalStatus.Pending => "bg-yellow-100 text-yellow-800",
+                                    ApprovalStatus.Rejected => "bg-red-100 text-red-800",
+                                    _ => "bg-gray-100 text-gray-800"
+                                };
+                            }
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @statusClass">
                                     @screen.ApprovalStatus
                                 </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                @screen.CreatedAt.ToString("g")
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                <a href="/Admin/Screens/Details?id=@screen.Id" class="text-blue-600 hover:text-blue-900">
-                                    View
-                                </a>
-                                <a href="/Admin/Screens/Edit?id=@screen.Id" class="text-blue-600 hover:text-blue-900">
-                                    Edit
-                                </a>
-                                @if (screen.ApprovalStatus == ApprovalStatus.Pending)
-                                {
-                                    <form method="post" asp-page-handler="Approve" asp-route-id="@screen.Id" class="inline">
-                                        <button type="submit" class="text-green-600 hover:text-green-900 font-medium" onclick="return confirm('Approve this screen?')">
-                                            Approve
-                                        </button>
-                                    </form>
-                                    <form method="post" asp-page-handler="Reject" asp-route-id="@screen.Id" class="inline">
-                                        <button type="submit" class="text-red-600 hover:text-red-900 font-medium" onclick="return confirm('Reject this screen?')">
-                                            Reject
-                                        </button>
-                                    </form>
-                                }
-                                @if (screen.ApprovalStatus == ApprovalStatus.Rejected)
-                                {
-                                    <form method="post" asp-page-handler="Approve" asp-route-id="@screen.Id" class="inline">
-                                        <button type="submit" class="text-green-600 hover:text-green-900 font-medium" onclick="return confirm('Approve this screen?')">
-                                            Re-approve
-                                        </button>
-                                    </form>
-                                }
-                            </td>
-                        </tr>
-                    }
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @screen.CreatedAt.ToString("g")
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                            <a href="/Admin/Screens/Details?id=@screen.Id" class="text-blue-600 hover:text-blue-900">
+                                View
+                            </a>
+                            <a href="/Admin/Screens/Edit?id=@screen.Id" class="text-blue-600 hover:text-blue-900">
+                                Edit
+                            </a>
+                            @if (screen.ApprovalStatus == ApprovalStatus.Pending)
+                            {
+                                <form method="post" asp-page-handler="Approve" asp-route-id="@screen.Id" class="inline">
+                                    <button type="submit" class="text-green-600 hover:text-green-900 font-medium"
+                                            onclick="return confirm('Approve this screen?')">
+                                        Approve
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="Reject" asp-route-id="@screen.Id" class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-900 font-medium"
+                                            onclick="return confirm('Reject this screen?')">
+                                        Reject
+                                    </button>
+                                </form>
+                            }
+                            @if (screen.ApprovalStatus == ApprovalStatus.Rejected)
+                            {
+                                <form method="post" asp-page-handler="Approve" asp-route-id="@screen.Id" class="inline">
+                                    <button type="submit" class="text-green-600 hover:text-green-900 font-medium"
+                                            onclick="return confirm('Approve this screen?')">
+                                        Re-approve
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>
 
         <!-- Pagination Info -->
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+        <div
+            class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
             <div class="flex-1 flex justify-between sm:hidden">
                 @if (Model.CurrentPage > 1)
                 {
-                    <a href="?page=@(Model.CurrentPage - 1)&statusFilter=@Model.StatusFilter" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <a href="?page=@(Model.CurrentPage - 1)&statusFilter=@Model.StatusFilter"
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         Previous
                     </a>
                 }
                 @if (Model.CurrentPage < Model.TotalPages)
                 {
-                    <a href="?page=@(Model.CurrentPage + 1)&statusFilter=@Model.StatusFilter" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <a href="?page=@(Model.CurrentPage + 1)&statusFilter=@Model.StatusFilter"
+                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         Next
                     </a>
                 }
@@ -147,7 +162,8 @@
                         Showing
                         <span class="font-medium">@((Model.CurrentPage - 1) * Model.PageSize + 1)</span>
                         to
-                        <span class="font-medium">@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalScreens)</span>
+                        <span
+                            class="font-medium">@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalScreens)</span>
                         of
                         <span class="font-medium">@Model.TotalScreens</span>
                         results
@@ -157,22 +173,24 @@
                     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                         @if (Model.CurrentPage > 1)
                         {
-                            <a href="?page=@(Model.CurrentPage - 1)&statusFilter=@Model.StatusFilter" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <a href="?page=@(Model.CurrentPage - 1)&statusFilter=@Model.StatusFilter"
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 Previous
                             </a>
                         }
-                        
-                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+
+                        @for (var i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
                         {
-                            <a href="?page=@i&statusFilter=@Model.StatusFilter" 
+                            <a href="?page=@i&statusFilter=@Model.StatusFilter"
                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium @(i == Model.CurrentPage ? "bg-blue-50 border-blue-500 text-blue-600 z-10" : "bg-white text-gray-700 hover:bg-gray-50")">
                                 @i
                             </a>
                         }
-                        
+
                         @if (Model.CurrentPage < Model.TotalPages)
                         {
-                            <a href="?page=@(Model.CurrentPage + 1)&statusFilter=@Model.StatusFilter" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <a href="?page=@(Model.CurrentPage + 1)&statusFilter=@Model.StatusFilter"
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 Next
                             </a>
                         }
@@ -185,7 +203,8 @@
     {
         <div class="bg-white shadow rounded-lg p-12 text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">No pending or rejected screens</h3>
             <p class="mt-1 text-sm text-gray-500">All screens have been reviewed.</p>

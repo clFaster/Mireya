@@ -1,7 +1,7 @@
 ﻿namespace Mireya.Api.Services.ScreenManagement;
 
 /// <summary>
-/// Response payload for screen details
+///     Response payload for screen details
 /// </summary>
 public class ScreenDetailsResponse
 {

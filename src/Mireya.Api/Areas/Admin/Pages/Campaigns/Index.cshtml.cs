@@ -19,21 +19,23 @@ public class IndexModel(MireyaDbContext context, ILogger<IndexModel> logger) : P
     {
         try
         {
-            var campaigns = await context.Campaigns
-                .Include(c => c.CampaignAssets)
+            var campaigns = await context
+                .Campaigns.Include(c => c.CampaignAssets)
                 .Include(c => c.CampaignAssignments)
                 .OrderByDescending(c => c.UpdatedAt)
                 .ToListAsync();
 
-            Campaigns = campaigns.Select(c => new CampaignListItem
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                AssetCount = c.CampaignAssets.Count,
-                DisplayCount = c.CampaignAssignments.Count,
-                UpdatedAt = c.UpdatedAt
-            }).ToList();
+            Campaigns = campaigns
+                .Select(c => new CampaignListItem
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    AssetCount = c.CampaignAssets.Count,
+                    DisplayCount = c.CampaignAssignments.Count,
+                    UpdatedAt = c.UpdatedAt,
+                })
+                .ToList();
         }
         catch (Exception ex)
         {

@@ -11,13 +11,13 @@ public class PendingModel(MireyaDbContext context, ILogger<PendingModel> logger)
     private const string PendingPageRoute = "./Pending";
 
     public List<Display> Screens { get; set; } = [];
-    
+
     [BindProperty(SupportsGet = true)]
     public string? StatusFilter { get; set; }
-    
+
     [BindProperty(SupportsGet = true)]
     public int CurrentPage { get; set; } = 1;
-    
+
     public int PageSize { get; set; } = 10;
     public int TotalScreens { get; set; }
     public int TotalPages { get; set; }
@@ -31,27 +31,32 @@ public class PendingModel(MireyaDbContext context, ILogger<PendingModel> logger)
             var query = context.Displays.AsQueryable();
 
             // Apply status filter
-            if (!string.IsNullOrEmpty(StatusFilter) && Enum.TryParse<ApprovalStatus>(StatusFilter, out var status))
-            {
+            if (
+                !string.IsNullOrEmpty(StatusFilter)
+                && Enum.TryParse<ApprovalStatus>(StatusFilter, out var status)
+            )
                 query = query.Where(d => d.ApprovalStatus == status);
-            }
             else
-            {
                 // Default: show both Pending and Rejected (exclude Approved)
                 query = query.Where(d => d.ApprovalStatus != ApprovalStatus.Approved);
-            }
 
             // Get counts for filter badges
-            PendingCount = await context.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
-            RejectedCount = await context.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Rejected);
+            PendingCount = await context.Displays.CountAsync(d =>
+                d.ApprovalStatus == ApprovalStatus.Pending
+            );
+            RejectedCount = await context.Displays.CountAsync(d =>
+                d.ApprovalStatus == ApprovalStatus.Rejected
+            );
 
             // Get total count for pagination
             TotalScreens = await query.CountAsync();
             TotalPages = (int)Math.Ceiling(TotalScreens / (double)PageSize);
 
             // Ensure CurrentPage is valid
-            if (CurrentPage < 1) CurrentPage = 1;
-            if (CurrentPage > TotalPages && TotalPages > 0) CurrentPage = TotalPages;
+            if (CurrentPage < 1)
+                CurrentPage = 1;
+            if (CurrentPage > TotalPages && TotalPages > 0)
+                CurrentPage = TotalPages;
 
             // Get paginated screens
             Screens = await query
@@ -73,16 +78,14 @@ public class PendingModel(MireyaDbContext context, ILogger<PendingModel> logger)
         {
             var screen = await context.Displays.FindAsync(id);
             if (screen == null)
-            {
                 return NotFound();
-            }
 
             screen.ApprovalStatus = ApprovalStatus.Approved;
             screen.UpdatedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 
             logger.LogInformation("Screen {ScreenId} approved via Pending page", id);
-            
+
             return RedirectToPage(PendingPageRoute, new { StatusFilter, CurrentPage });
         }
         catch (Exception ex)
@@ -98,16 +101,14 @@ public class PendingModel(MireyaDbContext context, ILogger<PendingModel> logger)
         {
             var screen = await context.Displays.FindAsync(id);
             if (screen == null)
-            {
                 return NotFound();
-            }
 
             screen.ApprovalStatus = ApprovalStatus.Rejected;
             screen.UpdatedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 
             logger.LogInformation("Screen {ScreenId} rejected via Pending page", id);
-            
+
             return RedirectToPage(PendingPageRoute, new { StatusFilter, CurrentPage });
         }
         catch (Exception ex)
