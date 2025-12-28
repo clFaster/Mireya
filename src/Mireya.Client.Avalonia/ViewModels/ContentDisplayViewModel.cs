@@ -68,6 +68,10 @@ public partial class ContentDisplayViewModel : ViewModelBase
     [ObservableProperty]
     private Uri? _currentWebsiteUri;
 
+    // Event to notify video component to start playback
+    public event Action<string, bool>? VideoPlaybackRequested; // path, isMuted
+    public event Action? VideoStopRequested;
+
     public ContentDisplayViewModel(
         IAuthenticationService authenticationService,
         IScreenHubService hubService,
@@ -258,6 +262,7 @@ public partial class ContentDisplayViewModel : ViewModelBase
                         Source = asset.Source,
                         DurationSeconds = asset.ResolvedDuration,
                         Position = asset.Position,
+                        IsMuted = asset.IsMuted,
                     }
                 );
             }
@@ -338,6 +343,9 @@ public partial class ContentDisplayViewModel : ViewModelBase
     {
         _logger.LogDebug("Loading image: {Path}", item.LocalPath);
 
+        // Stop any playing video
+        VideoStopRequested?.Invoke();
+
         CurrentContentType = ContentType.Image;
         CurrentVideoPath = null;
         CurrentVideoUri = null;
@@ -377,21 +385,26 @@ public partial class ContentDisplayViewModel : ViewModelBase
         CurrentWebsiteUrl = null;
         CurrentWebsiteUri = null;
 
-        if (CurrentVideoUri == null)
+        if (string.IsNullOrEmpty(item.LocalPath) || !File.Exists(item.LocalPath))
         {
-            _logger.LogWarning("Invalid video URI for asset {AssetId}", item.AssetId);
+            _logger.LogWarning("Video file not found for asset {AssetId}", item.AssetId);
             AdvanceToNext();
             return;
         }
 
-        // Video player should handle completion event
-        // For now, use duration as fallback
+        // Trigger video playback in the UI component
+        VideoPlaybackRequested?.Invoke(item.LocalPath, item.IsMuted);
+
+        // Set timer to advance after duration
         StartAdvanceTimer(item.DurationSeconds);
     }
 
     private void ShowWebsite(PlaylistItem item)
     {
         _logger.LogDebug("Loading website: {Url}", item.Source);
+
+        // Stop any playing video
+        VideoStopRequested?.Invoke();
 
         CurrentContentType = ContentType.Website;
         CurrentWebsiteUrl = item.Source;
@@ -498,6 +511,7 @@ public class PlaylistItem
     public string Source { get; set; } = "";
     public int DurationSeconds { get; set; }
     public int Position { get; set; }
+    public bool IsMuted { get; set; }
 }
 
 public enum ContentType

@@ -17,7 +17,7 @@ namespace Mireya.Database.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -172,6 +172,9 @@ namespace Mireya.Database.Postgres.Migrations
 
                     b.Property<long?>("FileSizeBytes")
                         .HasColumnType("bigint");
+
+                    b.Property<bool>("IsMuted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()

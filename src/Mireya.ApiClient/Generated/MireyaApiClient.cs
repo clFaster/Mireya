@@ -3472,6 +3472,9 @@ namespace Mireya.ApiClient.Generated
         [System.Text.Json.Serialization.JsonPropertyName("durationSeconds")]
         public int? DurationSeconds { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
+        public bool IsMuted { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
         public System.DateTimeOffset CreatedAt { get; set; } = default!;
 
@@ -3501,6 +3504,12 @@ namespace Mireya.ApiClient.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         public string? Description { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("durationSeconds")]
+        public int? DurationSeconds { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
+        public bool? IsMuted { get; set; } = default!;
 
     }
 
@@ -3594,6 +3603,12 @@ namespace Mireya.ApiClient.Generated
         [System.Text.Json.Serialization.JsonPropertyName("fileSizeBytes")]
         public long? FileSizeBytes { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("durationSeconds")]
+        public int? DurationSeconds { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
+        public bool IsMuted { get; set; } = default!;
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -3677,6 +3692,9 @@ namespace Mireya.ApiClient.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("resolvedDuration")]
         public int ResolvedDuration { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
+        public bool IsMuted { get; set; } = default!;
 
     }
 

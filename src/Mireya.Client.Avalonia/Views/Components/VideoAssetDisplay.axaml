@@ -1,31 +1,15 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:vlc="clr-namespace:LibVLCSharp.Avalonia;assembly=LibVLCSharp.Avalonia"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
              x:Class="Mireya.Client.Avalonia.Views.Components.VideoAssetDisplay"
              x:DataType="vm:ContentDisplayViewModel">
 
-    <Border Background="Black"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
-            <TextBlock Text="🎬 VIDEO PLAYBACK"
-                       FontSize="48"
-                       FontWeight="Bold"
-                       Foreground="White"
-                       HorizontalAlignment="Center" />
-            <TextBlock Text="{Binding CurrentAssetName}"
-                       FontSize="24"
-                       Foreground="#AAAAAA"
-                       HorizontalAlignment="Center" />
-            <TextBlock Text="(Ready for video player integration)"
-                       FontSize="16"
-                       Foreground="#666666"
-                       HorizontalAlignment="Center"
-                       Margin="0,20,0,0" />
-        </StackPanel>
-    </Border>
+    <vlc:VideoView x:Name="VideoView"
+                   HorizontalAlignment="Stretch"
+                   VerticalAlignment="Stretch" />
 
 </UserControl>

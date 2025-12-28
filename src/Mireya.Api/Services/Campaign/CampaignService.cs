@@ -68,7 +68,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 ca.Asset.Source,
                 ca.Position,
                 ca.DurationSeconds,
-                ResolveAssetDuration(ca.Asset, ca.DurationSeconds)
+                ResolveAssetDuration(ca.Asset, ca.DurationSeconds),
+                ca.Asset.IsMuted
             ))
             .ToList();
 
