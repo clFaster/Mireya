@@ -26,7 +26,7 @@
                HorizontalAlignment="Center"
                VerticalAlignment="Center" />
 
-        <!-- Video display (placeholder for now) -->
+        <!-- Video display -->
         <Border Grid.Row="0"
                 Background="Black"
                 IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Video}}"
@@ -42,7 +42,7 @@
                            FontSize="24"
                            Foreground="#AAAAAA"
                            HorizontalAlignment="Center" />
-                <TextBlock Text="(Video player integration pending)"
+                <TextBlock Text="(Ready for video player integration)"
                            FontSize="16"
                            Foreground="#666666"
                            HorizontalAlignment="Center"
@@ -50,7 +50,7 @@
             </StackPanel>
         </Border>
 
-        <!-- Website display (placeholder for now) -->
+        <!-- Website display -->
         <Border Grid.Row="0"
                 Background="Black"
                 IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Website}}"
@@ -68,14 +68,13 @@
                            HorizontalAlignment="Center"
                            TextWrapping="Wrap"
                            MaxWidth="1200" />
-                <TextBlock Text="(WebView integration pending)"
+                <TextBlock Text="(Ready for web browser integration)"
                            FontSize="16"
                            Foreground="#666666"
                            HorizontalAlignment="Center"
                            Margin="0,20,0,0" />
             </StackPanel>
         </Border>
-
         <!-- No content message -->
         <Border Grid.Row="0"
                 Background="Black"
