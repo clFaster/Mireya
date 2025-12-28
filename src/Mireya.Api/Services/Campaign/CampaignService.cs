@@ -239,16 +239,21 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             db.CampaignAssets.Add(campaignAsset);
         }
 
-        // Remove existing assignments and add new ones
-        db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
-        foreach (var displayId in request.DisplayIds)
+        // Update display assignments only when a list is provided; otherwise keep existing links
+        if (request.DisplayIds.Any())
         {
-            var campaignAssignment = new CampaignAssignment
+            db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
+
+            foreach (var displayId in request.DisplayIds)
             {
-                CampaignId = campaign.Id,
-                DisplayId = displayId,
-            };
-            db.CampaignAssignments.Add(campaignAssignment);
+                var campaignAssignment = new CampaignAssignment
+                {
+                    CampaignId = campaign.Id,
+                    DisplayId = displayId,
+                };
+
+                db.CampaignAssignments.Add(campaignAssignment);
+            }
         }
 
         await db.SaveChangesAsync();

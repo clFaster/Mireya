@@ -53,14 +53,13 @@ public partial class MainWindowViewModel : ViewModelBase
             backend.BaseUrl
         );
 
-        // Show client status view
-        ShowClientStatus();
+        ShowContentDisplay();
     }
 
-    private void ShowClientStatus()
+    private void ShowContentDisplay()
     {
-        _logger.LogInformation("Showing client status view");
+        _logger.LogInformation("Showing content display view");
 
-        CurrentView = _serviceProvider.GetRequiredService<ClientStatusViewModel>();
+        CurrentView = _serviceProvider.GetRequiredService<ContentDisplayViewModel>();
     }
 }
