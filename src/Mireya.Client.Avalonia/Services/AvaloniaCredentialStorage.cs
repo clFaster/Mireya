@@ -9,23 +9,23 @@ using Mireya.ApiClient.Models;
 namespace Mireya.Client.Avalonia.Services;
 
 /// <summary>
-/// Avalonia implementation of credential storage using encrypted JSON files
+///     Avalonia implementation of credential storage using encrypted JSON files
 /// </summary>
 public class AvaloniaCredentialStorage : ICredentialStorage
 {
-    private readonly string _credentialsFilePath;
     private const string CredentialsFileName = "credentials.dat";
     private const string AppFolderName = "Mireya";
+    private readonly string _credentialsFilePath;
 
     public AvaloniaCredentialStorage()
     {
         // Get platform-specific app data folder
         var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var appFolder = Path.Combine(appDataFolder, AppFolderName);
-        
+
         // Ensure directory exists
         Directory.CreateDirectory(appFolder);
-        
+
         _credentialsFilePath = Path.Combine(appFolder, CredentialsFileName);
     }
 
@@ -49,9 +49,7 @@ public class AvaloniaCredentialStorage : ICredentialStorage
         try
         {
             if (!File.Exists(_credentialsFilePath))
-            {
                 return null;
-            }
 
             var encrypted = await File.ReadAllBytesAsync(_credentialsFilePath);
             var json = UnprotectData(encrypted);
@@ -69,9 +67,7 @@ public class AvaloniaCredentialStorage : ICredentialStorage
         try
         {
             if (File.Exists(_credentialsFilePath))
-            {
                 await Task.Run(() => File.Delete(_credentialsFilePath));
-            }
         }
         catch (Exception ex)
         {
@@ -87,18 +83,16 @@ public class AvaloniaCredentialStorage : ICredentialStorage
     }
 
     /// <summary>
-    /// Encrypt data using DPAPI (Windows) or basic encryption (other platforms)
+    ///     Encrypt data using DPAPI (Windows) or basic encryption (other platforms)
     /// </summary>
     private static byte[] ProtectData(string data)
     {
         var bytes = Encoding.UTF8.GetBytes(data);
-        
+
         // Use DPAPI on Windows for secure encryption
         if (OperatingSystem.IsWindows())
-        {
-            return System.Security.Cryptography.ProtectedData.Protect(bytes, null, System.Security.Cryptography.DataProtectionScope.CurrentUser);
-        }
-        
+            return ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser);
+
         // For non-Windows platforms, use a simple XOR encryption
         // Note: This is not as secure as DPAPI. Consider using platform-specific secure storage
         // or a cross-platform encryption library in production
@@ -106,44 +100,38 @@ public class AvaloniaCredentialStorage : ICredentialStorage
     }
 
     /// <summary>
-    /// Decrypt data using DPAPI (Windows) or basic decryption (other platforms)
+    ///     Decrypt data using DPAPI (Windows) or basic decryption (other platforms)
     /// </summary>
     private static string UnprotectData(byte[] encryptedData)
     {
         byte[] bytes;
-        
+
         if (OperatingSystem.IsWindows())
-        {
-            bytes = System.Security.Cryptography.ProtectedData.Unprotect(encryptedData, null, System.Security.Cryptography.DataProtectionScope.CurrentUser);
-        }
+            bytes = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
         else
-        {
             bytes = XorEncrypt(encryptedData); // XOR is symmetric
-        }
-        
+
         return Encoding.UTF8.GetString(bytes);
     }
 
     /// <summary>
-    /// Simple XOR encryption for non-Windows platforms
-    /// Note: Not cryptographically secure - for demonstration only
+    ///     Simple XOR encryption for non-Windows platforms
+    ///     Note: Not cryptographically secure - for demonstration only
     /// </summary>
     private static byte[] XorEncrypt(byte[] data)
     {
         // Generate a simple key from machine-specific data
         var key = GetMachineKey();
         var result = new byte[data.Length];
-        
-        for (int i = 0; i < data.Length; i++)
-        {
+
+        for (var i = 0; i < data.Length; i++)
             result[i] = (byte)(data[i] ^ key[i % key.Length]);
-        }
-        
+
         return result;
     }
 
     /// <summary>
-    /// Generate a machine-specific key for XOR encryption
+    ///     Generate a machine-specific key for XOR encryption
     /// </summary>
     private static byte[] GetMachineKey()
     {

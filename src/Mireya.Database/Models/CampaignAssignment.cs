@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Mireya.Database.Models;
 
 /// <summary>
-/// Represents the assignment of a campaign to a display
+///     Represents the assignment of a campaign to a display
 /// </summary>
 public class CampaignAssignment
 {

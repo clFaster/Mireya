@@ -19,24 +19,23 @@ public class ScreenSynchronizationService(
     MireyaDbContext db,
     IHubContext<ScreenHub, IScreenClient> hubContext,
     IAssetSyncService assetSyncService,
-    ILogger<ScreenSynchronizationService> logger) : IScreenSynchronizationService
+    ILogger<ScreenSynchronizationService> logger
+) : IScreenSynchronizationService
 {
     private const int DefaultAssetDuration = 10;
 
     public async Task SyncScreensAsync(IEnumerable<Guid> displayIds)
     {
         foreach (var displayId in displayIds.Distinct())
-        {
             await SyncScreenAsync(displayId);
-        }
     }
 
     public async Task SyncScreenAsync(Guid displayId)
     {
         logger.LogDebug("Syncing screen {DisplayId}", displayId);
-        
-        var display = await db.Displays
-            .Include(d => d.CampaignAssignments)
+
+        var display = await db
+            .Displays.Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
                     .ThenInclude(c => c.CampaignAssets)
                         .ThenInclude(ca => ca.Asset)
@@ -47,21 +46,20 @@ public class ScreenSynchronizationService(
             logger.LogWarning("Screen {DisplayId} not found", displayId);
             return;
         }
-        
+
         if (display.UserId == null)
         {
             logger.LogWarning("Screen {DisplayId} has no UserId, skipping sync", displayId);
             return;
         }
 
-        var campaigns = display.CampaignAssignments
-            .Select(ca => ca.Campaign)
+        var campaigns = display
+            .CampaignAssignments.Select(ca => ca.Campaign)
             .Select(c => new CampaignDetail(
                 c.Id,
                 c.Name,
                 c.Description,
-                c.CampaignAssets
-                    .OrderBy(a => a.Position)
+                c.CampaignAssets.OrderBy(a => a.Position)
                     .Select(a => new CampaignAssetDetail(
                         a.Id,
                         a.AssetId,
@@ -71,7 +69,8 @@ public class ScreenSynchronizationService(
                         a.Position,
                         a.DurationSeconds,
                         ResolveAssetDuration(a.Asset, a.DurationSeconds)
-                    )).ToList(),
+                    ))
+                    .ToList(),
                 [], // Displays list not needed for screen client
                 c.CreatedAt,
                 c.UpdatedAt
@@ -87,12 +86,16 @@ public class ScreenSynchronizationService(
             ApprovalStatus = display.ApprovalStatus.ToString(),
             ResolutionWidth = display.ResolutionWidth,
             ResolutionHeight = display.ResolutionHeight,
-            Campaigns = campaigns
+            Campaigns = campaigns,
         };
 
-        logger.LogInformation("Sending config to user {UserId}: {ScreenName} with {CampaignCount} campaigns", 
-            display.UserId, display.Name, campaigns.Count);
-        
+        logger.LogInformation(
+            "Sending config to user {UserId}: {ScreenName} with {CampaignCount} campaigns",
+            display.UserId,
+            display.Name,
+            campaigns.Count
+        );
+
         await hubContext.Clients.User(display.UserId).ReceiveConfigurationUpdate(config);
 
         // Get all unique asset IDs from all campaigns
@@ -109,9 +112,12 @@ public class ScreenSynchronizationService(
         // Notify client to start asset sync
         var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(displayId);
         await hubContext.Clients.User(display.UserId).StartAssetSync(campaignsToSync);
-        
-        logger.LogInformation("Notified client to sync {CampaignCount} campaigns with {AssetCount} total unique assets",
-            campaignsToSync.Count, allAssetIds.Count);
+
+        logger.LogInformation(
+            "Notified client to sync {CampaignCount} campaigns with {AssetCount} total unique assets",
+            campaignsToSync.Count,
+            allAssetIds.Count
+        );
     }
 
     private static int ResolveAssetDuration(Database.Models.Asset asset, int? campaignDuration)

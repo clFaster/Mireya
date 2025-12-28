@@ -19,9 +19,13 @@ namespace Mireya.Database.Sqlite.Migrations
                     AssetId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SyncState = table.Column<int>(type: "INTEGER", nullable: false),
                     Progress = table.Column<int>(type: "INTEGER", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    ErrorMessage = table.Column<string>(
+                        type: "TEXT",
+                        maxLength: 1000,
+                        nullable: true
+                    ),
                     LastUpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -31,42 +35,48 @@ namespace Mireya.Database.Sqlite.Migrations
                         column: x => x.AssetId,
                         principalTable: "Assets",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Cascade
+                    );
                     table.ForeignKey(
                         name: "FK_AssetSyncStatuses_Displays_DisplayId",
                         column: x => x.DisplayId,
                         principalTable: "Displays",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_AssetSyncStatuses_AssetId",
                 table: "AssetSyncStatuses",
-                column: "AssetId");
+                column: "AssetId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_AssetSyncStatuses_DisplayId",
                 table: "AssetSyncStatuses",
-                column: "DisplayId");
+                column: "DisplayId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_AssetSyncStatuses_DisplayId_AssetId",
                 table: "AssetSyncStatuses",
                 columns: new[] { "DisplayId", "AssetId" },
-                unique: true);
+                unique: true
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_AssetSyncStatuses_SyncState",
                 table: "AssetSyncStatuses",
-                column: "SyncState");
+                column: "SyncState"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "AssetSyncStatuses");
+            migrationBuilder.DropTable(name: "AssetSyncStatuses");
         }
     }
 }

@@ -8,18 +8,18 @@ using Mireya.ApiClient.Services;
 namespace Mireya.Client.Avalonia.Services;
 
 /// <summary>
-/// Implementation of authentication service for screen clients
-/// Uses database-backed credential storage per backend
+///     Implementation of authentication service for screen clients
+///     Uses database-backed credential storage per backend
 /// </summary>
 public class AuthenticationService : IAuthenticationService
 {
     private readonly IMireyaApiClient _apiClient;
-    private readonly ICredentialStorage _legacyCredentialStorage;
-    private readonly ICredentialManager _credentialManager;
     private readonly IBackendManager _backendManager;
-    private readonly IAccessTokenProvider _tokenProvider;
+    private readonly ICredentialManager _credentialManager;
     private readonly IScreenHubService _hubService;
+    private readonly ICredentialStorage _legacyCredentialStorage;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly IAccessTokenProvider _tokenProvider;
 
     public AuthenticationService(
         IMireyaApiClient apiClient,
@@ -28,7 +28,8 @@ public class AuthenticationService : IAuthenticationService
         IBackendManager backendManager,
         IAccessTokenProvider tokenProvider,
         IScreenHubService hubService,
-        ILogger<AuthenticationService> logger)
+        ILogger<AuthenticationService> logger
+    )
     {
         _apiClient = apiClient;
         _legacyCredentialStorage = legacyCredentialStorage;
@@ -55,14 +56,14 @@ public class AuthenticationService : IAuthenticationService
             if (!hasValidCredentials)
             {
                 _logger.LogDebug("No valid credentials for backend {BackendId}", backend.Id);
-                
+
                 // Check legacy credential storage for migration
                 if (await _legacyCredentialStorage.HasCredentialsAsync())
                 {
                     _logger.LogInformation("Found legacy credentials, attempting migration");
                     return AuthenticationState.NotAuthenticated; // Will try to login and migrate
                 }
-                
+
                 return AuthenticationState.NotRegistered;
             }
 
@@ -82,18 +83,17 @@ public class AuthenticationService : IAuthenticationService
         {
             var backend = await _backendManager.GetCurrentBackendAsync();
             if (backend == null)
-            {
                 return new RegisterResult(
-                    Success: false,
-                    ScreenIdentifier: null,
-                    UserId: null,
-                    ErrorMessage: "No backend configured. Please select a backend first.");
-            }
+                    false,
+                    null,
+                    null,
+                    "No backend configured. Please select a backend first."
+                );
 
             // Generate credentials on the client
             var username = GenerateUsername();
             var password = GeneratePassword();
-            
+
             _logger.LogInformation("Registering screen with backend {BackendId}", backend.Id);
 
             // Register with backend
@@ -103,41 +103,31 @@ public class AuthenticationService : IAuthenticationService
                 Password = password,
                 DeviceName = deviceName,
                 ResolutionWidth = null,
-                ResolutionHeight = null
+                ResolutionHeight = null,
             };
 
             var response = await _apiClient.ScreenManagement_RegisterScreenAsync(request);
 
-            _logger.LogInformation("Registration successful. Screen identifier: {ScreenIdentifier}", 
-                response.ScreenIdentifier);
+            _logger.LogInformation(
+                "Registration successful. Screen identifier: {ScreenIdentifier}",
+                response.ScreenIdentifier
+            );
 
             // Store credentials temporarily in legacy storage (for backward compatibility)
             var credentials = new Credentials(username, password);
             await _legacyCredentialStorage.SaveCredentialsAsync(credentials);
 
-            return new RegisterResult(
-                Success: true,
-                ScreenIdentifier: response.ScreenIdentifier,
-                UserId: response.UserId,
-                ErrorMessage: null);
+            return new RegisterResult(true, response.ScreenIdentifier, response.UserId, null);
         }
         catch (ApiException ex)
         {
             _logger.LogError(ex, "Registration failed");
-            return new RegisterResult(
-                Success: false,
-                ScreenIdentifier: null,
-                UserId: null,
-                ErrorMessage: $"Registration failed: {ex.Message}");
+            return new RegisterResult(false, null, null, $"Registration failed: {ex.Message}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during registration");
-            return new RegisterResult(
-                Success: false,
-                ScreenIdentifier: null,
-                UserId: null,
-                ErrorMessage: $"Unexpected error: {ex.Message}");
+            return new RegisterResult(false, null, null, $"Unexpected error: {ex.Message}");
         }
     }
 
@@ -147,20 +137,22 @@ public class AuthenticationService : IAuthenticationService
         {
             var backend = await _backendManager.GetCurrentBackendAsync();
             if (backend == null)
-            {
                 return new LoginResult(
-                    Success: false,
-                    AccessToken: null,
-                    ErrorMessage: "No backend configured. Please select a backend first.");
-            }
+                    false,
+                    null,
+                    "No backend configured. Please select a backend first."
+                );
 
-            _logger.LogInformation("Attempting login for backend {BackendId} - {BaseUrl}", 
-                backend.Id, backend.BaseUrl);
+            _logger.LogInformation(
+                "Attempting login for backend {BackendId} - {BaseUrl}",
+                backend.Id,
+                backend.BaseUrl
+            );
 
             // Try to get credentials from new storage first
             var credential = await _credentialManager.GetCredentialsAsync(backend.Id);
             Credentials? legacyCredentials = null;
-            
+
             if (credential == null)
             {
                 // Try legacy storage for migration
@@ -169,11 +161,12 @@ public class AuthenticationService : IAuthenticationService
                 {
                     _logger.LogWarning("No credentials found for backend {BackendId}", backend.Id);
                     return new LoginResult(
-                        Success: false,
-                        AccessToken: null,
-                        ErrorMessage: "No credentials found. Please register first.");
+                        false,
+                        null,
+                        "No credentials found. Please register first."
+                    );
                 }
-                
+
                 _logger.LogInformation("Using legacy credentials for migration");
             }
 
@@ -181,24 +174,17 @@ public class AuthenticationService : IAuthenticationService
             var loginRequest = new LoginRequest
             {
                 Email = credential?.Username ?? legacyCredentials!.Username,
-                Password = "dummy" // We don't store passwords, only use for initial registration
+                Password = "dummy", // We don't store passwords, only use for initial registration
             };
 
             // If we have credentials from new storage but need password, try legacy
             if (credential != null && legacyCredentials == null)
-            {
                 legacyCredentials = await _legacyCredentialStorage.GetCredentialsAsync();
-            }
 
             if (legacyCredentials != null)
-            {
                 loginRequest.Password = legacyCredentials.Password;
-            }
 
-            var response = await _apiClient.PostLoginAsync(
-                useCookies: false,
-                useSessionCookies: false,
-                login: loginRequest);
+            var response = await _apiClient.PostLoginAsync(false, false, loginRequest);
 
             _logger.LogInformation("Login successful for backend {BackendId}", backend.Id);
 
@@ -208,34 +194,29 @@ public class AuthenticationService : IAuthenticationService
                 loginRequest.Email,
                 response.AccessToken,
                 response.RefreshToken,
-                DateTime.UtcNow.AddSeconds(response.ExpiresIn));
+                DateTime.UtcNow.AddSeconds(response.ExpiresIn)
+            );
 
-            _logger.LogInformation("Credentials saved to database for backend {BackendId}", backend.Id);
+            _logger.LogInformation(
+                "Credentials saved to database for backend {BackendId}",
+                backend.Id
+            );
 
             // Connect to SignalR Hub
             await _hubService.ConnectAsync();
             _logger.LogInformation("Connected to SignalR hub");
 
-            return new LoginResult(
-                Success: true,
-                AccessToken: response.AccessToken,
-                ErrorMessage: null);
+            return new LoginResult(true, response.AccessToken, null);
         }
         catch (ApiException ex)
         {
             _logger.LogError(ex, "Login failed");
-            return new LoginResult(
-                Success: false,
-                AccessToken: null,
-                ErrorMessage: $"Login failed: {ex.Message}");
+            return new LoginResult(false, null, $"Login failed: {ex.Message}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during login");
-            return new LoginResult(
-                Success: false,
-                AccessToken: null,
-                ErrorMessage: $"Unexpected error: {ex.Message}");
+            return new LoginResult(false, null, $"Unexpected error: {ex.Message}");
         }
     }
 
@@ -253,26 +234,36 @@ public class AuthenticationService : IAuthenticationService
             var credential = await _credentialManager.GetCredentialsAsync(backend.Id);
             if (credential == null || string.IsNullOrEmpty(credential.AccessToken))
             {
-                _logger.LogWarning("Cannot fetch screen info: Not authenticated for backend {BackendId}", backend.Id);
+                _logger.LogWarning(
+                    "Cannot fetch screen info: Not authenticated for backend {BackendId}",
+                    backend.Id
+                );
                 return null;
             }
 
             _logger.LogDebug("Fetching screen info for backend {BackendId}", backend.Id);
-            
+
             var response = await _apiClient.ScreenManagement_BonjourAsync();
 
-            _logger.LogInformation("Successfully fetched screen info: {ScreenIdentifier}", 
-                response.ScreenIdentifier);
-            
+            _logger.LogInformation(
+                "Successfully fetched screen info: {ScreenIdentifier}",
+                response.ScreenIdentifier
+            );
+
             return new ScreenInfo(
-                ScreenIdentifier: response.ScreenIdentifier,
-                ScreenName: response.ScreenName,
-                Description: response.Description,
-                ApprovalStatus: response.ApprovalStatus.ToString());
+                response.ScreenIdentifier,
+                response.ScreenName,
+                response.Description,
+                response.ApprovalStatus
+            );
         }
         catch (ApiException ex)
         {
-            _logger.LogError(ex, "API error fetching screen info. Status: {StatusCode}", ex.StatusCode);
+            _logger.LogError(
+                ex,
+                "API error fetching screen info. Status: {StatusCode}",
+                ex.StatusCode
+            );
             return null;
         }
         catch (Exception ex)
@@ -322,8 +313,7 @@ public class AuthenticationService : IAuthenticationService
 
     private static string GeneratePassword()
     {
-        return Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + 
-               Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+        return Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+            + Convert.ToBase64String(Guid.NewGuid().ToByteArray());
     }
 }
-

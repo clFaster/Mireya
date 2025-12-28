@@ -1,7 +1,7 @@
 namespace Mireya.Api.Middleware;
 
 /// <summary>
-/// Middleware to debug API responses, especially for unauthorized and error responses
+///     Middleware to debug API responses, especially for unauthorized and error responses
 /// </summary>
 public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebugMiddleware> logger)
 {
@@ -27,7 +27,11 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unhandled exception in request pipeline for {Path}", context.Request.Path);
+            logger.LogError(
+                ex,
+                "Unhandled exception in request pipeline for {Path}",
+                context.Request.Path
+            );
             throw;
         }
         finally
@@ -51,7 +55,7 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
                 401 => LogLevel.Warning,
                 403 => LogLevel.Warning,
                 >= 500 => LogLevel.Error,
-                _ => LogLevel.Information
+                _ => LogLevel.Information,
             };
 
             responseBody.Seek(0, SeekOrigin.Begin);
@@ -62,10 +66,11 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
             var hasAuth = !string.IsNullOrEmpty(authHeader);
             var authType = hasAuth ? authHeader.Split(' ').FirstOrDefault() : "None";
 
-            logger.Log(logLevel,
-                "API Response Debug | Status: {StatusCode} | Method: {Method} | Path: {Path}{QueryString} | " +
-                "Auth: {AuthType} | User: {User} | ContentType: {ContentType} | ResponseLength: {Length} | " +
-                "Response: {Response}",
+            logger.Log(
+                logLevel,
+                "API Response Debug | Status: {StatusCode} | Method: {Method} | Path: {Path}{QueryString} | "
+                    + "Auth: {AuthType} | User: {User} | ContentType: {ContentType} | ResponseLength: {Length} | "
+                    + "Response: {Response}",
                 statusCode,
                 method,
                 path,
@@ -74,27 +79,27 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
                 context.User?.Identity?.Name ?? "Anonymous",
                 context.Response.ContentType,
                 responseBodyText.Length,
-                responseBodyText.Length > 1000 ? responseBodyText.Substring(0, 1000) + "..." : responseBodyText
+                responseBodyText.Length > 1000
+                    ? responseBodyText.Substring(0, 1000) + "..."
+                    : responseBodyText
             );
 
             // Additional debug info for 401 Unauthorized
             if (statusCode == 401)
-            {
                 logger.LogWarning(
-                    "Unauthorized Access Details | IsAuthenticated: {IsAuthenticated} | " +
-                    "AuthScheme: {AuthScheme} | Claims: {Claims}",
+                    "Unauthorized Access Details | IsAuthenticated: {IsAuthenticated} | "
+                        + "AuthScheme: {AuthScheme} | Claims: {Claims}",
                     context.User?.Identity?.IsAuthenticated ?? false,
                     context.User?.Identity?.AuthenticationType ?? "None",
                     context.User?.Claims?.Select(c => $"{c.Type}={c.Value}").Take(5)
                 );
-            }
         }
         else if (logger.IsEnabled(LogLevel.Debug))
         {
             // Log successful responses only at Debug level to avoid noise
             logger.LogDebug(
-                "API Response | Status: {StatusCode} | Method: {Method} | Path: {Path}{QueryString} | " +
-                "User: {User}",
+                "API Response | Status: {StatusCode} | Method: {Method} | Path: {Path}{QueryString} | "
+                    + "User: {User}",
                 statusCode,
                 method,
                 path,
@@ -106,7 +111,7 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
 }
 
 /// <summary>
-/// Extension methods for registering the ResponseDebugMiddleware
+///     Extension methods for registering the ResponseDebugMiddleware
 /// </summary>
 public static class ResponseDebugMiddlewareExtensions
 {

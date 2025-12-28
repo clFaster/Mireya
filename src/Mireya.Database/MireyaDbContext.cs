@@ -4,7 +4,8 @@ using Mireya.Database.Models;
 
 namespace Mireya.Database;
 
-public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : IdentityDbContext<User>(options)
+public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
+    : IdentityDbContext<User>(options)
 {
     public DbSet<Display> Displays { get; set; }
     public DbSet<Asset> Assets { get; set; }
@@ -46,12 +47,14 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
             entity.HasIndex(e => e.AssetId);
             entity.HasIndex(e => new { e.CampaignId, e.Position }).IsUnique();
 
-            entity.HasOne(ca => ca.Campaign)
+            entity
+                .HasOne(ca => ca.Campaign)
                 .WithMany(c => c.CampaignAssets)
                 .HasForeignKey(ca => ca.CampaignId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(ca => ca.Asset)
+            entity
+                .HasOne(ca => ca.Asset)
                 .WithMany()
                 .HasForeignKey(ca => ca.AssetId)
                 .OnDelete(DeleteBehavior.Restrict); // Prevent asset deletion if used in campaigns
@@ -64,12 +67,14 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
             entity.HasIndex(e => e.DisplayId);
             entity.HasIndex(e => new { e.CampaignId, e.DisplayId }).IsUnique();
 
-            entity.HasOne(ca => ca.Campaign)
+            entity
+                .HasOne(ca => ca.Campaign)
                 .WithMany(c => c.CampaignAssignments)
                 .HasForeignKey(ca => ca.CampaignId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(ca => ca.Display)
+            entity
+                .HasOne(ca => ca.Display)
                 .WithMany(d => d.CampaignAssignments)
                 .HasForeignKey(ca => ca.DisplayId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -83,12 +88,14 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
             entity.HasIndex(e => e.SyncState);
             entity.HasIndex(e => new { e.DisplayId, e.AssetId }).IsUnique();
 
-            entity.HasOne(ass => ass.Display)
+            entity
+                .HasOne(ass => ass.Display)
                 .WithMany()
                 .HasForeignKey(ass => ass.DisplayId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(ass => ass.Asset)
+            entity
+                .HasOne(ass => ass.Asset)
                 .WithMany()
                 .HasForeignKey(ass => ass.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);

@@ -13,16 +13,19 @@
         </div>
         @if (Model.PendingCount > 0)
         {
-            <a href="/Admin/Screens/Pending" class="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 font-medium rounded-lg hover:bg-yellow-200 transition-colors">
+            <a href="/Admin/Screens/Pending"
+               class="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 font-medium rounded-lg hover:bg-yellow-200 transition-colors">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                 </svg>
                 @Model.PendingCount Pending Screen@(Model.PendingCount != 1 ? "s" : "")
             </a>
         }
         else
         {
-            <a href="/Admin/Screens/Pending" class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+            <a href="/Admin/Screens/Pending"
+               class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">
                 View Pending/Rejected
             </a>
         }
@@ -33,30 +36,37 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <span class="text-sm font-medium text-gray-700">Status:</span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     @Model.OnlineCount Online
                 </span>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                     @Model.OfflineCount Offline
                 </span>
             </div>
             <form method="get" class="flex items-center space-x-2">
-                <input type="hidden" name="page" value="1" />
+                <input type="hidden" name="page" value="1"/>
                 @if (Model.ShowOffline)
                 {
-                    <a href="?page=1&showOffline=false" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <a href="?page=1&showOffline=false"
+                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                         </svg>
                         Hide Offline Screens
                     </a>
                 }
                 else
                 {
-                    <a href="?page=1&showOffline=true" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                    <a href="?page=1&showOffline=true"
+                       class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
                         </svg>
                         Show Offline Screens
                     </a>
@@ -71,77 +81,88 @@
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Screen Name
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Location
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Last Seen
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
+                <tr>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Screen Name
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Seen
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach (var screen in Model.Screens)
-                    {
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">@screen.Name</div>
-                                <div class="text-sm text-gray-500">@screen.ScreenIdentifier</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">@screen.Location</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @{
-                                    var isOnline = screen.IsActive;
-                                    var connectionStatusClass = isOnline ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
-                                    var connectionStatus = isOnline ? "Online" : "Offline";
-                                }
-                                <span class="screen-status px-2 inline-flex text-xs leading-5 font-semibold rounded-full @connectionStatusClass" data-screen-id="@screen.Id">
+                @foreach (var screen in Model.Screens)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">@screen.Name</div>
+                            <div class="text-sm text-gray-500">@screen.ScreenIdentifier</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">@screen.Location</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @{
+                                var isOnline = screen.IsActive;
+                                var connectionStatusClass = isOnline ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800";
+                                var connectionStatus = isOnline ? "Online" : "Offline";
+                            }
+                            <span
+                                class="screen-status px-2 inline-flex text-xs leading-5 font-semibold rounded-full @connectionStatusClass"
+                                data-screen-id="@screen.Id">
                                     <svg class="w-2 h-2 mr-1 mt-0.5" fill="currentColor" viewBox="0 0 8 8">
-                                        <circle cx="4" cy="4" r="3" />
+                                        <circle cx="4" cy="4" r="3"/>
                                     </svg>
-                                    @connectionStatus
+                                @connectionStatus
                                 </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                @(screen.LastSeenAt?.ToString("g") ?? "Never")
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="/Admin/Screens/Details?id=@screen.Id" class="text-blue-600 hover:text-blue-900 mr-3">
-                                    View
-                                </a>
-                                <a href="/Admin/Screens/Edit?id=@screen.Id" class="text-blue-600 hover:text-blue-900">
-                                    Edit
-                                </a>
-                            </td>
-                        </tr>
-                    }
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @(screen.LastSeenAt?.ToString("g") ?? "Never")
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="/Admin/Screens/Details?id=@screen.Id"
+                               class="text-blue-600 hover:text-blue-900 mr-3">
+                                View
+                            </a>
+                            <a href="/Admin/Screens/Edit?id=@screen.Id" class="text-blue-600 hover:text-blue-900">
+                                Edit
+                            </a>
+                        </td>
+                    </tr>
+                }
                 </tbody>
             </table>
         </div>
 
         <!-- Pagination Info -->
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+        <div
+            class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
             <div class="flex-1 flex justify-between sm:hidden">
                 @if (Model.CurrentPage > 1)
                 {
-                    <a href="?page=@(Model.CurrentPage - 1)&showOffline=@Model.ShowOffline" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <a href="?page=@(Model.CurrentPage - 1)&showOffline=@Model.ShowOffline"
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         Previous
                     </a>
                 }
                 @if (Model.CurrentPage < Model.TotalPages)
                 {
-                    <a href="?page=@(Model.CurrentPage + 1)&showOffline=@Model.ShowOffline" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <a href="?page=@(Model.CurrentPage + 1)&showOffline=@Model.ShowOffline"
+                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         Next
                     </a>
                 }
@@ -152,7 +173,8 @@
                         Showing
                         <span class="font-medium">@((Model.CurrentPage - 1) * Model.PageSize + 1)</span>
                         to
-                        <span class="font-medium">@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalScreens)</span>
+                        <span
+                            class="font-medium">@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalScreens)</span>
                         of
                         <span class="font-medium">@Model.TotalScreens</span>
                         results
@@ -162,22 +184,24 @@
                     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                         @if (Model.CurrentPage > 1)
                         {
-                            <a href="?page=@(Model.CurrentPage - 1)&showOffline=@Model.ShowOffline" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <a href="?page=@(Model.CurrentPage - 1)&showOffline=@Model.ShowOffline"
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 Previous
                             </a>
                         }
-                        
-                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+
+                        @for (var i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
                         {
-                            <a href="?page=@i&showOffline=@Model.ShowOffline" 
+                            <a href="?page=@i&showOffline=@Model.ShowOffline"
                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium @(i == Model.CurrentPage ? "bg-blue-50 border-blue-500 text-blue-600 z-10" : "bg-white text-gray-700 hover:bg-gray-50")">
                                 @i
                             </a>
                         }
-                        
+
                         @if (Model.CurrentPage < Model.TotalPages)
                         {
-                            <a href="?page=@(Model.CurrentPage + 1)&showOffline=@Model.ShowOffline" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <a href="?page=@(Model.CurrentPage + 1)&showOffline=@Model.ShowOffline"
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                 Next
                             </a>
                         }
@@ -190,7 +214,8 @@
     {
         <div class="bg-white shadow rounded-lg p-12 text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">No screens found</h3>
             <p class="mt-1 text-sm text-gray-500">@(Model.ShowOffline ? "No screens have been registered yet." : "No online screens. Click 'Show Offline Screens' to see all screens.")</p>
@@ -208,14 +233,14 @@
                         'Accept': 'application/json'
                     }
                 });
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     const screens = data.items || [];
-                    
+
                     let onlineCount = 0;
                     let offlineCount = 0;
-                    
+
                     // Update status badges for visible screens
                     screens.forEach(screen => {
                         if (screen.isActive) {
@@ -223,11 +248,11 @@
                         } else {
                             offlineCount++;
                         }
-                        
+
                         const statusElement = document.querySelector(`.screen-status[data-screen-id="${screen.id}"]`);
                         if (statusElement) {
                             const isCurrentlyOnline = statusElement.classList.contains('bg-green-100');
-                            
+
                             if (screen.isActive && !isCurrentlyOnline) {
                                 // Changed to online
                                 statusElement.className = 'screen-status px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800';
@@ -239,11 +264,11 @@
                             }
                         }
                     });
-                    
+
                     // Update counts if they changed
                     const onlineBadge = document.querySelector('.inline-flex.bg-green-100');
                     const offlineBadge = document.querySelector('.inline-flex.bg-gray-100');
-                    
+
                     if (onlineBadge && onlineBadge.textContent.trim() !== `${onlineCount} Online`) {
                         onlineBadge.innerHTML = `<svg class="w-2 h-2 mr-1" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>${onlineCount} Online`;
                     }
@@ -260,7 +285,7 @@
         if (document.querySelector('.screen-status')) {
             // Update immediately
             updateScreenStatuses();
-            
+
             // Then update every 5 seconds
             setInterval(updateScreenStatuses, 5000);
         }
