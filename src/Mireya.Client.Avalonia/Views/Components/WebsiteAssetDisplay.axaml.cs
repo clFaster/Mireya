@@ -48,8 +48,8 @@ public partial class WebsiteAssetDisplay : UserControl
 
             // Mark as initialized - environment is created and ready for use
             _isInitialized = true;
-            _errorPanel!.IsVisible = true;
-            _browserContainer.IsVisible = false;
+            _browserContainer.IsVisible = true;
+            _errorPanel!.IsVisible = false;
 
             System.Diagnostics.Debug.WriteLine("WebView2 environment initialized");
         }
@@ -74,7 +74,8 @@ public partial class WebsiteAssetDisplay : UserControl
         {
             // WebView2 runtime integration for displaying websites
             System.Diagnostics.Debug.WriteLine($"Navigate called for URL: {uri.AbsoluteUri}");
-            _errorPanel!.IsVisible = true;
+            _browserContainer!.IsVisible = true;
+            _errorPanel!.IsVisible = false;
         }
         catch (Exception ex)
         {
@@ -96,6 +97,3 @@ public partial class WebsiteAssetDisplay : UserControl
         }
     }
 }
-
-
-
