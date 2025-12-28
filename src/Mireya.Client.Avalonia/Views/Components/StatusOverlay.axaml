@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="200"
+             x:Class="Mireya.Client.Avalonia.Views.Components.StatusOverlay"
+             x:DataType="vm:ContentDisplayViewModel">
+
+    <Border Background="#DD000000"
+            CornerRadius="8"
+            Padding="20"
+            IsVisible="{Binding IsOverlayVisible}">
+        <StackPanel Spacing="8">
+            <TextBlock Text="{Binding DisplayName}"
+                       FontSize="24"
+                       FontWeight="Bold"
+                       Foreground="White" />
+            <TextBlock Text="{Binding StatusText}"
+                       FontSize="14"
+                       Foreground="#CCCCCC" />
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock Text="Campaign:"
+                           FontSize="12"
+                           Foreground="#AAAAAA" />
+                <TextBlock Text="{Binding CurrentCampaignName}"
+                           FontSize="12"
+                           Foreground="White" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock Text="Asset:"
+                           FontSize="12"
+                           Foreground="#AAAAAA" />
+                <TextBlock Text="{Binding CurrentAssetName}"
+                           FontSize="12"
+                           Foreground="White" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock Text="Progress:"
+                           FontSize="12"
+                           Foreground="#AAAAAA" />
+                <TextBlock Text="{Binding CurrentAssetPosition}"
+                           FontSize="12"
+                           Foreground="White" />
+                <TextBlock Text="/"
+                           FontSize="12"
+                           Foreground="#AAAAAA" />
+                <TextBlock Text="{Binding TotalAssets}"
+                           FontSize="12"
+                           Foreground="White" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+
+</UserControl>
