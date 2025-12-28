@@ -5,8 +5,7 @@ using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages;
 
-public class LogoutModel(SignInManager<User> signInManager, ILogger<LogoutModel> logger)
-    : PageModel
+public class LogoutModel(SignInManager<User> signInManager, ILogger<LogoutModel> logger) : PageModel
 {
     public async Task<IActionResult> OnPostAsync()
     {

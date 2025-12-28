@@ -11,7 +11,8 @@
             <h1 class="text-3xl font-bold text-gray-900">Edit Screen</h1>
             <p class="text-gray-600 mt-1">Update screen information and settings</p>
         </div>
-        <a href="/Admin/Screens/Details?id=@Model.ScreenId" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+        <a href="/Admin/Screens/Details?id=@Model.ScreenId"
+           class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
             Cancel
         </a>
     </div>
@@ -24,45 +25,55 @@
             <div class="space-y-4">
                 <!-- Name -->
                 <div>
-                    <label asp-for="Input.Name" for="screen-name" class="block text-sm font-medium text-gray-700 mb-1">Screen Name</label>
-                    <input asp-for="Input.Name" id="screen-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <label asp-for="Input.Name" for="screen-name" class="block text-sm font-medium text-gray-700 mb-1">Screen
+                        Name</label>
+                    <input asp-for="Input.Name" id="screen-name"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
                     <span asp-validation-for="Input.Name" class="text-red-600 text-sm"></span>
                 </div>
 
                 <!-- Location -->
                 <div>
-                    <label asp-for="Input.Location" for="screen-location" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                    <input asp-for="Input.Location" id="screen-location" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    <label asp-for="Input.Location" for="screen-location"
+                           class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input asp-for="Input.Location" id="screen-location"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
                     <span asp-validation-for="Input.Location" class="text-red-600 text-sm"></span>
                 </div>
 
                 <!-- Description -->
                 <div>
-                    <label asp-for="Input.Description" for="screen-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea asp-for="Input.Description" id="screen-description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                    <label asp-for="Input.Description" for="screen-description"
+                           class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea asp-for="Input.Description" id="screen-description" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                     <span asp-validation-for="Input.Description" class="text-red-600 text-sm"></span>
                 </div>
 
                 <!-- Approval Status -->
                 <div>
-                    <label asp-for="Input.ApprovalStatus" for="screen-approval-status" class="block text-sm font-medium text-gray-700 mb-1">Approval Status</label>
-                    <select asp-for="Input.ApprovalStatus" asp-items="Html.GetEnumSelectList<ApprovalStatus>()" id="screen-approval-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <label asp-for="Input.ApprovalStatus" for="screen-approval-status"
+                           class="block text-sm font-medium text-gray-700 mb-1">Approval Status</label>
+                    <select asp-for="Input.ApprovalStatus" asp-items="Html.GetEnumSelectList<ApprovalStatus>()"
+                            id="screen-approval-status"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </select>
                     <span asp-validation-for="Input.ApprovalStatus" class="text-red-600 text-sm"></span>
                 </div>
 
                 <!-- Assigned Campaigns -->
                 <div>
-                    <label  for="screen-assigned-campaigns" class="block text-sm font-medium text-gray-700 mb-2">Assigned Campaigns</label>
+                    <label for="screen-assigned-campaigns" class="block text-sm font-medium text-gray-700 mb-2">Assigned
+                        Campaigns</label>
                     <div class="space-y-2">
                         @if (Model.AvailableCampaigns.Any())
                         {
                             @foreach (var campaign in Model.AvailableCampaigns)
                             {
                                 <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                    <input type="checkbox" name="SelectedCampaignIds" value="@campaign.Id" 
+                                    <input type="checkbox" name="SelectedCampaignIds" value="@campaign.Id"
                                            @(Model.SelectedCampaignIds.Contains(campaign.Id) ? "checked" : "")
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
+                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"/>
                                     <div class="ml-3 flex-1">
                                         <div class="text-sm font-medium text-gray-900">@campaign.Name</div>
                                         @if (!string.IsNullOrEmpty(campaign.Description))
@@ -85,10 +96,12 @@
 
             <!-- Form Actions -->
             <div class="mt-6 flex justify-end space-x-3">
-                <a href="/Admin/Screens/Details?id=@Model.ScreenId" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                <a href="/Admin/Screens/Details?id=@Model.ScreenId"
+                   class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
                     Cancel
                 </a>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                     Save Changes
                 </button>
             </div>
@@ -97,5 +110,5 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <partial name="_ValidationScriptsPartial"/>
 }

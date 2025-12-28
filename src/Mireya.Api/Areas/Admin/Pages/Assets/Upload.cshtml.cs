@@ -12,9 +12,7 @@ public class UploadModel(IAssetService assetService, ILogger<UploadModel> logger
     public string? SuccessMessage { get; set; }
     public string? ErrorMessage { get; set; }
 
-    public void OnGet()
-    {
-    }
+    public void OnGet() { }
 
     public async Task<IActionResult> OnPostAsync()
     {
@@ -28,10 +26,10 @@ public class UploadModel(IAssetService assetService, ILogger<UploadModel> logger
         {
             var uploadedAssets = await assetService.UploadAssetsAsync(Files);
             SuccessMessage = $"Successfully uploaded {uploadedAssets.Count} asset(s).";
-            
+
             // Clear the form
             Files = [];
-            
+
             return Page();
         }
         catch (ArgumentException ex)
@@ -48,7 +46,11 @@ public class UploadModel(IAssetService assetService, ILogger<UploadModel> logger
         }
     }
 
-    public async Task<IActionResult> OnPostWebsiteAsync(string url, string name, string? description)
+    public async Task<IActionResult> OnPostWebsiteAsync(
+        string url,
+        string name,
+        string? description
+    )
     {
         if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(name))
         {

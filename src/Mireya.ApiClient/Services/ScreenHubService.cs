@@ -8,37 +8,40 @@ namespace Mireya.ApiClient.Services;
 
 public interface IScreenHubService : IAsyncDisposable
 {
+    bool IsConnected { get; }
     event Action<ScreenConfiguration> OnConfigurationUpdateReceived;
-    
+    event Action<List<CampaignSyncInfo>> OnStartAssetSync;
+    event Action OnReconnected;
+
     Task ConnectAsync();
     Task DisconnectAsync();
-    bool IsConnected { get; }
 }
 
 public class ScreenHubService : IScreenHubService
 {
-    private readonly HubConnection _hubConnection;
     private readonly IAccessTokenProvider _accessTokenProvider;
+    private readonly HubConnection _hubConnection;
     private readonly ILogger<ScreenHubService> _logger;
 
-    public event Action<ScreenConfiguration>? OnConfigurationUpdateReceived;
-
-    public bool IsConnected => _hubConnection.State == HubConnectionState.Connected;
-
     public ScreenHubService(
-        IOptions<MireyaApiClientOptions> options, 
+        IOptions<MireyaApiClientOptions> options,
         IAccessTokenProvider accessTokenProvider,
-        ILogger<ScreenHubService> logger)
+        ILogger<ScreenHubService> logger
+    )
     {
         _accessTokenProvider = accessTokenProvider;
         _logger = logger;
-        
+
         var baseUrl = options.Value.BaseUrl.TrimEnd('/');
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl($"{baseUrl}/hubs/screen", options =>
-            {
-                options.AccessTokenProvider = () => Task.FromResult(_accessTokenProvider.GetAccessToken());
-            })
+            .WithUrl(
+                $"{baseUrl}/hubs/screen",
+                options =>
+                {
+                    options.AccessTokenProvider = () =>
+                        Task.FromResult(_accessTokenProvider.GetAccessToken());
+                }
+            )
             .WithAutomaticReconnect()
             .ConfigureLogging(logging =>
             {
@@ -47,12 +50,30 @@ public class ScreenHubService : IScreenHubService
             })
             .Build();
 
-        _hubConnection.On<ScreenConfiguration>("ReceiveConfigurationUpdate", config =>
-        {
-            _logger.LogInformation("Received config: {ScreenName} with {CampaignCount} campaigns", 
-                config.ScreenName, config.Campaigns.Count);
-            OnConfigurationUpdateReceived?.Invoke(config);
-        });
+        _hubConnection.On<ScreenConfiguration>(
+            "ReceiveConfigurationUpdate",
+            config =>
+            {
+                _logger.LogInformation(
+                    "Received config: {ScreenName} with {CampaignCount} campaigns",
+                    config.ScreenName,
+                    config.Campaigns.Count
+                );
+                OnConfigurationUpdateReceived?.Invoke(config);
+            }
+        );
+
+        _hubConnection.On<List<CampaignSyncInfo>>(
+            "StartAssetSync",
+            campaigns =>
+            {
+                _logger.LogInformation(
+                    "Received StartAssetSync for {CampaignCount} campaigns",
+                    campaigns.Count
+                );
+                OnStartAssetSync?.Invoke(campaigns);
+            }
+        );
 
         _hubConnection.Closed += error =>
         {
@@ -69,9 +90,19 @@ public class ScreenHubService : IScreenHubService
         _hubConnection.Reconnected += connectionId =>
         {
             _logger.LogInformation("SignalR reconnected: {ConnectionId}", connectionId);
+
+            // Trigger sync check on reconnect
+            OnReconnected?.Invoke();
+
             return Task.CompletedTask;
         };
     }
+
+    public event Action<ScreenConfiguration>? OnConfigurationUpdateReceived;
+    public event Action<List<CampaignSyncInfo>>? OnStartAssetSync;
+    public event Action? OnReconnected;
+
+    public bool IsConnected => _hubConnection.State == HubConnectionState.Connected;
 
     public async Task ConnectAsync()
     {
@@ -96,19 +127,38 @@ public class ScreenHubService : IScreenHubService
     {
         await _hubConnection.DisposeAsync();
     }
-    
+
     // Simple logger provider to ensure we see SignalR internal logs in console
     private class ConsoleLoggerProvider : ILoggerProvider
     {
-        public ILogger CreateLogger(string categoryName) => new ConsoleLogger(categoryName);
+        public ILogger CreateLogger(string categoryName)
+        {
+            return new ConsoleLogger(categoryName);
+        }
+
         public void Dispose() { }
     }
-    
+
     private class ConsoleLogger(string categoryName) : ILogger
     {
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-        public bool IsEnabled(LogLevel logLevel) => true;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull
+        {
+            return null;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        )
         {
             Console.WriteLine($"[{logLevel}] {categoryName}: {formatter(state, exception)}");
         }

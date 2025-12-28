@@ -1,7 +1,7 @@
 ﻿namespace Mireya.Api.Services.ScreenManagement;
 
 /// <summary>
-/// Paged response for screens list
+///     Paged response for screens list
 /// </summary>
 public class PagedScreensResponse
 {
