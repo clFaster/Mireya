@@ -48,7 +48,8 @@ public record CampaignAssetDetail(
     string Source,
     int Position,
     int? DurationSeconds,
-    int ResolvedDuration // Calculated: use DurationSeconds or asset's duration or default
+    int ResolvedDuration, // Calculated: use DurationSeconds or asset's duration or default
+    bool IsMuted // Whether video audio should be muted
 );
 
 public record DisplayInfo(Guid Id, string Name, string Location);

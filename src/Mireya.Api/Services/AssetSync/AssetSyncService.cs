@@ -140,7 +140,9 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
                     ca.Asset.Name,
                     ca.Asset.Type.ToString(),
                     ca.Asset.Source,
-                    ca.Asset.FileSizeBytes
+                    ca.Asset.FileSizeBytes,
+                    ca.Asset.DurationSeconds,
+                    ca.Asset.IsMuted
                 ))
                 .ToList();
 

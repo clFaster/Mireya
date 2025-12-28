@@ -19,7 +19,9 @@ public record AssetDownloadInfo(
     string Name,
     string Type,
     string Source,
-    long? FileSizeBytes
+    long? FileSizeBytes,
+    int? DurationSeconds,
+    bool IsMuted
 );
 
 public record CampaignSyncInfo(

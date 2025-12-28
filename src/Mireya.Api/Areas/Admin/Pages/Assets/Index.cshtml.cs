@@ -90,11 +90,23 @@ public class AssetsIndexModel(
         return RedirectToPage(new { TypeFilter, CurrentPage });
     }
 
-    public async Task<IActionResult> OnPostEditAsync(Guid assetId, string name, string? description)
+    public async Task<IActionResult> OnPostEditAsync(
+        Guid assetId,
+        string name,
+        string? description,
+        int? durationSeconds,
+        bool? isMuted
+    )
     {
         try
         {
-            var request = new UpdateAssetMetadataRequest { Name = name, Description = description };
+            var request = new UpdateAssetMetadataRequest
+            {
+                Name = name,
+                Description = description,
+                DurationSeconds = durationSeconds,
+                IsMuted = isMuted,
+            };
 
             await assetService.UpdateAssetMetadataAsync(assetId, request);
             SuccessMessage = "Asset updated successfully.";
