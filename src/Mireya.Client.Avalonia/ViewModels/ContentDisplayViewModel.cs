@@ -60,7 +60,13 @@ public partial class ContentDisplayViewModel : ViewModelBase
     private string? _currentVideoPath;
 
     [ObservableProperty]
+    private Uri? _currentVideoUri;
+
+    [ObservableProperty]
     private string? _currentWebsiteUrl;
+
+    [ObservableProperty]
+    private Uri? _currentWebsiteUri;
 
     public ContentDisplayViewModel(
         IAuthenticationService authenticationService,
@@ -226,9 +232,11 @@ public partial class ContentDisplayViewModel : ViewModelBase
             foreach (var asset in sortedAssets)
             {
                 var localPath = _assetSyncService.GetAssetLocalPath(asset.AssetId);
+                var needsLocalFile = asset.AssetType != AssetType.Website;
+                var hasLocalFile = !string.IsNullOrEmpty(localPath) && File.Exists(localPath);
 
-                // Skip if asset is not downloaded yet
-                if (string.IsNullOrEmpty(localPath) || !File.Exists(localPath))
+                // Skip if asset needs a downloaded file and it is missing
+                if (needsLocalFile && !hasLocalFile)
                 {
                     _logger.LogWarning(
                         "Asset {AssetId} ({AssetName}) not found locally, skipping",
@@ -246,7 +254,7 @@ public partial class ContentDisplayViewModel : ViewModelBase
                         AssetId = asset.AssetId,
                         AssetName = asset.AssetName,
                         AssetType = asset.AssetType,
-                        LocalPath = localPath,
+                        LocalPath = hasLocalFile ? localPath! : string.Empty,
                         Source = asset.Source,
                         DurationSeconds = asset.ResolvedDuration,
                         Position = asset.Position,
@@ -332,7 +340,9 @@ public partial class ContentDisplayViewModel : ViewModelBase
 
         CurrentContentType = ContentType.Image;
         CurrentVideoPath = null;
+        CurrentVideoUri = null;
         CurrentWebsiteUrl = null;
+        CurrentWebsiteUri = null;
 
         try
         {
@@ -362,8 +372,17 @@ public partial class ContentDisplayViewModel : ViewModelBase
 
         CurrentContentType = ContentType.Video;
         CurrentVideoPath = item.LocalPath;
+        CurrentVideoUri = TryCreateUri(item.LocalPath);
         CurrentImage = null;
         CurrentWebsiteUrl = null;
+        CurrentWebsiteUri = null;
+
+        if (CurrentVideoUri == null)
+        {
+            _logger.LogWarning("Invalid video URI for asset {AssetId}", item.AssetId);
+            AdvanceToNext();
+            return;
+        }
 
         // Video player should handle completion event
         // For now, use duration as fallback
@@ -376,11 +395,25 @@ public partial class ContentDisplayViewModel : ViewModelBase
 
         CurrentContentType = ContentType.Website;
         CurrentWebsiteUrl = item.Source;
+        CurrentWebsiteUri = TryCreateUri(item.Source);
         CurrentImage = null;
         CurrentVideoPath = null;
+        CurrentVideoUri = null;
+
+        if (CurrentWebsiteUri == null)
+        {
+            _logger.LogWarning("Invalid website URL for asset {AssetId}", item.AssetId);
+            AdvanceToNext();
+            return;
+        }
 
         // Set timer to advance after duration
         StartAdvanceTimer(item.DurationSeconds);
+    }
+
+    private static Uri? TryCreateUri(string? value)
+    {
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) ? uri : null;
     }
 
     private void StartAdvanceTimer(int durationSeconds)
