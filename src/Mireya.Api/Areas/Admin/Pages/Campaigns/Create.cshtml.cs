@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,11 @@ using Mireya.Database.Models;
 
 namespace Mireya.Api.Areas.Admin.Pages.Campaigns;
 
-public class CreateModel(MireyaDbContext context, ICampaignService campaignService, ILogger<CreateModel> logger) : PageModel
+public class CreateModel(
+    MireyaDbContext context,
+    ICampaignService campaignService,
+    ILogger<CreateModel> logger
+) : PageModel
 {
     [BindProperty]
     public string Name { get; set; } = string.Empty;
@@ -41,13 +46,13 @@ public class CreateModel(MireyaDbContext context, ICampaignService campaignServi
         {
             // Parse selected assets from JSON
             logger.LogInformation("Raw SelectedAssetsJson: {Json}", SelectedAssetsJson);
-            
-            var options = new System.Text.Json.JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-            var selectedAssets = System.Text.Json.JsonSerializer.Deserialize<List<SelectedAsset>>(SelectedAssetsJson, options);
-            
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var selectedAssets = JsonSerializer.Deserialize<List<SelectedAsset>>(
+                SelectedAssetsJson,
+                options
+            );
+
             if (selectedAssets == null || !selectedAssets.Any())
             {
                 ErrorMessage = "Please add at least one asset to the campaign.";
@@ -55,19 +60,26 @@ public class CreateModel(MireyaDbContext context, ICampaignService campaignServi
                 return Page();
             }
 
-            logger.LogInformation("Creating campaign with {AssetCount} assets. Asset IDs: {AssetIds}", 
-                selectedAssets.Count, 
-                string.Join(", ", selectedAssets.Select(a => a.AssetId)));
+            logger.LogInformation(
+                "Creating campaign with {AssetCount} assets. Asset IDs: {AssetIds}",
+                selectedAssets.Count,
+                string.Join(", ", selectedAssets.Select(a => a.AssetId))
+            );
 
             // Create campaign request
             var request = new CreateCampaignRequest(
                 Name,
                 Description,
-                selectedAssets.Select((a, index) => new CampaignAssetDto(
-                    a.AssetId,
-                    index + 1, // Position is 1-based
-                    a.DurationSeconds
-                )).ToList(),
+                selectedAssets
+                    .Select(
+                        (a, index) =>
+                            new CampaignAssetDto(
+                                a.AssetId,
+                                index + 1, // Position is 1-based
+                                a.DurationSeconds
+                            )
+                    )
+                    .ToList(),
                 [] // Empty display list - displays are assigned from the screen edit page
             );
 
@@ -95,9 +107,7 @@ public class CreateModel(MireyaDbContext context, ICampaignService campaignServi
 
     private async Task LoadDataAsync()
     {
-        AvailableAssets = await context.Assets
-            .OrderBy(a => a.Name)
-            .ToListAsync();
+        AvailableAssets = await context.Assets.OrderBy(a => a.Name).ToListAsync();
     }
 }
 

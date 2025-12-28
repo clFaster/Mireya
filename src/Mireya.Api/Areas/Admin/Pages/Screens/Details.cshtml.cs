@@ -14,35 +14,34 @@ public class DetailsModel(MireyaDbContext context) : PageModel
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
-        var screen = await context.Displays
-            .Include(d => d.CampaignAssignments)
+        var screen = await context
+            .Displays.Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
                     .ThenInclude(c => c.CampaignAssets)
                         .ThenInclude(ca => ca.Asset)
             .FirstOrDefaultAsync(d => d.Id == id);
 
         if (screen == null)
-        {
             return NotFound();
-        }
 
         Screen = screen;
-        
+
         // Check if screen is currently online using IsActive
         IsOnline = screen.IsActive;
 
         // Flatten all campaign assets with campaign information
-        CampaignAssets = Screen.CampaignAssignments
-            .SelectMany(assignment => assignment.Campaign.CampaignAssets
-                .Select(ca => new CampaignAssetViewModel
+        CampaignAssets = Screen
+            .CampaignAssignments.SelectMany(assignment =>
+                assignment.Campaign.CampaignAssets.Select(ca => new CampaignAssetViewModel
                 {
                     CampaignName = assignment.Campaign.Name,
                     AssetId = ca.AssetId,
                     AssetName = ca.Asset.Name,
                     AssetType = ca.Asset.Type,
                     Position = ca.Position,
-                    DurationSeconds = ca.DurationSeconds ?? ca.Asset.DurationSeconds ?? 10 // Use override, then asset duration, then default 10
-                }))
+                    DurationSeconds = ca.DurationSeconds ?? ca.Asset.DurationSeconds ?? 10, // Use override, then asset duration, then default 10
+                })
+            )
             .OrderBy(ca => ca.CampaignName)
             .ThenBy(ca => ca.Position)
             .ToList();

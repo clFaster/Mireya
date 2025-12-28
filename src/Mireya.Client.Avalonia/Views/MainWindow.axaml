@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+        xmlns:views="using:Mireya.Client.Avalonia.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
@@ -12,171 +13,21 @@
         MinWidth="700" MinHeight="600">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <ScrollViewer>
-        <StackPanel Margin="40" Spacing="25">
-            
-            <!-- Title -->
-            <TextBlock Text="Mireya Digital Signage Client" 
-                       FontSize="28" 
-                       FontWeight="Bold"
-                       HorizontalAlignment="Center"
-                       Margin="0,10,0,20"/>
-            
-            <!-- Backend Configuration Section -->
-            <Border BorderBrush="#2196F3" 
-                    BorderThickness="2" 
-                    CornerRadius="8" 
-                    Padding="25"
-                    Background="White">
-                <StackPanel Spacing="15">
-                    <TextBlock Text="⚙️ Backend Configuration" 
-                               FontSize="20" 
-                               FontWeight="SemiBold"
-                               Foreground="#1976D2"
-                               Margin="0,0,0,10"/>
-                    
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Backend URL:" 
-                                   FontWeight="SemiBold"
-                                   FontSize="15"/>
-                        <TextBox Text="{Binding BackendUrl}" 
-                                 Watermark="https://your-mireya-backend.com"
-                                 FontSize="15"
-                                 Padding="10"
-                                 Height="40"/>
-                    </StackPanel>
-                    
-                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,5,0,0">
-                        <Button Content="💾 Save URL" 
-                                Command="{Binding SaveCommand}"
-                                Width="130"
-                                Height="40"
-                                FontSize="14"
-                                Foreground="#5632A8"
-                                FontWeight="SemiBold"/>
-                        <Button Content="✖ Cancel" 
-                                Command="{Binding CancelCommand}"
-                                Width="130"
-                                Height="40"
-                                Foreground="#5632A8"
-                                FontSize="14"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-            
-            <!-- Authentication Section -->
-            <Border BorderBrush="#4CAF50" 
-                    BorderThickness="2" 
-                    CornerRadius="8" 
-                    Padding="25"
-                    Background="White">
-                <StackPanel Spacing="15">
-                    <TextBlock Text="🔐 Authentication" 
-                               FontSize="20" 
-                               FontWeight="SemiBold"
-                               Foreground="#388E3C"
-                               Margin="0,0,0,10"/>
-                    
-                    <!-- Authentication Status -->
-                    <Border Background="#F1F8E9" 
-                            Padding="15" 
-                            CornerRadius="6"
-                            BorderBrush="#C5E1A5"
-                            BorderThickness="1">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Current Status:" 
-                                       FontWeight="SemiBold"
-                                       FontSize="15"
-                                       Foreground="#558B2F"/>
-                            <TextBlock Text="{Binding AuthStatus}" 
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       Foreground="#2E7D32"/>
-                        </StackPanel>
-                    </Border>
-                    
-                    <!-- Authentication Buttons -->
-                    <StackPanel Spacing="12" Margin="0,5,0,0">
-                        <TextBlock Text="Actions:" 
-                                   FontWeight="SemiBold"
-                                   FontSize="15"/>
-                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" RowSpacing="10" ColumnSpacing="10">
-                            <Button Content="📝 Register Screen" 
-                                    Command="{Binding RegisterCommand}"
-                                    Grid.Row="0" Grid.Column="0"
-                                    Height="45"
-                                    FontSize="14"
-                                    HorizontalContentAlignment="Center"
-                                    Foreground="#5632A8"
-                                    ToolTip.Tip="Register this screen with the backend (first time setup)"/>
-                            <Button Content="🔑 Login" 
-                                    Command="{Binding LoginCommand}"
-                                    Grid.Row="0" Grid.Column="1"
-                                    Height="45"
-                                    FontSize="14"
-                                    HorizontalContentAlignment="Center"
-                                    Foreground="#5632A8"
-                                    ToolTip.Tip="Login with stored credentials"/>
-                            <Button Content="📊 Fetch Screen Info" 
-                                    Command="{Binding FetchScreenInfoCommand}"
-                                    Grid.Row="1" Grid.Column="0"
-                                    Height="45"
-                                    FontSize="14"
-                                    HorizontalContentAlignment="Center"
-                                    Foreground="#5632A8"
-                                    ToolTip.Tip="Get screen details from backend (requires authentication)"/>
-                            <Button Content="🔄 Test SignalR" 
-                                    Command="{Binding TestSyncCommand}"
-                                    Grid.Row="1" Grid.Column="1"
-                                    Height="45"
-                                    FontSize="14"
-                                    HorizontalContentAlignment="Center"
-                                    Foreground="#5632A8"
-                                    ToolTip.Tip="Test SignalR connection status"/>
-                        </Grid>
-                        <Button Content="🚪 Logout" 
-                                Command="{Binding LogoutCommand}"
-                                Height="45"
-                                FontSize="14"
-                                HorizontalContentAlignment="Center"
-                                Foreground="#5632A8"
-                                ToolTip.Tip="Clear credentials and logout"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-            
-            <!-- Status Message Section -->
-            <Border BorderBrush="#FF9800" 
-                    BorderThickness="2" 
-                    CornerRadius="8" 
-                    Padding="25"
-                    Background="White">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="📋 Status Messages" 
-                               FontSize="20" 
-                               FontWeight="SemiBold"
-                               Foreground="#F57C00"/>
-                    <Border Background="#FFF3E0"
-                            BorderBrush="#FFE0B2"
-                            BorderThickness="1"
-                            CornerRadius="6">
-                        <ScrollViewer Height="150" 
-                                      VerticalScrollBarVisibility="Auto"
-                                      Padding="15">
-                            <TextBlock Text="{Binding StatusMessage}" 
-                                       TextWrapping="Wrap"
-                                       FontSize="14"
-                                       LineHeight="22"
-                                       Foreground="#424242"/>
-                        </ScrollViewer>
-                    </Border>
-                </StackPanel>
-            </Border>
-            
-        </StackPanel>
-    </ScrollViewer>
+    <ContentControl Content="{Binding CurrentView}">
+        <ContentControl.DataTemplates>
+            <!-- BackendSelectionViewModel -> BackendSelectionView -->
+            <DataTemplate DataType="vm:BackendSelectionViewModel">
+                <views:BackendSelectionView />
+            </DataTemplate>
+
+            <!-- ClientStatusViewModel -> ClientStatusView -->
+            <DataTemplate DataType="vm:ClientStatusViewModel">
+                <views:ClientStatusView />
+            </DataTemplate>
+        </ContentControl.DataTemplates>
+    </ContentControl>
 
 </Window>

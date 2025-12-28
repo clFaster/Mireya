@@ -1,3 +1,5 @@
+using Mireya.Database.Models;
+
 namespace Mireya.Api.Services.Campaign;
 
 // Request DTOs
@@ -15,11 +17,7 @@ public record UpdateCampaignRequest(
     List<Guid> DisplayIds
 );
 
-public record CampaignAssetDto(
-    Guid AssetId,
-    int Position,
-    int? DurationSeconds
-);
+public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
 
 // Response DTOs
 public record CampaignSummary(
@@ -46,15 +44,11 @@ public record CampaignAssetDetail(
     Guid Id,
     Guid AssetId,
     string AssetName,
-    Database.Models.AssetType AssetType,
+    AssetType AssetType,
     string Source,
     int Position,
     int? DurationSeconds,
     int ResolvedDuration // Calculated: use DurationSeconds or asset's duration or default
 );
 
-public record DisplayInfo(
-    Guid Id,
-    string Name,
-    string Location
-);
+public record DisplayInfo(Guid Id, string Name, string Location);

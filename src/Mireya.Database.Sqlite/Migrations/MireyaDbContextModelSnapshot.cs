@@ -15,7 +15,7 @@ namespace Mireya.Database.Sqlite.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -185,6 +185,48 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.HasIndex("Type");
 
                     b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.AssetSyncStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DisplayId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SyncState")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("DisplayId");
+
+                    b.HasIndex("SyncState");
+
+                    b.HasIndex("DisplayId", "AssetId")
+                        .IsUnique();
+
+                    b.ToTable("AssetSyncStatuses");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.Campaign", b =>
@@ -457,6 +499,25 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.AssetSyncStatus", b =>
+                {
+                    b.HasOne("Mireya.Database.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Mireya.Database.Models.Display", "Display")
+                        .WithMany()
+                        .HasForeignKey("DisplayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("Display");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.CampaignAsset", b =>

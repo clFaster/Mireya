@@ -2,13 +2,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Mireya.Client.Avalonia.App"
              xmlns:local="using:Mireya.Client.Avalonia"
+             xmlns:converters="using:Mireya.Client.Avalonia.Converters"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Resources>
+        <converters:BoolToColorConverter x:Key="ErrorColorConverter"
+                                         TrueColor="#D32F2F"
+                                         FalseColor="#4CAF50" />
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+    </Application.Resources>
 
     <Application.DataTemplates>
-        <local:ViewLocator/>
+        <local:ViewLocator />
     </Application.DataTemplates>
-  
+
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
