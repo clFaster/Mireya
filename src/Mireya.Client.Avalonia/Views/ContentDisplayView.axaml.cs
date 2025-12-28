@@ -25,6 +25,20 @@ public partial class ContentDisplayView : UserControl
                 viewModel.VideoPlaybackRequested += videoDisplay.PlayVideo;
                 viewModel.VideoStopRequested += videoDisplay.Stop;
             }
+
+            // Find the WebsiteAssetDisplay component and wire up navigation
+            var websiteDisplay = this.FindControl<WebsiteAssetDisplay>("WebsiteDisplay");
+            if (websiteDisplay != null)
+            {
+                // Subscribe to CurrentWebsiteUri changes to navigate
+                viewModel.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName == nameof(ContentDisplayViewModel.CurrentWebsiteUri))
+                    {
+                        websiteDisplay.Navigate(viewModel.CurrentWebsiteUri);
+                    }
+                };
+            }
         }
     }
 }

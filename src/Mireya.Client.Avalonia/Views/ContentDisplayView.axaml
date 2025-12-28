@@ -31,7 +31,8 @@
                                       IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Video}}" />
 
         <!-- Website display -->
-        <components:WebsiteAssetDisplay Grid.Row="0"
+        <components:WebsiteAssetDisplay x:Name="WebsiteDisplay"
+                                        Grid.Row="0"
                                         DataContext="{Binding}"
                                         IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Website}}" />
 
