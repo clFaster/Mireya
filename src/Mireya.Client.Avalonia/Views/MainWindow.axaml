@@ -23,9 +23,9 @@
                 <views:BackendSelectionView />
             </DataTemplate>
 
-            <!-- ClientStatusViewModel -> ClientStatusView -->
-            <DataTemplate DataType="vm:ClientStatusViewModel">
-                <views:ClientStatusView />
+            <!-- ContentDisplayViewModel -> ContentDisplayView -->
+            <DataTemplate DataType="vm:ContentDisplayViewModel">
+                <views:ContentDisplayView />
             </DataTemplate>
         </ContentControl.DataTemplates>
     </ContentControl>

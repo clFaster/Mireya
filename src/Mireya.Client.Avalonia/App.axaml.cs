@@ -137,7 +137,7 @@ public class App : Application
 
         // Register ViewModels
         services.AddTransient<MainWindowViewModel>();
-        services.AddTransient<ClientStatusViewModel>();
+        services.AddTransient<ContentDisplayViewModel>();
         services.AddTransient<BackendSelectionViewModel>();
 
         var serviceProvider = services.BuildServiceProvider();

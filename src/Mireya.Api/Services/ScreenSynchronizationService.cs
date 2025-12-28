@@ -32,8 +32,6 @@ public class ScreenSynchronizationService(
 
     public async Task SyncScreenAsync(Guid displayId)
     {
-        logger.LogDebug("Syncing screen {DisplayId}", displayId);
-
         var display = await db
             .Displays.Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
@@ -90,10 +88,11 @@ public class ScreenSynchronizationService(
         };
 
         logger.LogInformation(
-            "Sending config to user {UserId}: {ScreenName} with {CampaignCount} campaigns",
-            display.UserId,
+            "SYNC SCREEN: {ScreenName} - CampaignAssignments: {Count}, Config campaigns: {ConfigCampaigns}, UserId: {UserId}",
             display.Name,
-            campaigns.Count
+            display.CampaignAssignments.Count,
+            campaigns.Count,
+            display.UserId
         );
 
         await hubContext.Clients.User(display.UserId).ReceiveConfigurationUpdate(config);
@@ -114,7 +113,7 @@ public class ScreenSynchronizationService(
         await hubContext.Clients.User(display.UserId).StartAssetSync(campaignsToSync);
 
         logger.LogInformation(
-            "Notified client to sync {CampaignCount} campaigns with {AssetCount} total unique assets",
+            "NOTIFY SYNC: {CampaignCount} campaigns, {AssetCount} assets",
             campaignsToSync.Count,
             allAssetIds.Count
         );

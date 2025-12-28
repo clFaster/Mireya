@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace Mireya.Client.Avalonia.Views;
 
-public partial class ClientStatusView : UserControl
+public partial class ContentDisplayView : UserControl
 {
-    public ClientStatusView()
+    public ContentDisplayView()
     {
         InitializeComponent();
     }
