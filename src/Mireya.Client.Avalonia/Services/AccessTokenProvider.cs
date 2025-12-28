@@ -4,8 +4,8 @@ using Mireya.ApiClient.Services;
 namespace Mireya.Client.Avalonia.Services;
 
 /// <summary>
-/// Database-backed access token provider
-/// Retrieves tokens from encrypted credential storage
+///     Database-backed access token provider
+///     Retrieves tokens from encrypted credential storage
 /// </summary>
 public class AccessTokenProvider : IAccessTokenProvider
 {
@@ -20,9 +20,10 @@ public class AccessTokenProvider : IAccessTokenProvider
     {
         // This needs to be synchronous for HTTP client handlers
         // Use Task.Run to make it work (not ideal but necessary for IAccessTokenProvider interface)
-        var credential = Task.Run(async () => 
-            await _credentialManager.GetCurrentCredentialsAsync()).Result;
-            
+        var credential = Task.Run(async () =>
+            await _credentialManager.GetCurrentCredentialsAsync()
+        ).Result;
+
         return credential?.AccessToken;
     }
 
@@ -33,4 +34,3 @@ public class AccessTokenProvider : IAccessTokenProvider
         // Token management should be done via CredentialManager
     }
 }
-

@@ -14,22 +14,28 @@ public class ScreenHub(
     ILogger<ScreenHub> logger,
     IScreenConnectionTracker connectionTracker,
     IScreenSynchronizationService screenSyncService,
-    MireyaDbContext db) : Hub<IScreenClient>
+    MireyaDbContext db
+) : Hub<IScreenClient>
 {
     public override async Task OnConnectedAsync()
     {
         var userId = Context.UserIdentifier;
         var connectionId = Context.ConnectionId;
-        
-        logger.LogInformation("Screen connected: UserId={UserId}, ConnectionId={ConnectionId}", 
-            userId, connectionId);
-        
+
+        logger.LogInformation(
+            "Screen connected: UserId={UserId}, ConnectionId={ConnectionId}",
+            userId,
+            connectionId
+        );
+
         if (!string.IsNullOrEmpty(userId))
         {
             connectionTracker.AddConnection(userId, connectionId);
-            logger.LogInformation("Registered connection. Online screens: {Count}", 
-                connectionTracker.GetOnlineScreenCount());
-            
+            logger.LogInformation(
+                "Registered connection. Online screens: {Count}",
+                connectionTracker.GetOnlineScreenCount()
+            );
+
             // Update IsActive and LastSeenAt in database
             var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
             if (display != null)
@@ -39,13 +45,16 @@ public class ScreenHub(
                 display.UpdatedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
                 logger.LogInformation("Updated IsActive=true for screen {DisplayId}", display.Id);
-                
+
                 // Trigger sync when client connects/reconnects
-                logger.LogInformation("Triggering sync for display {DisplayId} on connect", display.Id);
+                logger.LogInformation(
+                    "Triggering sync for display {DisplayId} on connect",
+                    display.Id
+                );
                 await screenSyncService.SyncScreenAsync(display.Id);
             }
         }
-        
+
         await base.OnConnectedAsync();
     }
 
@@ -53,16 +62,25 @@ public class ScreenHub(
     {
         var userId = Context.UserIdentifier;
         var connectionId = Context.ConnectionId;
-        
-        logger.LogInformation(exception, "Screen disconnected: UserId={UserId}, ConnectionId={ConnectionId}", 
-            userId, connectionId);
-        
+
+        logger.LogInformation(
+            exception,
+            "Screen disconnected: UserId={UserId}, ConnectionId={ConnectionId}",
+            userId,
+            connectionId
+        );
+
         connectionTracker.RemoveConnection(connectionId);
-        logger.LogInformation("Removed connection. Online screens: {Count}", 
-            connectionTracker.GetOnlineScreenCount());
-        
+        logger.LogInformation(
+            "Removed connection. Online screens: {Count}",
+            connectionTracker.GetOnlineScreenCount()
+        );
+
         // Only set IsActive=false if this user has no more connections
-        if (!string.IsNullOrEmpty(userId) && !connectionTracker.GetConnectedUserIds().Contains(userId))
+        if (
+            !string.IsNullOrEmpty(userId)
+            && !connectionTracker.GetConnectedUserIds().Contains(userId)
+        )
         {
             var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
             if (display != null)
@@ -74,7 +92,7 @@ public class ScreenHub(
                 logger.LogInformation("Updated IsActive=false for screen {DisplayId}", display.Id);
             }
         }
-        
+
         await base.OnDisconnectedAsync(exception);
     }
 }

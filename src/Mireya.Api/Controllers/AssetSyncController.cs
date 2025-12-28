@@ -1,16 +1,17 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mireya.Api.Constants;
 using Mireya.Api.Services.AssetSync;
 using Mireya.Database;
-using System.Security.Claims;
 
 namespace Mireya.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AssetSyncController(IAssetSyncService assetSyncService, MireyaDbContext db) : ControllerBase
+public class AssetSyncController(IAssetSyncService assetSyncService, MireyaDbContext db)
+    : ControllerBase
 {
     [HttpPost("status")]
     [Authorize(Roles = Roles.Screen)]
@@ -18,16 +19,12 @@ public class AssetSyncController(IAssetSyncService assetSyncService, MireyaDbCon
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-        {
             return Unauthorized("User ID not found");
-        }
 
         // Get displayId from userId
         var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
         if (display == null)
-        {
             return NotFound("Display not found for current user");
-        }
 
         try
         {
@@ -46,16 +43,12 @@ public class AssetSyncController(IAssetSyncService assetSyncService, MireyaDbCon
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-        {
             return Unauthorized("User ID not found");
-        }
 
         // Get displayId from userId
         var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
         if (display == null)
-        {
             return NotFound("Display not found for current user");
-        }
 
         try
         {
@@ -74,16 +67,12 @@ public class AssetSyncController(IAssetSyncService assetSyncService, MireyaDbCon
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
-        {
             return Unauthorized("User ID not found");
-        }
 
         // Get displayId from userId
         var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
         if (display == null)
-        {
             return NotFound("Display not found for current user");
-        }
 
         try
         {
@@ -99,7 +88,9 @@ public class AssetSyncController(IAssetSyncService assetSyncService, MireyaDbCon
     // Admin endpoint to get sync status for any display
     [HttpGet("{displayId:guid}/status")]
     [Authorize(Roles = Roles.Admin)]
-    public async Task<ActionResult<List<AssetSyncStatusDto>>> GetSyncStatusForDisplay(Guid displayId)
+    public async Task<ActionResult<List<AssetSyncStatusDto>>> GetSyncStatusForDisplay(
+        Guid displayId
+    )
     {
         try
         {

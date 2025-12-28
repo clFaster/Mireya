@@ -1,7 +1,7 @@
 ﻿namespace Mireya.Api.Services.ScreenManagement;
 
 /// <summary>
-/// Response payload for screen approval
+///     Response payload for screen approval
 /// </summary>
 public class ApproveScreenResponse
 {

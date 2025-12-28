@@ -9,19 +9,22 @@ namespace Mireya.Client.Avalonia.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MainWindowViewModel> _logger;
-    
+    private readonly IServiceProvider _serviceProvider;
+
     [ObservableProperty]
     private ViewModelBase? _currentView;
 
-    public MainWindowViewModel(IServiceProvider serviceProvider, ILogger<MainWindowViewModel> logger)
+    public MainWindowViewModel(
+        IServiceProvider serviceProvider,
+        ILogger<MainWindowViewModel> logger
+    )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        
+
         _logger.LogInformation("MainWindowViewModel initialized");
-        
+
         // Start with backend selection
         ShowBackendSelection();
     }
@@ -29,22 +32,27 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ShowBackendSelection()
     {
         _logger.LogInformation("Showing backend selection view");
-        
+
         var backendManager = _serviceProvider.GetRequiredService<IBackendManager>();
         var apiClientConfig = _serviceProvider.GetRequiredService<IApiClientConfiguration>();
         var logger = _serviceProvider.GetRequiredService<ILogger<BackendSelectionViewModel>>();
-        
+
         CurrentView = new BackendSelectionViewModel(
-            backendManager, 
-            apiClientConfig, 
-            logger, 
-            OnBackendSelected);
+            backendManager,
+            apiClientConfig,
+            logger,
+            OnBackendSelected
+        );
     }
 
     private void OnBackendSelected(BackendInstance backend)
     {
-        _logger.LogInformation("Backend selected: {BackendId} - {Url}", backend.Id, backend.BaseUrl);
-        
+        _logger.LogInformation(
+            "Backend selected: {BackendId} - {Url}",
+            backend.Id,
+            backend.BaseUrl
+        );
+
         // Show client status view
         ShowClientStatus();
     }
@@ -52,7 +60,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ShowClientStatus()
     {
         _logger.LogInformation("Showing client status view");
-        
+
         CurrentView = _serviceProvider.GetRequiredService<ClientStatusViewModel>();
     }
 }

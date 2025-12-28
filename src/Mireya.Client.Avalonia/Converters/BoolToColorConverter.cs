@@ -1,7 +1,7 @@
-using Avalonia.Data.Converters;
-using Avalonia.Media;
 using System;
 using System.Globalization;
+using Avalonia.Data.Converters;
+using Avalonia.Media;
 
 namespace Mireya.Client.Avalonia.Converters;
 
@@ -13,13 +13,16 @@ public class BoolToColorConverter : IValueConverter
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool boolValue)
-        {
             return boolValue ? Brush.Parse(TrueColor) : Brush.Parse(FalseColor);
-        }
         return Brush.Parse(FalseColor);
     }
 
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object? ConvertBack(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    )
     {
         throw new NotImplementedException();
     }

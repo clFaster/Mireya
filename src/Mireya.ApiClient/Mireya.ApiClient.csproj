@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -10,16 +9,23 @@
   <ItemGroup>
     <PackageReference Include="FluentResults" Version="4.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageReference
+      Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+      Version="10.0.0"
+    />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageReference Include="Nanoid" Version="3.1.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
   </ItemGroup>
 
   <!-- NSwag code generation target - runs before compilation -->
-  <Target Name="NSwag" BeforeTargets="CoreCompile" Inputs="nswag.json;../Mireya.Api/Mireya.Api.csproj" Outputs="Generated/MireyaApiClient.cs">
+  <Target
+    Name="NSwag"
+    BeforeTargets="CoreCompile"
+    Inputs="nswag.json;../Mireya.Api/Mireya.Api.csproj"
+    Outputs="Generated/MireyaApiClient.cs"
+  >
     <Message Importance="high" Text="Generating API client from OpenAPI spec..." />
     <Exec Command="dotnet tool run nswag run nswag.json" WorkingDirectory="$(ProjectDir)" />
   </Target>
-
 </Project>

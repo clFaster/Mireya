@@ -13,20 +13,23 @@ public interface IAssetSyncService
     Task CleanupSyncStatusAsync(Guid displayId, List<Guid> currentAssetIds);
 }
 
-public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logger) : IAssetSyncService
+public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logger)
+    : IAssetSyncService
 {
     public async Task InitializeSyncStatusForDisplayAsync(Guid displayId, List<Guid> assetIds)
     {
-        logger.LogDebug("Initializing sync status for display {DisplayId} with {AssetCount} assets", 
-            displayId, assetIds.Count);
+        logger.LogDebug(
+            "Initializing sync status for display {DisplayId} with {AssetCount} assets",
+            displayId,
+            assetIds.Count
+        );
 
         foreach (var assetId in assetIds.Distinct())
         {
             // Check if sync status already exists
-            var existingStatus = await db.AssetSyncStatuses
-                .FirstOrDefaultAsync(ass => 
-                    ass.DisplayId == displayId && 
-                    ass.AssetId == assetId);
+            var existingStatus = await db.AssetSyncStatuses.FirstOrDefaultAsync(ass =>
+                ass.DisplayId == displayId && ass.AssetId == assetId
+            );
 
             if (existingStatus == null)
             {
@@ -37,7 +40,7 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
                     AssetId = assetId,
                     SyncState = SyncState.Pending,
                     Progress = 0,
-                    LastUpdatedAt = DateTime.UtcNow
+                    LastUpdatedAt = DateTime.UtcNow,
                 };
 
                 db.AssetSyncStatuses.Add(syncStatus);
@@ -54,18 +57,25 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
 
     public async Task UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request)
     {
-        logger.LogDebug("Updating sync status for display {DisplayId}, asset {AssetId}: {State} ({Progress}%)",
-            displayId, request.AssetId, request.SyncState, request.Progress);
+        logger.LogDebug(
+            "Updating sync status for display {DisplayId}, asset {AssetId}: {State} ({Progress}%)",
+            displayId,
+            request.AssetId,
+            request.SyncState,
+            request.Progress
+        );
 
-        var syncStatus = await db.AssetSyncStatuses
-            .FirstOrDefaultAsync(ass => 
-                ass.DisplayId == displayId && 
-                ass.AssetId == request.AssetId);
+        var syncStatus = await db.AssetSyncStatuses.FirstOrDefaultAsync(ass =>
+            ass.DisplayId == displayId && ass.AssetId == request.AssetId
+        );
 
         if (syncStatus == null)
         {
-            logger.LogWarning("Sync status not found for display {DisplayId}, asset {AssetId}",
-                displayId, request.AssetId);
+            logger.LogWarning(
+                "Sync status not found for display {DisplayId}, asset {AssetId}",
+                displayId,
+                request.AssetId
+            );
             return;
         }
 
@@ -85,28 +95,35 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
 
         await db.SaveChangesAsync();
 
-        logger.LogInformation("Updated sync status for display {DisplayId}, asset {AssetId}: {State} ({Progress}%)",
-            displayId, request.AssetId, syncStatus.SyncState, syncStatus.Progress);
+        logger.LogInformation(
+            "Updated sync status for display {DisplayId}, asset {AssetId}: {State} ({Progress}%)",
+            displayId,
+            request.AssetId,
+            syncStatus.SyncState,
+            syncStatus.Progress
+        );
     }
 
     public async Task<List<AssetSyncStatusDto>> GetSyncStatusForDisplayAsync(Guid displayId)
     {
-        var statuses = await db.AssetSyncStatuses
-            .Where(ass => ass.DisplayId == displayId)
+        var statuses = await db
+            .AssetSyncStatuses.Where(ass => ass.DisplayId == displayId)
             .ToListAsync();
 
-        return statuses.Select(ass => new AssetSyncStatusDto(
-            ass.AssetId,
-            ass.SyncState.ToString(),
-            ass.Progress,
-            ass.ErrorMessage
-        )).ToList();
+        return statuses
+            .Select(ass => new AssetSyncStatusDto(
+                ass.AssetId,
+                ass.SyncState.ToString(),
+                ass.Progress,
+                ass.ErrorMessage
+            ))
+            .ToList();
     }
 
     public async Task<List<CampaignSyncInfo>> GetCampaignsToSyncAsync(Guid displayId)
     {
-        var campaigns = await db.CampaignAssignments
-            .Where(ca => ca.DisplayId == displayId)
+        var campaigns = await db
+            .CampaignAssignments.Where(ca => ca.DisplayId == displayId)
             .Include(ca => ca.Campaign)
                 .ThenInclude(c => c.CampaignAssets)
                     .ThenInclude(ca => ca.Asset)
@@ -117,8 +134,8 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
 
         foreach (var campaign in campaigns)
         {
-            var assets = campaign.CampaignAssets
-                .Select(ca => new AssetDownloadInfo(
+            var assets = campaign
+                .CampaignAssets.Select(ca => new AssetDownloadInfo(
                     ca.Asset.Id,
                     ca.Asset.Name,
                     ca.Asset.Type.ToString(),
@@ -127,11 +144,7 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
                 ))
                 .ToList();
 
-            result.Add(new CampaignSyncInfo(
-                campaign.Id,
-                campaign.Name,
-                assets
-            ));
+            result.Add(new CampaignSyncInfo(campaign.Id, campaign.Name, assets));
         }
 
         return result;
@@ -141,17 +154,22 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
     {
         logger.LogDebug("Cleaning up sync status for display {DisplayId}", displayId);
 
-        var outdatedStatuses = await db.AssetSyncStatuses
-            .Where(ass => ass.DisplayId == displayId && !currentAssetIds.Contains(ass.AssetId))
+        var outdatedStatuses = await db
+            .AssetSyncStatuses.Where(ass =>
+                ass.DisplayId == displayId && !currentAssetIds.Contains(ass.AssetId)
+            )
             .ToListAsync();
 
         if (outdatedStatuses.Any())
         {
             db.AssetSyncStatuses.RemoveRange(outdatedStatuses);
             await db.SaveChangesAsync();
-            
-            logger.LogInformation("Removed {Count} outdated sync status entries for display {DisplayId}",
-                outdatedStatuses.Count, displayId);
+
+            logger.LogInformation(
+                "Removed {Count} outdated sync status entries for display {DisplayId}",
+                outdatedStatuses.Count,
+                displayId
+            );
         }
     }
 }

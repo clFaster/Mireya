@@ -13,19 +13,19 @@
         MinWidth="700" MinHeight="600">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
 
     <ContentControl Content="{Binding CurrentView}">
         <ContentControl.DataTemplates>
             <!-- BackendSelectionViewModel -> BackendSelectionView -->
             <DataTemplate DataType="vm:BackendSelectionViewModel">
-                <views:BackendSelectionView/>
+                <views:BackendSelectionView />
             </DataTemplate>
-            
+
             <!-- ClientStatusViewModel -> ClientStatusView -->
             <DataTemplate DataType="vm:ClientStatusViewModel">
-                <views:ClientStatusView/>
+                <views:ClientStatusView />
             </DataTemplate>
         </ContentControl.DataTemplates>
     </ContentControl>

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Mireya.Database.Models;
 
 /// <summary>
-/// Represents a campaign - a planned collection of media rotations assigned to displays
+///     Represents a campaign - a planned collection of media rotations assigned to displays
 /// </summary>
 public class Campaign
 {

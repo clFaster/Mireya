@@ -12,8 +12,8 @@ namespace Mireya.Client.Avalonia.ViewModels;
 
 public partial class BackendSelectionViewModel : ViewModelBase
 {
-    private readonly IBackendManager _backendManager;
     private readonly IApiClientConfiguration _apiClientConfiguration;
+    private readonly IBackendManager _backendManager;
     private readonly ILogger<BackendSelectionViewModel> _logger;
     private readonly Action<BackendInstance> _onBackendSelected;
 
@@ -21,22 +21,23 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private ObservableCollection<BackendInstance> _backends = new();
 
     [ObservableProperty]
-    private BackendInstance? _selectedBackend;
+    private bool _isStatusError;
 
     [ObservableProperty]
     private string _newBackendUrl = string.Empty;
 
     [ObservableProperty]
-    private string? _statusMessage;
+    private BackendInstance? _selectedBackend;
 
     [ObservableProperty]
-    private bool _isStatusError;
+    private string? _statusMessage;
 
     public BackendSelectionViewModel(
         IBackendManager backendManager,
         IApiClientConfiguration apiClientConfiguration,
         ILogger<BackendSelectionViewModel> logger,
-        Action<BackendInstance> onBackendSelected)
+        Action<BackendInstance> onBackendSelected
+    )
     {
         _backendManager = backendManager;
         _apiClientConfiguration = apiClientConfiguration;
@@ -49,15 +50,15 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private async Task LoadBackendsAsync()
     {
         _logger.LogInformation("Loading backends...");
-        
+
         try
         {
             var backends = await _backendManager.GetAllBackendsAsync();
             Backends = new ObservableCollection<BackendInstance>(backends);
 
             // Select the most recently used backend
-            SelectedBackend = backends.FirstOrDefault(b => b.IsCurrentBackend) 
-                           ?? backends.FirstOrDefault();
+            SelectedBackend =
+                backends.FirstOrDefault(b => b.IsCurrentBackend) ?? backends.FirstOrDefault();
 
             _logger.LogInformation("Loaded {Count} backend(s)", backends.Count);
 
@@ -100,15 +101,15 @@ public partial class BackendSelectionViewModel : ViewModelBase
         try
         {
             _logger.LogInformation("Adding new backend: {Url}", NewBackendUrl);
-            
+
             var backend = await _backendManager.GetOrCreateBackendAsync(NewBackendUrl);
-            
+
             // Reload the list
             await LoadBackendsAsync();
-            
+
             // Select the newly added backend
             SelectedBackend = Backends.FirstOrDefault(b => b.Id == backend.Id);
-            
+
             StatusMessage = $"✓ Backend added: {NewBackendUrl}";
             IsStatusError = false;
             NewBackendUrl = string.Empty;
@@ -133,20 +134,23 @@ public partial class BackendSelectionViewModel : ViewModelBase
 
         try
         {
-            _logger.LogInformation("Connecting to backend: {BackendId} - {Url}", 
-                SelectedBackend.Id, SelectedBackend.BaseUrl);
-            
+            _logger.LogInformation(
+                "Connecting to backend: {BackendId} - {Url}",
+                SelectedBackend.Id,
+                SelectedBackend.BaseUrl
+            );
+
             // Set as current backend
             await _backendManager.SetCurrentBackendAsync(SelectedBackend.Id);
-            
+
             // Update API client configuration
             await _apiClientConfiguration.UpdateBaseUrlAsync(SelectedBackend.BaseUrl);
-            
+
             StatusMessage = $"✓ Connected to {SelectedBackend.BaseUrl}";
             IsStatusError = false;
-            
+
             _logger.LogInformation("Backend connection successful, notifying parent...");
-            
+
             // Notify parent to switch view
             _onBackendSelected(SelectedBackend);
         }
@@ -161,10 +165,15 @@ public partial class BackendSelectionViewModel : ViewModelBase
     [RelayCommand]
     private async Task DeleteBackendAsync(BackendInstance? backend)
     {
-        if (backend == null) return;
+        if (backend == null)
+            return;
 
-        _logger.LogInformation("Deleting backend: {BackendId} - {Url}", backend.Id, backend.BaseUrl);
-        
+        _logger.LogInformation(
+            "Deleting backend: {BackendId} - {Url}",
+            backend.Id,
+            backend.BaseUrl
+        );
+
         // TODO: Implement delete logic (remove from database, clean up assets, etc.)
         StatusMessage = "Delete functionality not yet implemented.";
         IsStatusError = false;
