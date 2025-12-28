@@ -9,21 +9,14 @@ namespace Mireya.Client.Avalonia.Services;
 /// <summary>
 /// HTTP message handler that adds Bearer token to outgoing requests
 /// </summary>
-public class AuthenticationHandler : DelegatingHandler
+public class AuthenticationHandler(IAccessTokenProvider tokenProvider) : DelegatingHandler
 {
-    private readonly IAccessTokenProvider _tokenProvider;
-
-    public AuthenticationHandler(IAccessTokenProvider tokenProvider)
-    {
-        _tokenProvider = tokenProvider;
-    }
-
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request, 
         CancellationToken cancellationToken)
     {
         // Get the current access token from the provider
-        var token = _tokenProvider.GetAccessToken();
+        var token = tokenProvider.GetAccessToken();
         
         // Add Bearer token if available
         if (!string.IsNullOrEmpty(token))

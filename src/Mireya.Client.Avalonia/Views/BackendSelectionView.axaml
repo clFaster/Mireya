@@ -1,0 +1,164 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:converters="using:Mireya.Client.Avalonia.Converters"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Mireya.Client.Avalonia.Views.BackendSelectionView"
+             x:DataType="vm:BackendSelectionViewModel">
+
+    <UserControl.Resources>
+        <converters:BoolToColorConverter x:Key="ErrorColorConverter" 
+                                         TrueColor="#D32F2F" 
+                                         FalseColor="#4CAF50"/>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel Margin="40" Spacing="25" MaxWidth="700">
+            
+            <!-- Title -->
+            <TextBlock Text="Mireya Digital Signage Client" 
+                       FontSize="28" 
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,10,0,10"/>
+            
+            <TextBlock Text="Select Backend Server" 
+                       FontSize="18" 
+                       HorizontalAlignment="Center"
+                       Foreground="#666"
+                       Margin="0,0,0,20"/>
+            
+            <!-- Backend List Section -->
+            <Border BorderBrush="#2196F3" 
+                    BorderThickness="2" 
+                    CornerRadius="8" 
+                    Padding="25"
+                    Background="White">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="🌐 Available Backends" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               Foreground="#1976D2"
+                               Margin="0,0,0,10"/>
+                    
+                    <!-- Backend ListBox -->
+                    <ListBox ItemsSource="{Binding Backends}"
+                             SelectedItem="{Binding SelectedBackend}"
+                             Height="200"
+                             Background="#F5F5F5"
+                             BorderBrush="#DDD"
+                             BorderThickness="1"
+                             CornerRadius="6"
+                             Padding="5">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12" 
+                                        Margin="4"
+                                        Background="White"
+                                        CornerRadius="4"
+                                        BorderBrush="#E0E0E0"
+                                        BorderThickness="1">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Grid.Column="0" Spacing="5">
+                                            <TextBlock Text="{Binding Name, FallbackValue='Unnamed Backend'}" 
+                                                       FontWeight="SemiBold"
+                                                       FontSize="15"/>
+                                            <TextBlock Text="{Binding BaseUrl}" 
+                                                       FontSize="13"
+                                                       Foreground="#666"/>
+                                            <TextBlock FontSize="12" Foreground="#999">
+                                                <Run Text="Last connected: "/>
+                                                <Run Text="{Binding LastConnectedAt, StringFormat='{}{0:g}'}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Column="1" Spacing="5" Orientation="Horizontal">
+                                            <!-- Current indicator -->
+                                            <Border Background="#4CAF50" 
+                                                    CornerRadius="3"
+                                                    Padding="6,3"
+                                                    IsVisible="{Binding IsCurrentBackend}">
+                                                <TextBlock Text="CURRENT" 
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Foreground="White"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    
+                    <!-- Connect Button -->
+                    <Button Content="🔌 Connect to Selected Backend" 
+                            Command="{Binding ConnectCommand}"
+                            IsEnabled="{Binding SelectedBackend, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Height="50"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Foreground="#5632A8"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Add New Backend Section -->
+            <Border BorderBrush="#4CAF50" 
+                    BorderThickness="2" 
+                    CornerRadius="8" 
+                    Padding="25"
+                    Background="White">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="➕ Add New Backend" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               Foreground="#388E3C"
+                               Margin="0,0,0,10"/>
+                    
+                    <TextBlock Text="Backend URL:" 
+                               FontWeight="SemiBold"
+                               FontSize="15"/>
+                    <TextBox Text="{Binding NewBackendUrl}" 
+                             Watermark="https://your-mireya-backend.com"
+                             FontSize="15"
+                             Padding="12"
+                             Height="45"/>
+                    
+                    <Button Content="➕ Add Backend" 
+                            Command="{Binding AddBackendCommand}"
+                            Height="45"
+                            FontSize="15"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Foreground="#5632A8"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Status Message Section -->
+            <Border BorderBrush="#FF9800" 
+                    BorderThickness="2" 
+                    CornerRadius="8" 
+                    Padding="20"
+                    Background="White"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="📋 Status" 
+                               FontSize="18" 
+                               FontWeight="SemiBold"
+                               Foreground="#F57C00"/>
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               TextWrapping="Wrap"
+                               FontSize="14"
+                               LineHeight="20"
+                               Foreground="{Binding IsStatusError, Converter={StaticResource ErrorColorConverter}}"/>
+                </StackPanel>
+            </Border>
+            
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         });
         
         services.AddTransient<IMireyaService, MireyaService>();
+        services.AddSingleton<IAssetSyncService, AssetSyncService>();
         
         return services;
     }

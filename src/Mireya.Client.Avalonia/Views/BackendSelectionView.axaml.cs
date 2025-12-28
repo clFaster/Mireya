@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace Mireya.Client.Avalonia.Views;
 
-public partial class MainWindow : Window
+public partial class BackendSelectionView : UserControl
 {
-    public MainWindow()
+    public BackendSelectionView()
     {
         InitializeComponent();
     }

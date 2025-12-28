@@ -8,6 +8,7 @@ using Mireya.Api.Hubs;
 using Mireya.Api.Middleware;
 using Mireya.Api.Services;
 using Mireya.Api.Services.Asset;
+using Mireya.Api.Services.AssetSync;
 using Mireya.Api.Services.Campaign;
 using Mireya.Api.Services.ScreenManagement;
 using Mireya.Api.Startup;
@@ -99,6 +100,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 // Register services
 builder.Services.AddScoped<IInitializerService, InitializerService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
+builder.Services.AddScoped<IAssetSyncService, AssetSyncService>();
 builder.Services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true; // Enable detailed errors for debugging
