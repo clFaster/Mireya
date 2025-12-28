@@ -11,7 +11,9 @@ namespace Mireya.Api.Controllers;
 public class CampaignController(ICampaignService campaignService) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<CampaignSummary>>> GetCampaigns([FromQuery] Guid? displayId = null)
+    public async Task<ActionResult<List<CampaignSummary>>> GetCampaigns(
+        [FromQuery] Guid? displayId = null
+    )
     {
         try
         {
@@ -43,7 +45,9 @@ public class CampaignController(ICampaignService campaignService) : ControllerBa
     }
 
     [HttpPost]
-    public async Task<ActionResult<CampaignDetail>> CreateCampaign([FromBody] CreateCampaignRequest request)
+    public async Task<ActionResult<CampaignDetail>> CreateCampaign(
+        [FromBody] CreateCampaignRequest request
+    )
     {
         try
         {
@@ -61,7 +65,10 @@ public class CampaignController(ICampaignService campaignService) : ControllerBa
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<CampaignDetail>> UpdateCampaign(Guid id, [FromBody] UpdateCampaignRequest request)
+    public async Task<ActionResult<CampaignDetail>> UpdateCampaign(
+        Guid id,
+        [FromBody] UpdateCampaignRequest request
+    )
     {
         try
         {

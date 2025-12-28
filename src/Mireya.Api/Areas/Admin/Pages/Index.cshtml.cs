@@ -7,9 +7,10 @@ using Mireya.Database.Models;
 namespace Mireya.Api.Areas.Admin.Pages;
 
 public class IndexModel(
-    MireyaDbContext context, 
+    MireyaDbContext context,
     ILogger<IndexModel> logger,
-    IScreenConnectionTracker connectionTracker) : PageModel
+    IScreenConnectionTracker connectionTracker
+) : PageModel
 {
     public int OnlineScreens { get; set; }
     public int PendingScreens { get; set; }
@@ -20,7 +21,9 @@ public class IndexModel(
         try
         {
             OnlineScreens = connectionTracker.GetOnlineScreenCount();
-            PendingScreens = await context.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
+            PendingScreens = await context.Displays.CountAsync(d =>
+                d.ApprovalStatus == ApprovalStatus.Pending
+            );
             TotalAssets = await context.Assets.CountAsync();
         }
         catch (Exception ex)

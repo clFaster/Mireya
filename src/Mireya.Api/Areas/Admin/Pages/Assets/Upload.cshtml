@@ -11,7 +11,8 @@
             <h1 class="text-3xl font-bold text-gray-900">Upload Assets</h1>
             <p class="text-gray-600 mt-1">Upload images and videos for your digital signage</p>
         </div>
-        <a href="/Admin/Assets" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+        <a href="/Admin/Assets"
+           class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
             Back to Assets
         </a>
     </div>
@@ -22,7 +23,9 @@
         <div class="rounded-md bg-green-50 p-4">
             <div class="flex">
                 <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clip-rule="evenodd"/>
                 </svg>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-green-800">@Model.SuccessMessage</p>
@@ -36,7 +39,9 @@
         <div class="rounded-md bg-red-50 p-4">
             <div class="flex">
                 <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clip-rule="evenodd"/>
                 </svg>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-red-800">@Model.ErrorMessage</p>
@@ -48,10 +53,12 @@
     <!-- Tab Navigation -->
     <div class="border-b border-gray-200">
         <nav class="-mb-px flex space-x-8">
-            <button type="button" onclick="showTab('upload')" id="upload-tab" class="tab-button border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600">
+            <button type="button" onclick="showTab('upload')" id="upload-tab"
+                    class="tab-button border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600">
                 Upload Files
             </button>
-            <button type="button" onclick="showTab('website')" id="website-tab" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+            <button type="button" onclick="showTab('website')" id="website-tab"
+                    class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 Add Website
             </button>
         </nav>
@@ -66,15 +73,21 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Select Files
                     </label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
+                    <div
+                        class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
                         <div class="space-y-1 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
+                                 viewBox="0 0 48 48">
+                                <path
+                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <div class="flex text-sm text-gray-600">
-                                <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                <label for="file-upload"
+                                       class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                                     <span>Upload files</span>
-                                    <input id="file-upload" name="Files" type="file" class="sr-only" multiple accept="image/*,video/*" asp-for="Files" />
+                                    <input id="file-upload" name="Files" type="file" class="sr-only" multiple
+                                           accept="image/*,video/*" asp-for="Files"/>
                                 </label>
                                 <p class="pl-1">or drag and drop</p>
                             </div>
@@ -96,10 +109,12 @@
 
                 <!-- Submit Button -->
                 <div class="flex justify-end space-x-3">
-                    <a href="/Admin/Assets" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                    <a href="/Admin/Assets"
+                       class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
                         Cancel
                     </a>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                         Upload Assets
                     </button>
                 </div>
@@ -115,9 +130,9 @@
                     <label for="website-url" class="block text-sm font-medium text-gray-700 mb-2">
                         Website URL *
                     </label>
-                    <input type="url" id="website-url" name="Url" required 
+                    <input type="url" id="website-url" name="Url" required
                            placeholder="https://example.com"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     <p class="text-xs text-gray-500 mt-1">Enter a valid HTTP or HTTPS URL</p>
                 </div>
 
@@ -127,7 +142,7 @@
                     </label>
                     <input type="text" id="website-name" name="Name" required maxlength="200"
                            placeholder="My Website"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     <p class="text-xs text-gray-500 mt-1">Max 200 characters</p>
                 </div>
 
@@ -142,10 +157,12 @@
                 </div>
 
                 <div class="flex justify-end space-x-3">
-                    <a href="/Admin/Assets" class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
+                    <a href="/Admin/Assets"
+                       class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors">
                         Cancel
                     </a>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
                         Add Website
                     </button>
                 </div>
@@ -161,7 +178,7 @@
             <p><strong>Videos:</strong> MP4, WebM, AVI, MOV (max 100 MB each)</p>
         </div>
     </div>
-    
+
     <div id="website-info" class="tab-content hidden bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 class="text-sm font-medium text-blue-900 mb-2">Website Assets</h3>
         <div class="text-sm text-blue-800 space-y-1">
@@ -181,7 +198,7 @@
                 const content = document.getElementById(t + '-content');
                 const info = document.getElementById(t + '-info');
                 const button = document.getElementById(t + '-tab');
-                
+
                 if (t === tab) {
                     content?.classList.remove('hidden');
                     info?.classList.remove('hidden');
@@ -195,42 +212,42 @@
                 }
             });
         }
-        
+
         // File upload preview with validation and thumbnails
         const fileInput = document.getElementById('file-upload');
         const fileList = document.getElementById('file-list');
         const fileListItems = document.getElementById('file-list-items');
-        
+
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
         const videoExtensions = ['.mp4', '.webm', '.avi', '.mov'];
         const maxImageSize = 10 * 1024 * 1024; // 10 MB
         const maxVideoSize = 100 * 1024 * 1024; // 100 MB
 
-        fileInput.addEventListener('change', function(e) {
+        fileInput.addEventListener('change', function (e) {
             const files = Array.from(e.target.files);
-            
+
             if (files.length > 0) {
                 fileList.classList.remove('hidden');
                 fileListItems.innerHTML = '';
-                
+
                 files.forEach((file, index) => {
                     const li = document.createElement('li');
                     li.className = 'px-4 py-3 flex items-center gap-3';
-                    
+
                     // Preview thumbnail
                     const preview = document.createElement('div');
                     preview.className = 'w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center overflow-hidden';
-                    
+
                     const ext = '.' + file.name.split('.').pop().toLowerCase();
                     const isImage = imageExtensions.includes(ext);
                     const isVideo = videoExtensions.includes(ext);
-                    
+
                     if (isImage) {
                         // Create image thumbnail
                         const img = document.createElement('img');
                         img.className = 'w-full h-full object-cover';
                         const reader = new FileReader();
-                        reader.onload = function(e) {
+                        reader.onload = function (e) {
                             img.src = e.target.result;
                         };
                         reader.readAsDataURL(file);
@@ -242,24 +259,24 @@
                         // Unknown file icon
                         preview.innerHTML = '<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>';
                     }
-                    
+
                     // File info
                     const fileInfo = document.createElement('div');
                     fileInfo.className = 'flex-1 min-w-0';
-                    
+
                     const fileName = document.createElement('p');
                     fileName.className = 'text-sm font-medium text-gray-900 truncate';
                     fileName.textContent = file.name;
-                    
+
                     const fileSize = document.createElement('p');
                     fileSize.className = 'text-sm text-gray-500';
                     const sizeMB = file.size / 1024 / 1024;
                     fileSize.textContent = `${sizeMB.toFixed(2)} MB`;
-                    
+
                     // Validation
                     const validation = document.createElement('p');
                     validation.className = 'text-xs mt-1';
-                    
+
                     if (!isImage && !isVideo) {
                         validation.className += ' text-red-600';
                         validation.textContent = '❌ Unsupported file type';
@@ -273,33 +290,33 @@
                         validation.className += ' text-green-600';
                         validation.textContent = '✓ Valid file';
                     }
-                    
+
                     fileInfo.appendChild(fileName);
                     fileInfo.appendChild(fileSize);
                     fileInfo.appendChild(validation);
-                    
+
                     // Remove button
                     const removeBtn = document.createElement('button');
                     removeBtn.type = 'button';
                     removeBtn.className = 'text-red-600 hover:text-red-800 flex-shrink-0';
                     removeBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
-                    removeBtn.onclick = function() {
+                    removeBtn.onclick = function () {
                         // Remove from list
                         li.remove();
-                        
+
                         // Remove from file input (create new FileList without this file)
                         const dt = new DataTransfer();
                         Array.from(fileInput.files).forEach((f, i) => {
                             if (i !== index) dt.items.add(f);
                         });
                         fileInput.files = dt.files;
-                        
+
                         // Hide list if empty
                         if (fileInput.files.length === 0) {
                             fileList.classList.add('hidden');
                         }
                     };
-                    
+
                     li.appendChild(preview);
                     li.appendChild(fileInfo);
                     li.appendChild(removeBtn);

@@ -8,8 +8,7 @@ public interface IMireyaService
     void SetBaseUrl(string httpsLocalhost);
 }
 
-public class MireyaService(
-    IOptions<MireyaApiClientOptions> mireyaOptions) : IMireyaService
+public class MireyaService(IOptions<MireyaApiClientOptions> mireyaOptions) : IMireyaService
 {
     public void SetBaseUrl(string httpsLocalhost)
     {

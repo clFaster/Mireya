@@ -6,23 +6,23 @@ using System.Threading.Tasks;
 namespace Mireya.Client.Avalonia.Services;
 
 /// <summary>
-/// Implementation of settings service using JSON file storage
+///     Implementation of settings service using JSON file storage
 /// </summary>
 public class SettingsService : ISettingsService
 {
-    private readonly string _settingsFilePath;
     private const string SettingsFileName = "settings.json";
     private const string AppFolderName = "Mireya";
+    private readonly string _settingsFilePath;
 
     public SettingsService()
     {
         // Get platform-specific app data folder
         var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var appFolder = Path.Combine(appDataFolder, AppFolderName);
-        
+
         // Ensure directory exists
         Directory.CreateDirectory(appFolder);
-        
+
         _settingsFilePath = Path.Combine(appFolder, SettingsFileName);
     }
 
@@ -31,9 +31,7 @@ public class SettingsService : ISettingsService
         try
         {
             if (!File.Exists(_settingsFilePath))
-            {
                 return null;
-            }
 
             var json = await File.ReadAllTextAsync(_settingsFilePath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json);
@@ -53,11 +51,11 @@ public class SettingsService : ISettingsService
         try
         {
             var settings = new AppSettings { BackendUrl = url };
-            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
-            { 
-                WriteIndented = true 
-            });
-            
+            var json = JsonSerializer.Serialize(
+                settings,
+                new JsonSerializerOptions { WriteIndented = true }
+            );
+
             await File.WriteAllTextAsync(_settingsFilePath, json);
         }
         catch (Exception ex)
@@ -72,17 +70,15 @@ public class SettingsService : ISettingsService
     public bool IsValidUrl(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))
-        {
             return false;
-        }
 
         // Basic URL validation
-        return Uri.TryCreate(url, UriKind.Absolute, out var uriResult) 
-               && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+        return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
+            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
     }
 
     /// <summary>
-    /// Internal settings data structure
+    ///     Internal settings data structure
     /// </summary>
     private class AppSettings
     {

@@ -1,14 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Mireya.Database.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace Mireya.Api.Areas.Admin.Pages;
 
-public class LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> logger)
-    : PageModel
+public class LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> logger) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -16,20 +15,6 @@ public class LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> l
     public string? ReturnUrl { get; set; }
 
     public string? ErrorMessage { get; set; }
-
-    public class InputModel
-    {
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; } = string.Empty;
-
-        [Required]
-        [DataType(DataType.Password)]
-        public string Password { get; set; } = string.Empty;
-
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
-    }
 
     public async Task OnGetAsync(string? returnUrl = null)
     {
@@ -54,18 +39,25 @@ public class LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> l
         {
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-            var result = await signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
-            
+            var result = await signInManager.PasswordSignInAsync(
+                Input.Email,
+                Input.Password,
+                Input.RememberMe,
+                true
+            );
+
             if (result.Succeeded)
             {
                 logger.LogInformation("User logged in");
                 return LocalRedirect(returnUrl);
             }
+
             if (result.RequiresTwoFactor)
             {
                 ErrorMessage = "Two-factor authentication is required.";
                 return Page();
             }
+
             if (result.IsLockedOut)
             {
                 logger.LogWarning("User account locked out");
@@ -79,5 +71,19 @@ public class LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> l
 
         // If we got this far, something failed, redisplay form
         return Page();
+    }
+
+    public class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
     }
 }
