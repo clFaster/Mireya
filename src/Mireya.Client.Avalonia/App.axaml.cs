@@ -144,21 +144,19 @@ public class App : Application
 
         // Apply database migrations automatically at startup
         Log.Information("Initializing database and applying migrations...");
-        using (var scope = serviceProvider.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
+        using var scope = serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-            try
-            {
-                // Apply all pending migrations automatically
-                db.Database.Migrate();
-                Log.Information("Database migrations applied successfully");
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Failed to apply database migrations");
-                throw;
-            }
+        try
+        {
+            // Apply all pending migrations automatically
+            db.Database.Migrate();
+            Log.Information("Database migrations applied successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Failed to apply database migrations");
+            throw;
         }
 
         return serviceProvider;
