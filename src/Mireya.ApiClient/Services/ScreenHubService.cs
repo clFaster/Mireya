@@ -9,6 +9,8 @@ namespace Mireya.ApiClient.Services;
 public interface IScreenHubService : IAsyncDisposable
 {
     event Action<ScreenConfiguration> OnConfigurationUpdateReceived;
+    event Action<List<CampaignSyncInfo>> OnStartAssetSync;
+    event Action OnReconnected;
     
     Task ConnectAsync();
     Task DisconnectAsync();
@@ -22,6 +24,8 @@ public class ScreenHubService : IScreenHubService
     private readonly ILogger<ScreenHubService> _logger;
 
     public event Action<ScreenConfiguration>? OnConfigurationUpdateReceived;
+    public event Action<List<CampaignSyncInfo>>? OnStartAssetSync;
+    public event Action? OnReconnected;
 
     public bool IsConnected => _hubConnection.State == HubConnectionState.Connected;
 
@@ -54,6 +58,12 @@ public class ScreenHubService : IScreenHubService
             OnConfigurationUpdateReceived?.Invoke(config);
         });
 
+        _hubConnection.On<List<CampaignSyncInfo>>("StartAssetSync", campaigns =>
+        {
+            _logger.LogInformation("Received StartAssetSync for {CampaignCount} campaigns", campaigns.Count);
+            OnStartAssetSync?.Invoke(campaigns);
+        });
+
         _hubConnection.Closed += error =>
         {
             _logger.LogWarning(error, "SignalR connection closed");
@@ -69,6 +79,10 @@ public class ScreenHubService : IScreenHubService
         _hubConnection.Reconnected += connectionId =>
         {
             _logger.LogInformation("SignalR reconnected: {ConnectionId}", connectionId);
+            
+            // Trigger sync check on reconnect
+            OnReconnected?.Invoke();
+            
             return Task.CompletedTask;
         };
     }

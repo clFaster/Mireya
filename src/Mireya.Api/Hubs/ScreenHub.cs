@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Mireya.Api.Constants;
 using Mireya.Api.Services;
+using Mireya.Api.Services.AssetSync;
 using Mireya.Api.Services.ScreenManagement;
 using Mireya.Database;
 
@@ -12,6 +13,7 @@ namespace Mireya.Api.Hubs;
 public class ScreenHub(
     ILogger<ScreenHub> logger,
     IScreenConnectionTracker connectionTracker,
+    IScreenSynchronizationService screenSyncService,
     MireyaDbContext db) : Hub<IScreenClient>
 {
     public override async Task OnConnectedAsync()
@@ -37,6 +39,10 @@ public class ScreenHub(
                 display.UpdatedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
                 logger.LogInformation("Updated IsActive=true for screen {DisplayId}", display.Id);
+                
+                // Trigger sync when client connects/reconnects
+                logger.LogInformation("Triggering sync for display {DisplayId} on connect", display.Id);
+                await screenSyncService.SyncScreenAsync(display.Id);
             }
         }
         
@@ -76,4 +82,5 @@ public class ScreenHub(
 public interface IScreenClient
 {
     Task ReceiveConfigurationUpdate(ScreenConfiguration configuration);
+    Task StartAssetSync(List<CampaignSyncInfo> campaigns);
 }

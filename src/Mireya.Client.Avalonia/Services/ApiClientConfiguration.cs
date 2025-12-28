@@ -23,23 +23,16 @@ public interface IApiClientConfiguration
 /// <summary>
 /// Implementation of API client configuration service
 /// </summary>
-public class ApiClientConfiguration : IApiClientConfiguration
+public class ApiClientConfiguration(IOptions<MireyaApiClientOptions> options) : IApiClientConfiguration
 {
-    private readonly IOptions<MireyaApiClientOptions> _options;
-
-    public ApiClientConfiguration(IOptions<MireyaApiClientOptions> options)
-    {
-        _options = options;
-    }
-
     public Task UpdateBaseUrlAsync(string baseUrl)
     {
-        _options.Value.BaseUrl = baseUrl;
+        options.Value.BaseUrl = baseUrl;
         return Task.CompletedTask;
     }
 
     public string GetBaseUrl()
     {
-        return _options.Value.BaseUrl;
+        return options.Value.BaseUrl;
     }
 }

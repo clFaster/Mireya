@@ -11,6 +11,7 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
     public DbSet<Campaign> Campaigns { get; set; }
     public DbSet<CampaignAsset> CampaignAssets { get; set; }
     public DbSet<CampaignAssignment> CampaignAssignments { get; set; }
+    public DbSet<AssetSyncStatus> AssetSyncStatuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -71,6 +72,25 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options) : Identi
             entity.HasOne(ca => ca.Display)
                 .WithMany(d => d.CampaignAssignments)
                 .HasForeignKey(ca => ca.DisplayId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure AssetSyncStatus entity
+        builder.Entity<AssetSyncStatus>(entity =>
+        {
+            entity.HasIndex(e => e.DisplayId);
+            entity.HasIndex(e => e.AssetId);
+            entity.HasIndex(e => e.SyncState);
+            entity.HasIndex(e => new { e.DisplayId, e.AssetId }).IsUnique();
+
+            entity.HasOne(ass => ass.Display)
+                .WithMany()
+                .HasForeignKey(ass => ass.DisplayId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ass => ass.Asset)
+                .WithMany()
+                .HasForeignKey(ass => ass.AssetId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

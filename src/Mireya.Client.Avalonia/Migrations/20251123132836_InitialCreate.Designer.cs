@@ -2,147 +2,150 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Mireya.Database;
+using Mireya.Client.Avalonia.Data;
 
 #nullable disable
 
-namespace Mireya.Database.Sqlite.Migrations
+namespace Mireya.Client.Avalonia.Migrations
 {
-    [DbContext(typeof(MireyaDbContext))]
-    partial class MireyaDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(LocalDbContext))]
+    [Migration("20251123132836_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendAsset", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("BackendInstanceId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SyncedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BackendInstanceId", "AssetId");
+
+                    b.HasIndex("AssetId");
+
+                    b.ToTable("BackendAssets");
+                });
+
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCampaign", b =>
+                {
+                    b.Property<Guid>("BackendInstanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CampaignId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SyncedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BackendInstanceId", "CampaignId");
+
+                    b.HasIndex("CampaignId");
+
+                    b.ToTable("BackendCampaigns");
+                });
+
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCredential", b =>
+                {
+                    b.Property<Guid>("BackendInstanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("EncryptedAccessToken")
+                        .HasColumnType("BLOB");
+
+                    b.Property<byte[]>("EncryptedRefreshToken")
+                        .HasColumnType("BLOB");
+
+                    b.Property<DateTime?>("TokenExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BackendInstanceId");
+
+                    b.ToTable("BackendCredentials");
+                });
+
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BaseUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCurrentBackend")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastConnectedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
+                    b.HasIndex("BaseUrl")
+                        .IsUnique();
 
-                    b.ToTable("AspNetRoles", (string)null);
+                    b.ToTable("BackendInstances");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.DownloadedAsset", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("BackendInstanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DownloadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileExtension")
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDownloaded")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ClaimType")
+                    b.Property<DateTime>("LastCheckedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ClaimValue")
+                    b.Property<string>("LocalPath")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.HasKey("BackendInstanceId", "AssetId");
 
-                    b.HasKey("Id");
+                    b.HasIndex("IsDownloaded");
 
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("AspNetRoleClaims", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ClaimType")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ClaimValue")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AspNetUserClaims", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                {
-                    b.Property<string>("LoginProvider")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProviderKey")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("LoginProvider", "ProviderKey");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AspNetUserLogins", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RoleId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("UserId", "RoleId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("AspNetUserRoles", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LoginProvider")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("UserId", "LoginProvider", "Name");
-
-                    b.ToTable("AspNetUserTokens", (string)null);
+                    b.ToTable("DownloadedAssets");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.Asset", b =>
@@ -187,48 +190,6 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.ToTable("Assets");
                 });
 
-            modelBuilder.Entity("Mireya.Database.Models.AssetSyncStatus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("AssetId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("DisplayId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("LastUpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Progress")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SyncState")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.HasIndex("DisplayId");
-
-                    b.HasIndex("SyncState");
-
-                    b.HasIndex("DisplayId", "AssetId")
-                        .IsUnique();
-
-                    b.ToTable("AssetSyncStatuses");
-                });
-
             modelBuilder.Entity("Mireya.Database.Models.Campaign", b =>
                 {
                     b.Property<Guid>("Id")
@@ -251,8 +212,6 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
 
                     b.HasIndex("Name");
 
@@ -283,8 +242,7 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("CampaignId");
 
-                    b.HasIndex("CampaignId", "Position")
-                        .IsUnique();
+                    b.HasIndex("CampaignId", "Position");
 
                     b.ToTable("CampaignAssets");
                 });
@@ -310,10 +268,7 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("DisplayId");
 
-                    b.HasIndex("CampaignId", "DisplayId")
-                        .IsUnique();
-
-                    b.ToTable("CampaignAssignments");
+                    b.ToTable("CampaignAssignment");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.Display", b =>
@@ -368,140 +323,10 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApprovalStatus");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("Name");
-
-                    b.HasIndex("ScreenIdentifier")
-                        .IsUnique();
-
-                    b.ToTable("Displays");
+                    b.ToTable("Display");
                 });
 
-            modelBuilder.Entity("Mireya.Database.Models.User", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex");
-
-                    b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
-                {
-                    b.HasOne("Mireya.Database.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
-                {
-                    b.HasOne("Mireya.Database.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Mireya.Database.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
-                {
-                    b.HasOne("Mireya.Database.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Mireya.Database.Models.AssetSyncStatus", b =>
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendAsset", b =>
                 {
                     b.HasOne("Mireya.Database.Models.Asset", "Asset")
                         .WithMany()
@@ -509,15 +334,48 @@ namespace Mireya.Database.Sqlite.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Mireya.Database.Models.Display", "Display")
+                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
                         .WithMany()
-                        .HasForeignKey("DisplayId")
+                        .HasForeignKey("BackendInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Asset");
+                });
 
-                    b.Navigation("Display");
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCampaign", b =>
+                {
+                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
+                        .WithMany()
+                        .HasForeignKey("BackendInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Mireya.Database.Models.Campaign", "Campaign")
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Campaign");
+                });
+
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCredential", b =>
+                {
+                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
+                        .WithMany()
+                        .HasForeignKey("BackendInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Mireya.Client.Avalonia.Data.DownloadedAsset", b =>
+                {
+                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
+                        .WithMany()
+                        .HasForeignKey("BackendInstanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.CampaignAsset", b =>
@@ -525,7 +383,7 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.HasOne("Mireya.Database.Models.Asset", "Asset")
                         .WithMany()
                         .HasForeignKey("AssetId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Mireya.Database.Models.Campaign", "Campaign")

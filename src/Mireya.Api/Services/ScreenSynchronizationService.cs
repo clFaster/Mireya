@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Mireya.Api.Hubs;
+using Mireya.Api.Services.AssetSync;
 using Mireya.Api.Services.Campaign;
 using Mireya.Api.Services.ScreenManagement;
 using Mireya.Database;
@@ -17,6 +18,7 @@ public interface IScreenSynchronizationService
 public class ScreenSynchronizationService(
     MireyaDbContext db,
     IHubContext<ScreenHub, IScreenClient> hubContext,
+    IAssetSyncService assetSyncService,
     ILogger<ScreenSynchronizationService> logger) : IScreenSynchronizationService
 {
     private const int DefaultAssetDuration = 10;
@@ -92,6 +94,24 @@ public class ScreenSynchronizationService(
             display.UserId, display.Name, campaigns.Count);
         
         await hubContext.Clients.User(display.UserId).ReceiveConfigurationUpdate(config);
+
+        // Get all unique asset IDs from all campaigns
+        var allAssetIds = campaigns
+            .SelectMany(c => c.Assets)
+            .Select(a => a.AssetId)
+            .Distinct()
+            .ToList();
+
+        // Initialize sync status for all assets and cleanup old ones
+        await assetSyncService.CleanupSyncStatusAsync(displayId, allAssetIds);
+        await assetSyncService.InitializeSyncStatusForDisplayAsync(displayId, allAssetIds);
+
+        // Notify client to start asset sync
+        var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(displayId);
+        await hubContext.Clients.User(display.UserId).StartAssetSync(campaignsToSync);
+        
+        logger.LogInformation("Notified client to sync {CampaignCount} campaigns with {AssetCount} total unique assets",
+            campaignsToSync.Count, allAssetIds.Count);
     }
 
     private static int ResolveAssetDuration(Database.Models.Asset asset, int? campaignDuration)
