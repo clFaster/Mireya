@@ -11,7 +11,8 @@ public partial class WebsiteAssetDisplay : UserControl
 {
     private Grid? _browserContainer;
     private StackPanel? _errorPanel;
-    private bool _isInitialized;
+    private CoreWebView2Environment? _webViewEnvironment;
+    private CoreWebView2Controller? _webViewController;
 
     public WebsiteAssetDisplay()
     {
@@ -26,7 +27,7 @@ public partial class WebsiteAssetDisplay : UserControl
         _errorPanel = this.FindControl<StackPanel>("ErrorPanel");
     }
 
-    private async void InitializeWebView()
+    private void InitializeWebView()
     {
         if (_browserContainer == null || !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -34,6 +35,20 @@ public partial class WebsiteAssetDisplay : UserControl
             return;
         }
 
+        try
+        {
+            // Wait for the control to be loaded and get its window handle
+            this.Loaded += async (_, __) => await CreateWebViewControllerAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize WebView2: {ex}");
+            ShowError();
+        }
+    }
+
+    private async System.Threading.Tasks.Task CreateWebViewControllerAsync()
+    {
         try
         {
             // Get the user data folder for WebView2
@@ -44,19 +59,92 @@ public partial class WebsiteAssetDisplay : UserControl
             );
 
             // Create WebView2 environment
-            await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+            _webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
 
-            // Mark as initialized - environment is created and ready for use
-            _isInitialized = true;
-            _browserContainer.IsVisible = true;
-            _errorPanel!.IsVisible = false;
+            // Get the parent window handle from the visual root
+            if (this.VisualRoot is TopLevel topLevel)
+            {
+                var hwnd = GetWindowHandleFromTopLevel(topLevel);
 
-            System.Diagnostics.Debug.WriteLine("WebView2 environment initialized");
+                if (hwnd != IntPtr.Zero)
+                {
+                    // Create the WebView2 controller
+                    _webViewController = await _webViewEnvironment.CreateCoreWebView2ControllerAsync(hwnd);
+                    
+                    // Configure the WebView2 settings
+                    var settings = _webViewController.CoreWebView2.Settings;
+                    settings.IsScriptEnabled = true;
+                    settings.IsStatusBarEnabled = false;
+                    settings.AreDefaultContextMenusEnabled = false;
+                    settings.IsZoomControlEnabled = false;
+
+                    // Set bounds to fill the container
+                    UpdateWebViewBounds();
+
+                    // Subscribe to size changes
+                    _browserContainer!.SizeChanged += (_, __) => UpdateWebViewBounds();
+
+                    _browserContainer.IsVisible = true;
+                    _errorPanel!.IsVisible = false;
+
+                    System.Diagnostics.Debug.WriteLine("WebView2 controller created and initialized");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Failed to get window handle for WebView2");
+                    ShowError();
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("No VisualRoot found");
+                ShowError();
+            }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to initialize WebView2: {ex}");
+            System.Diagnostics.Debug.WriteLine($"Failed to create WebView2 controller: {ex}");
             ShowError();
+        }
+    }
+
+    private static IntPtr GetWindowHandleFromTopLevel(TopLevel topLevel)
+    {
+        try
+        {
+            // Try to get HWND through TryGetPlatformHandle
+            var platformHandle = topLevel.TryGetPlatformHandle();
+            if (platformHandle != null)
+            {
+                // platformHandle is an IPlatformHandle - get the handle directly
+                return new IntPtr(platformHandle.Handle.ToInt64());
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to get window handle: {ex}");
+        }
+
+        return IntPtr.Zero;
+    }
+
+    private void UpdateWebViewBounds()
+    {
+        if (_webViewController == null || _browserContainer == null)
+        {
+            return;
+        }
+
+        try
+        {
+            // Set the bounds to fill the container
+            // WebView2 controller manages its own bounds based on parent window size
+            var bounds = _browserContainer.Bounds;
+            System.Diagnostics.Debug.WriteLine($"Container bounds: {bounds.Width}x{bounds.Height}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to update WebView bounds: {ex}");
         }
     }
 
@@ -65,17 +153,46 @@ public partial class WebsiteAssetDisplay : UserControl
     /// </summary>
     public void Navigate(Uri? uri)
     {
-        if (uri == null || !_isInitialized)
+        if (uri == null || _webViewController?.CoreWebView2 == null)
         {
             return;
         }
 
         try
         {
-            // WebView2 runtime integration for displaying websites
             System.Diagnostics.Debug.WriteLine($"Navigate called for URL: {uri.AbsoluteUri}");
             _browserContainer!.IsVisible = true;
             _errorPanel!.IsVisible = false;
+
+            // Navigate to the URL
+            _webViewController.CoreWebView2.Navigate(uri.AbsoluteUri);
+
+            // Inject script to mute audio/video
+            _webViewController.CoreWebView2.NavigationCompleted += async (_, __) =>
+            {
+                try
+                {
+                    var muteScript = @"
+                        (function() {
+                            var videos = document.getElementsByTagName('video');
+                            for (var i = 0; i < videos.length; i++) {
+                                videos[i].muted = true;
+                                videos[i].volume = 0;
+                            }
+                            var audios = document.getElementsByTagName('audio');
+                            for (var i = 0; i < audios.length; i++) {
+                                audios[i].muted = true;
+                                audios[i].volume = 0;
+                            }
+                        })();
+                    ";
+                    await _webViewController.CoreWebView2.ExecuteScriptAsync(muteScript);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to execute mute script: {ex}");
+                }
+            };
         }
         catch (Exception ex)
         {
@@ -97,3 +214,4 @@ public partial class WebsiteAssetDisplay : UserControl
         }
     }
 }
+
