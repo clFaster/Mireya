@@ -11,13 +11,30 @@
         <!-- Placeholder for embedded browser - ready for future WebView2 integration -->
         <Grid x:Name="BrowserContainer"
               HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch" />
+              VerticalAlignment="Stretch"
+              IsVisible="False" />
+        
+        <!-- Loading indicator shown while WebView2 initializes -->
+        <StackPanel x:Name="LoadingPanel"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="10"
+                    IsVisible="True">
+            <TextBlock Text="🌐"
+                       FontSize="48"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Loading website..."
+                       FontSize="18"
+                       Foreground="#AAAAAA"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
         
         <!-- Fallback message if WebView2 is not available -->
         <StackPanel x:Name="ErrorPanel"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="20">
+                    Spacing="20"
+                    IsVisible="False">
             <TextBlock Text="🌐 WEBSITE"
                        FontSize="48"
                        FontWeight="Bold"
