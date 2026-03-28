@@ -136,6 +136,14 @@
                             {
                                 <span>Size unknown</span>
                             }
+                            @if (asset.Type == AssetType.Video && asset.DurationSeconds.HasValue)
+                            {
+                                <span class="ml-2">• @asset.DurationSeconds.Value s</span>
+                            }
+                            @if (asset.Type == AssetType.Video && asset.IsMuted)
+                            {
+                                <span class="ml-2">• 🔇 Muted</span>
+                            }
                         </p>
                         <div class="mt-3 flex justify-between items-center">
                             <div class="flex gap-2">
@@ -151,7 +159,10 @@
                                         class="text-green-600 hover:text-green-800 text-sm font-medium edit-btn"
                                         data-id="@asset.Id"
                                         data-name="@asset.Name"
-                                        data-description="@(asset.Description ?? "")">
+                                        data-description="@(asset.Description ?? "")"
+                                        data-type="@asset.Type"
+                                        data-duration="@asset.DurationSeconds"
+                                        data-muted="@asset.IsMuted">
                                     Edit
                                 </button>
                             </div>
@@ -319,6 +330,7 @@
             <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit Asset</h3>
             <form method="post" asp-page-handler="Edit">
                 <input type="hidden" id="editAssetId" name="assetId"/>
+                <input type="hidden" id="editAssetType" name="assetType"/>
 
                 <div class="mb-4">
                     <label for="editName" class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
@@ -332,6 +344,27 @@
                     <textarea id="editDescription" name="description" rows="3" maxlength="1000"
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     <p class="text-xs text-gray-500 mt-1">Optional, max 1000 characters</p>
+                </div>
+
+                <div id="videoSettings" class="hidden mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h4 class="text-sm font-medium text-gray-900 mb-3">Video Settings</h4>
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                        <input type="text" id="editDurationDisplay" readonly
+                               class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 cursor-not-allowed"
+                               placeholder="Auto-detected from video file"/>
+                        <input type="hidden" id="editDurationSeconds" name="durationSeconds"/>
+                        <p class="text-xs text-gray-500 mt-1">Duration is automatically extracted from the video file and cannot be changed.</p>
+                    </div>
+
+                    <div class="flex items-center">
+                        <!-- Hidden input ensures a value is sent when checkbox is unchecked -->
+                        <input type="hidden" name="isMuted" value="false" />
+                        <input type="checkbox" id="editIsMuted" name="isMuted" value="true"
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"/>
+                        <label for="editIsMuted" class="ml-2 block text-sm text-gray-700">Mute audio</label>
+                    </div>
                 </div>
 
                 <div class="flex justify-end gap-3">
@@ -368,7 +401,10 @@
                     const id = this.getAttribute('data-id');
                     const name = this.getAttribute('data-name');
                     const description = this.getAttribute('data-description');
-                    openEditModal(id, name, description);
+                    const type = this.getAttribute('data-type');
+                    const duration = this.getAttribute('data-duration');
+                    const isMuted = this.getAttribute('data-muted') === 'True';
+                    openEditModal(id, name, description, type, duration, isMuted);
                 });
             });
         });
@@ -430,10 +466,33 @@
             document.getElementById('previewModal').classList.add('hidden');
         }
 
-        function openEditModal(id, name, description) {
+        function openEditModal(id, name, description, type, duration, isMuted) {
             document.getElementById('editAssetId').value = id;
+            document.getElementById('editAssetType').value = type;
             document.getElementById('editName').value = name;
             document.getElementById('editDescription').value = description;
+            
+            // Show video settings only for video assets
+            const videoSettings = document.getElementById('videoSettings');
+            if (type === 'Video') {
+                videoSettings.classList.remove('hidden');
+                
+                // Display duration as read-only, store in hidden field
+                const durationDisplay = document.getElementById('editDurationDisplay');
+                const durationHidden = document.getElementById('editDurationSeconds');
+                if (duration) {
+                    durationDisplay.value = duration + ' seconds (auto-detected)';
+                    durationHidden.value = duration;
+                } else {
+                    durationDisplay.value = 'Not yet extracted';
+                    durationHidden.value = '';
+                }
+                
+                document.getElementById('editIsMuted').checked = isMuted;
+            } else {
+                videoSettings.classList.add('hidden');
+            }
+            
             document.getElementById('editModal').classList.remove('hidden');
         }
 

@@ -40,6 +40,11 @@ public class Asset
     /// </summary>
     public int? DurationSeconds { get; set; }
 
+    /// <summary>
+    ///     Whether the video audio should be muted (for video assets only)
+    /// </summary>
+    public bool IsMuted { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
