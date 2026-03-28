@@ -7,10 +7,34 @@
              x:Class="Mireya.Client.Avalonia.Views.Components.WebsiteAssetDisplay"
              x:DataType="vm:ContentDisplayViewModel">
 
-    <Border Background="Black"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+    <Grid Background="Black">
+        <!-- Placeholder for embedded browser - ready for future WebView2 integration -->
+        <Grid x:Name="BrowserContainer"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              IsVisible="False" />
+        
+        <!-- Loading indicator shown while WebView2 initializes -->
+        <StackPanel x:Name="LoadingPanel"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="10"
+                    IsVisible="True">
+            <TextBlock Text="🌐"
+                       FontSize="48"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Loading website..."
+                       FontSize="18"
+                       Foreground="#AAAAAA"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+        
+        <!-- Fallback message if WebView2 is not available -->
+        <StackPanel x:Name="ErrorPanel"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="20"
+                    IsVisible="False">
             <TextBlock Text="🌐 WEBSITE"
                        FontSize="48"
                        FontWeight="Bold"
@@ -22,12 +46,23 @@
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
                        MaxWidth="1200" />
-            <TextBlock Text="(Ready for web browser integration)"
-                       FontSize="16"
+            <TextBlock FontSize="14"
+                       Foreground="#999999"
+                       HorizontalAlignment="Center"
+                       MaxWidth="800">
+                <Run Text="Website: " />
+                <Run Text="{Binding CurrentWebsiteUrl}" />
+            </TextBlock>
+            <TextBlock Text="WebView2 Runtime required for website display."
+                       FontSize="14"
                        Foreground="#666666"
                        HorizontalAlignment="Center"
                        Margin="0,20,0,0" />
+            <TextBlock Text="Install from: https://developer.microsoft.com/microsoft-edge/webview2"
+                       FontSize="12"
+                       Foreground="#555555"
+                       HorizontalAlignment="Center" />
         </StackPanel>
-    </Border>
+    </Grid>
 
 </UserControl>

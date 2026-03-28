@@ -23,6 +23,8 @@ public class AssetDownloadInfo
     public string Type { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
     public long? FileSizeBytes { get; set; }
+    public int? DurationSeconds { get; set; }
+    public bool IsMuted { get; set; }
 }
 
 public class CampaignSyncInfo

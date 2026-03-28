@@ -306,10 +306,23 @@ public class LocalAssetSyncService : ILocalAssetSyncService
                     Type = Enum.Parse<AssetType>(assetInfo.Type, true),
                     Source = assetInfo.Source,
                     FileSizeBytes = assetInfo.FileSizeBytes,
+                    DurationSeconds = assetInfo.DurationSeconds,
+                    IsMuted = assetInfo.IsMuted,
                     CreatedAt = DateTime.UtcNow,
                 };
                 _db.Assets.Add(asset);
                 _logger.LogDebug("Created new asset {AssetId} - {AssetName}", asset.Id, asset.Name);
+            }
+            else
+            {
+                // Keep local asset metadata in sync with server
+                asset.Name = assetInfo.Name;
+                asset.Type = Enum.Parse<AssetType>(assetInfo.Type, true);
+                asset.Source = assetInfo.Source;
+                asset.FileSizeBytes = assetInfo.FileSizeBytes;
+                asset.DurationSeconds = assetInfo.DurationSeconds;
+                asset.IsMuted = assetInfo.IsMuted;
+                asset.UpdatedAt = DateTime.UtcNow;
             }
 
             // Create/update BackendAsset mapping
