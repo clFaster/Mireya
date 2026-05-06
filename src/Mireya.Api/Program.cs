@@ -16,6 +16,8 @@ using Mireya.Database;
 using Mireya.Database.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
 var config = builder
     .Configuration.AddJsonFile("appsettings.json", false, true)
     .AddJsonFile("appsettings.Development.json", true, true)
@@ -129,6 +131,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 using var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;

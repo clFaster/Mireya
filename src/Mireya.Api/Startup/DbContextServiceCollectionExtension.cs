@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Mireya.Database;
+using Npgsql;
 
 namespace Mireya.Api.Startup;
 
@@ -17,11 +18,19 @@ public static class DbContextServiceCollectionExtension
                 )
             );
         else if (provider == Provider.Postgres.Name)
+        {
+            var connectionString = config.GetConnectionString(Provider.Postgres.Name)!;
+            var npgsqlBuilder = new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                SslMode = SslMode.Disable,
+            };
+
             services.AddDbContext<MireyaDbContext>(options =>
                 options.UseNpgsql(
-                    config.GetConnectionString(Provider.Postgres.Name)!,
+                    npgsqlBuilder.ConnectionString,
                     x => x.MigrationsAssembly(Provider.Postgres.Assembly)
                 )
             );
+        }
     }
 }
