@@ -2,7 +2,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder
     .AddPostgres("postgres-server")
-    .WithDataVolume()
+    .WithDataVolume("mireya-db")
     .AddDatabase("Postgres");
 
 builder
