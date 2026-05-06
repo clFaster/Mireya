@@ -11,14 +11,14 @@ using Mireya.Database;
 namespace Mireya.Database.Sqlite.Migrations
 {
     [DbContext(typeof(MireyaDbContext))]
-    [Migration("20251123103001_AddAssetSyncStatus")]
-    partial class AddAssetSyncStatus
+    [Migration("20260506202024_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -165,6 +165,9 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsMuted")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
