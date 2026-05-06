@@ -4,6 +4,8 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="src/MireyaDigitalSignage.AppHost/MireyaDigitalSignage.AppHost.csproj" />
+  <Project Path="src/MireyaDigitalSignage.ServiceDefaults/MireyaDigitalSignage.ServiceDefaults.csproj" />
   <Project Path="src/Mireya.Api/Mireya.Api.csproj" />
   <Project Path="src/Mireya.ApiClient.TestConsole/Mireya.ApiClient.TestConsole.csproj" />
   <Project Path="src/Mireya.ApiClient/Mireya.ApiClient.csproj" />

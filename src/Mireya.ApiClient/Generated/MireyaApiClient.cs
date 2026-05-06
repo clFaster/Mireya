@@ -3255,9 +3255,11 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("password")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Password { get; set; } = default!;
 
     }
@@ -3270,12 +3272,14 @@ namespace Mireya.ApiClient.Generated
         public string TokenType { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("accessToken")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string AccessToken { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("expiresIn")]
         public long ExpiresIn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("refreshToken")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string RefreshToken { get; set; } = default!;
 
     }
@@ -3285,9 +3289,11 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("password")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Password { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("twoFactorCode")]
@@ -3303,6 +3309,7 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("refreshToken")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string RefreshToken { get; set; } = default!;
 
     }
@@ -3312,6 +3319,7 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
     }
@@ -3321,6 +3329,7 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
     }
@@ -3330,12 +3339,15 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("resetCode")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ResetCode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("newPassword")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string NewPassword { get; set; } = default!;
 
     }
@@ -3345,6 +3357,7 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("sharedKey")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string SharedKey { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("recoveryCodesLeft")]
@@ -3387,6 +3400,7 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string Email { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isEmailConfirmed")]
@@ -3769,12 +3783,15 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("screenIdentifier")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ScreenIdentifier { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("userId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string UserId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("screenName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ScreenName { get; set; } = default!;
 
     }
@@ -3809,15 +3826,18 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("screenIdentifier")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ScreenIdentifier { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("screenName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ScreenName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("approvalStatus")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public string ApprovalStatus { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("location")]
@@ -3920,7 +3940,8 @@ namespace Mireya.ApiClient.Generated
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("screen")]
-        public ScreenDetailsResponse Screen { get; set; } = default!;
+        [System.ComponentModel.DataAnnotations.Required]
+        public ScreenDetailsResponse Screen { get; set; } = new ScreenDetailsResponse();
 
     }
 
