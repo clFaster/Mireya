@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Mireya.Api;
+using Mireya.Api.Components;
+using Mireya.Api.Endpoints;
 using Mireya.Api.Extensions;
 using Mireya.Api.Hubs;
 using Mireya.Api.Middleware;
@@ -27,44 +29,39 @@ var config = builder
     .AddEnvironmentVariables()
     .Build();
 
-// Add services to the container.
+// ─── Blazor Server ───────────────────────────────────────────────────────────
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
+// ─── Carter (REST API) ────────────────────────────────────────────────────────
 builder.Services.AddCarter();
 builder.Services.AddEndpointsApiExplorer();
 
-// Add NSwag OpenAPI document generation
+// ─── NSwag OpenAPI ───────────────────────────────────────────────────────────
 builder.Services.AddOpenApiDocument(generatorSettings =>
 {
     generatorSettings.DocumentName = "v1";
     generatorSettings.Title = "Mireya Digital Signage API";
     generatorSettings.Version = "v1";
-
-    // Process IFormFile as binary string for file uploads
     generatorSettings.SchemaSettings.SchemaProcessors.Add(new FormFileSchemaProcessor());
 });
 
+// ─── Database ────────────────────────────────────────────────────────────────
 builder.Services.AddMireyaDbContext(config);
 
-// Add Identity with API endpoints (supports both Bearer tokens and Cookies)
-builder
-    .Services.AddIdentityApiEndpoints<User>(options =>
+// ─── Identity + dual auth (Bearer for screens/API, Cookie for Blazor admin) ──
+builder.Services
+    .AddIdentityApiEndpoints<User>(options =>
     {
-        // Password settings
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = false;
         options.Password.RequireUppercase = false;
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequiredLength = 9;
-
-        // Lockout settings
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.AllowedForNewUsers = true;
-
-        // User settings
         options.User.RequireUniqueEmail = true;
-
-        // SignIn settings - allow signing in with email
         options.SignIn.RequireConfirmedEmail = false;
         options.SignIn.RequireConfirmedPhoneNumber = false;
         options.SignIn.RequireConfirmedAccount = false;
@@ -73,106 +70,101 @@ builder
     .AddEntityFrameworkStores<MireyaDbContext>()
     .AddDefaultTokenProviders();
 
-// API uses Bearer tokens only — no cookie challenge scheme needed
-builder.Services.AddAuthentication();
+// Cookie settings for Blazor admin UI
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/login";
+    options.AccessDeniedPath = "/login";
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+});
 
+// ─── Authorization ────────────────────────────────────────────────────────────
 builder.Services.AddAuthorization(options =>
 {
-    // Add policy for Admin role
     options.AddPolicy(Roles.Admin, policy => policy.RequireRole(Roles.Admin));
     options.AddPolicy(Roles.Screen, policy => policy.RequireRole(Roles.Screen));
 });
 
-// Register services
+// ─── Application services ─────────────────────────────────────────────────────
+builder.Services.AddSignalR(options => { options.EnableDetailedErrors = true; });
 builder.Services.AddScoped<IInitializerService, InitializerService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IAssetSyncService, AssetSyncService>();
-builder.Services.AddSignalR(options =>
-{
-    options.EnableDetailedErrors = true; // Enable detailed errors for debugging
-});
 builder.Services.AddSingleton<IScreenConnectionTracker, ScreenConnectionTracker>();
 builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
 builder.Services.AddScoped<IScreenHubContext, ScreenHubContextAdapter>();
 
-// Add CORS for development
+// ─── CORS (dev only) ──────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(
-        "Development",
-        policy =>
-        {
-            policy
-                .WithOrigins("http://localhost:3000")
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-        }
-    );
+    options.AddPolicy("Development", policy =>
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
 });
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-using var scope = app.Services.CreateScope();
-var services = scope.ServiceProvider;
-var context = services.GetRequiredService<MireyaDbContext>();
+// ─── Startup: migrations + seed ───────────────────────────────────────────────
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<MireyaDbContext>();
+    await context.Database.MigrateAsync();
+    var adminInitializer = services.GetRequiredService<IInitializerService>();
+    await adminInitializer.InitializeAsync();
 
-// Apply pending migrations automatically
-await context.Database.MigrateAsync();
+    if (app.Environment.IsDevelopment())
+    {
+        var db = services.GetRequiredService<MireyaDbContext>();
+        await MireyaDbContext.InitializeAsync(db);
+    }
+}
 
-// Initialize default admin user
-var adminInitializer = services.GetRequiredService<IInitializerService>();
-await adminInitializer.InitializeAsync();
-
-// Configure the HTTP request pipeline.
-// Only use HTTPS redirection in production to avoid 307 redirects in development
+// ─── Middleware pipeline ──────────────────────────────────────────────────────
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
 if (app.Environment.IsDevelopment())
 {
-    var db = services.GetRequiredService<MireyaDbContext>();
-    await MireyaDbContext.InitializeAsync(db);
-
-    // Enable NSwag middleware for document generation and Swagger UI
     app.UseOpenApi();
     app.UseSwaggerUi();
-
     app.UseCors("Development");
 }
 
-// Establish routing context (required for authentication/authorization to work with Razor Pages)
+app.UseStaticFiles(); // Blazor static assets (wwwroot)
+
+// Serve uploaded media files from /uploads
+Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "uploads"));
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+    RequestPath = "/uploads",
+});
+
 app.UseRouting();
-
-// Add response debug middleware (logs unauthorized and error responses)
 app.UseResponseDebug();
-
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
-// Serve uploaded files
-// Erstelle das Verzeichnis "uploads", falls es nicht existiert
-Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "uploads"));
-app.UseStaticFiles(
-    new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(
-            Path.Combine(Directory.GetCurrentDirectory(), "uploads")
-        ),
-        RequestPath = "/uploads",
-    }
-);
-
-// Map Identity API endpoints
+// ─── Endpoints ────────────────────────────────────────────────────────────────
 app.MapIdentityApi<User>();
 app.MapIdentityApiAdditionalEndpoints<User>();
 
-// Map Carter modules and SignalR hub
+app.MapGroup("/auth").MapLoginEndpoints(); // Cookie login/logout for Blazor admin
+
 app.MapCarter();
 app.MapHub<ScreenHub>("/hubs/screen");
+
+app.MapRazorComponents<App>()
+   .AddInteractiveServerRenderMode();
 
 await app.RunAsync();

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;
 
-namespace Mireya.Web.Services;
+namespace Mireya.Api.Services;
 
 /// <summary>
 /// Adapts Blazor's IBrowserFile to IFormFile so it can be passed to AssetService.
