@@ -162,19 +162,10 @@ public class ScreenManagementService(
 
         var query = db.Displays.AsQueryable();
 
-        // Filter by status if provided
         if (status.HasValue)
             query = query.Where(d => d.ApprovalStatus == status.Value);
 
-        // Apply sorting
-        query = sortBy?.ToLower() switch
-        {
-            "name" => query.OrderBy(d => d.Name),
-            "location" => query.OrderBy(d => d.Location),
-            "status" => query.OrderBy(d => d.ApprovalStatus).ThenBy(d => d.Name),
-            "lastseen" => query.OrderByDescending(d => d.LastSeenAt),
-            _ => query.OrderByDescending(d => d.CreatedAt), // Default: newest first
-        };
+        query = ApplyScreenSorting(query, sortBy);
 
         var total = await query.CountAsync();
         var displays = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
@@ -189,6 +180,20 @@ public class ScreenManagementService(
             Items = items,
         };
     }
+
+    private static readonly Dictionary<string, Func<IQueryable<Display>, IQueryable<Display>>> SortFunctions =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["name"] = q => q.OrderBy(d => d.Name),
+            ["location"] = q => q.OrderBy(d => d.Location),
+            ["status"] = q => q.OrderBy(d => d.ApprovalStatus).ThenBy(d => d.Name),
+            ["lastseen"] = q => q.OrderByDescending(d => d.LastSeenAt),
+        };
+
+    private static IQueryable<Display> ApplyScreenSorting(IQueryable<Display> query, string? sortBy) =>
+        sortBy != null && SortFunctions.TryGetValue(sortBy, out var sort)
+            ? sort(query)
+            : query.OrderByDescending(d => d.CreatedAt);
 
     public async Task<ScreenDetailsResponse> GetScreenByIdAsync(Guid id)
     {

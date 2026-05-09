@@ -158,18 +158,13 @@ public class AssetSyncService : IAssetSyncService
     {
         var localPath = GetAssetLocalPath(asset.AssetId);
 
-        // Check if asset already exists locally
         if (File.Exists(localPath))
         {
-            _logger.LogDebug(
-                "Asset {AssetId} already exists locally, skipping download",
-                asset.AssetId
-            );
+            _logger.LogDebug("Asset {AssetId} already exists locally, skipping download", asset.AssetId);
             await UpdateSyncStatusAsync(asset.AssetId, "Downloaded", 100);
             return;
         }
 
-        // Only download image and video assets, skip website URLs
         if (asset.Type == "Website")
         {
             _logger.LogDebug("Skipping download for website asset {AssetId}", asset.AssetId);
@@ -182,84 +177,64 @@ public class AssetSyncService : IAssetSyncService
             await UpdateSyncStatusAsync(asset.AssetId, "Downloading", 0);
             OnSyncProgressChanged?.Invoke(asset.AssetId, "Downloading", 0);
 
-            // Construct full URL
-            var downloadUrl = asset.Source.StartsWith("http")
-                ? asset.Source
-                : $"{_baseUrl}{asset.Source}";
-
-            _logger.LogInformation(
-                "Downloading asset {AssetId} from {Url}",
-                asset.AssetId,
-                downloadUrl
-            );
-
-            // Add authorization token
-            var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
-            var token = _accessTokenProvider.GetAccessToken();
-            if (!string.IsNullOrEmpty(token))
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            using var response = await _httpClient.SendAsync(
-                request,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken
-            );
-            response.EnsureSuccessStatusCode();
-
-            var totalBytes = response.Content.Headers.ContentLength ?? asset.FileSizeBytes ?? 0;
-            var downloadedBytes = 0L;
-
-            await using var contentStream = await response.Content.ReadAsStreamAsync(
-                cancellationToken
-            );
-            await using var fileStream = new FileStream(
-                localPath,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                8192,
-                true
-            );
-
-            var buffer = new byte[8192];
-            int bytesRead;
-
-            while (
-                (
-                    bytesRead = await contentStream.ReadAsync(
-                        buffer,
-                        0,
-                        buffer.Length,
-                        cancellationToken
-                    )
-                ) > 0
-            )
-            {
-                await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
-                downloadedBytes += bytesRead;
-
-                if (totalBytes > 0)
-                {
-                    var progress = (int)(downloadedBytes * 100 / totalBytes);
-                    await UpdateSyncStatusAsync(asset.AssetId, "Downloading", progress);
-                    OnSyncProgressChanged?.Invoke(asset.AssetId, "Downloading", progress);
-                }
-            }
+            await DownloadFileAsync(asset, localPath, cancellationToken);
 
             await UpdateSyncStatusAsync(asset.AssetId, "Downloaded", 100);
             OnSyncProgressChanged?.Invoke(asset.AssetId, "Downloaded", 100);
 
-            _logger.LogInformation(
-                "Successfully downloaded asset {AssetId} to {Path}",
-                asset.AssetId,
-                localPath
-            );
+            _logger.LogInformation("Successfully downloaded asset {AssetId} to {Path}", asset.AssetId, localPath);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to download asset {AssetId}", asset.AssetId);
             await UpdateSyncStatusAsync(asset.AssetId, "Failed", 0, ex.Message);
             throw;
+        }
+    }
+
+    private async Task DownloadFileAsync(
+        AssetDownloadInfo asset,
+        string localPath,
+        CancellationToken cancellationToken)
+    {
+        var downloadUrl = asset.Source.StartsWith("http")
+            ? asset.Source
+            : $"{_baseUrl}{asset.Source}";
+
+        _logger.LogInformation("Downloading asset {AssetId} from {Url}", asset.AssetId, downloadUrl);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+        var token = _accessTokenProvider.GetAccessToken();
+        if (!string.IsNullOrEmpty(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var response = await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+
+        var totalBytes = response.Content.Headers.ContentLength ?? asset.FileSizeBytes ?? 0;
+        var downloadedBytes = 0L;
+
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var fileStream = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+
+        var buffer = new byte[8192];
+        int bytesRead;
+
+        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+        {
+            await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
+            downloadedBytes += bytesRead;
+
+            if (totalBytes > 0)
+            {
+                var progress = (int)(downloadedBytes * 100 / totalBytes);
+                await UpdateSyncStatusAsync(asset.AssetId, "Downloading", progress);
+                OnSyncProgressChanged?.Invoke(asset.AssetId, "Downloading", progress);
+            }
         }
     }
 

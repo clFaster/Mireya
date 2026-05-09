@@ -12,82 +12,91 @@ public class AssetModule : ICarterModule
     {
         var group = app.MapGroup("/api/assets").RequireAuthorization(Roles.Admin);
 
-        group.MapPost("/upload", async (
-            [FromForm] UploadFilesRequest request,
-            IAssetService assetService) =>
-        {
-            try
-            {
-                var result = await assetService.UploadAssetsAsync(request.Files);
-                return Results.Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-        }).DisableAntiforgery();
+        group.MapPost("/upload", HandleUploadAsync).DisableAntiforgery();
+        group.MapGet("/", HandleGetAssetsAsync);
+        group.MapDelete("/{id:guid}", HandleDeleteAsync);
+        group.MapPut("/{id:guid}/metadata", HandleUpdateMetadataAsync);
+        group.MapPost("/website", HandleCreateWebsiteAssetAsync);
+    }
 
-        group.MapGet("/", async (
-            IAssetService assetService,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] AssetType? type = null,
-            [FromQuery] string sortBy = "name") =>
+    private static async Task<IResult> HandleUploadAsync(
+        [FromForm] UploadFilesRequest request,
+        IAssetService assetService)
+    {
+        try
         {
-            var result = await assetService.GetAssetsAsync(page, pageSize, type, sortBy);
+            var result = await assetService.UploadAssetsAsync(request.Files);
             return Results.Ok(result);
-        });
-
-        group.MapDelete("/{id:guid}", async (Guid id, IAssetService assetService) =>
+        }
+        catch (ArgumentException ex)
         {
-            try
-            {
-                await assetService.DeleteAssetAsync(id);
-                return Results.NoContent();
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-        });
+            return Results.BadRequest(ex.Message);
+        }
+    }
 
-        group.MapPut("/{id:guid}/metadata", async (
-            Guid id,
-            [FromBody] UpdateAssetMetadataRequest request,
-            IAssetService assetService) =>
-        {
-            try
-            {
-                var asset = await assetService.UpdateAssetMetadataAsync(id, request);
-                return Results.Ok(asset);
-            }
-            catch (ArgumentNullException)
-            {
-                return Results.BadRequest("Request body is required");
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
-        });
+    private record GetAssetsQuery(
+        [property: FromQuery] int Page = 1,
+        [property: FromQuery] int PageSize = 10,
+        [property: FromQuery] AssetType? Type = null,
+        [property: FromQuery] string SortBy = "name");
 
-        group.MapPost("/website", async (
-            [FromBody] CreateWebsiteAssetRequest request,
-            IAssetService assetService) =>
+    private static async Task<IResult> HandleGetAssetsAsync(
+        IAssetService assetService,
+        [AsParameters] GetAssetsQuery query)
+    {
+        var result = await assetService.GetAssetsAsync(new AssetFilter(query.Page, query.PageSize, query.Type, query.SortBy));
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> HandleDeleteAsync(Guid id, IAssetService assetService)
+    {
+        try
         {
-            try
-            {
-                var result = await assetService.CreateWebsiteAssetAsync(request.Url, request.Name, request.Description);
-                return Results.Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-        });
+            await assetService.DeleteAssetAsync(id);
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> HandleUpdateMetadataAsync(
+        Guid id,
+        [FromBody] UpdateAssetMetadataRequest request,
+        IAssetService assetService)
+    {
+        try
+        {
+            var asset = await assetService.UpdateAssetMetadataAsync(id, request);
+            return Results.Ok(asset);
+        }
+        catch (ArgumentNullException)
+        {
+            return Results.BadRequest("Request body is required");
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound();
+        }
+    }
+
+    private static async Task<IResult> HandleCreateWebsiteAssetAsync(
+        [FromBody] CreateWebsiteAssetRequest request,
+        IAssetService assetService)
+    {
+        try
+        {
+            var result = await assetService.CreateWebsiteAssetAsync(request.Url, request.Name, request.Description);
+            return Results.Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
     }
 }

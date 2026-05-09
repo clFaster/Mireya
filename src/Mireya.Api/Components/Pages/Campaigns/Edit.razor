@@ -86,7 +86,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var all = await AssetService.GetAssetsAsync(1, 1000, null, "name");
+        var all = await AssetService.GetAssetsAsync(new(1, 1000));
         _availableAssets = all.Items;
 
         if (Id.HasValue)

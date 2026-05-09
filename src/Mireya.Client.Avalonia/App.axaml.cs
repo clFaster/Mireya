@@ -91,6 +91,7 @@ public class App : Application
 
         // Register token provider (singleton to share state)
         services.AddSingleton<IAccessTokenProvider, AccessTokenProvider>();
+        services.AddSingleton<ICredentialRepository, CredentialRepository>();
 
         // Register authentication service
         services.AddSingleton<IAuthenticationService, AuthenticationService>();

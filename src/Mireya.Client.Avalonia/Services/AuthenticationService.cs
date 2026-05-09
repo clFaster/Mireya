@@ -15,27 +15,21 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly IMireyaApiClient _apiClient;
     private readonly IBackendManager _backendManager;
-    private readonly ICredentialManager _credentialManager;
+    private readonly ICredentialRepository _credentials;
     private readonly IScreenHubService _hubService;
-    private readonly ICredentialStorage _legacyCredentialStorage;
     private readonly ILogger<AuthenticationService> _logger;
-    private readonly IAccessTokenProvider _tokenProvider;
 
     public AuthenticationService(
         IMireyaApiClient apiClient,
-        ICredentialStorage legacyCredentialStorage,
-        ICredentialManager credentialManager,
+        ICredentialRepository credentials,
         IBackendManager backendManager,
-        IAccessTokenProvider tokenProvider,
         IScreenHubService hubService,
         ILogger<AuthenticationService> logger
     )
     {
         _apiClient = apiClient;
-        _legacyCredentialStorage = legacyCredentialStorage;
-        _credentialManager = credentialManager;
+        _credentials = credentials;
         _backendManager = backendManager;
-        _tokenProvider = tokenProvider;
         _hubService = hubService;
         _logger = logger;
     }
@@ -52,13 +46,13 @@ public class AuthenticationService : IAuthenticationService
             }
 
             // Check if we have valid credentials for current backend
-            var hasValidCredentials = await _credentialManager.HasValidCredentialsAsync(backend.Id);
+            var hasValidCredentials = await _credentials.HasValidCredentialsAsync(backend.Id);
             if (!hasValidCredentials)
             {
                 _logger.LogDebug("No valid credentials for backend {BackendId}", backend.Id);
 
                 // Check legacy credential storage for migration
-                if (await _legacyCredentialStorage.HasCredentialsAsync())
+                if (await _credentials.HasLegacyCredentialsAsync())
                 {
                     _logger.LogInformation("Found legacy credentials, attempting migration");
                     return AuthenticationState.NotAuthenticated; // Will try to login and migrate
@@ -115,7 +109,7 @@ public class AuthenticationService : IAuthenticationService
 
             // Store credentials temporarily in legacy storage (for backward compatibility)
             var credentials = new Credentials(username, password);
-            await _legacyCredentialStorage.SaveCredentialsAsync(credentials);
+            await _credentials.SaveLegacyCredentialsAsync(credentials);
 
             return new RegisterResult(true, response.ScreenIdentifier, response.UserId, null);
         }
@@ -137,60 +131,24 @@ public class AuthenticationService : IAuthenticationService
         {
             var backend = await _backendManager.GetCurrentBackendAsync();
             if (backend == null)
-                return new LoginResult(
-                    false,
-                    null,
-                    "No backend configured. Please select a backend first."
-                );
+                return new LoginResult(false, null, "No backend configured. Please select a backend first.");
 
-            _logger.LogInformation(
-                "Attempting login for backend {BackendId} - {BaseUrl}",
-                backend.Id,
-                backend.BaseUrl
-            );
+            _logger.LogInformation("Attempting login for backend {BackendId} - {BaseUrl}", backend.Id, backend.BaseUrl);
 
-            // Try to get credentials from new storage first
-            var credential = await _credentialManager.GetCredentialsAsync(backend.Id);
-            Credentials? legacyCredentials = null;
+            var (loginIdentity, password) = await ResolveLoginCredentialsAsync(backend.Id);
+            if (loginIdentity == null)
+                return new LoginResult(false, null, "No credentials found. Please register first.");
 
-            if (credential == null)
-            {
-                // Try legacy storage for migration
-                legacyCredentials = await _legacyCredentialStorage.GetCredentialsAsync();
-                if (legacyCredentials == null)
-                {
-                    _logger.LogWarning("No credentials found for backend {BackendId}", backend.Id);
-                    return new LoginResult(
-                        false,
-                        null,
-                        "No credentials found. Please register first."
-                    );
-                }
-
-                _logger.LogInformation("Using legacy credentials for migration");
-            }
-
-            // Login with backend (useCookies=false for JWT tokens)
-            var loginIdentity = credential?.Username ?? legacyCredentials!.Username;
             var loginRequest = new LoginRequest
             {
                 Email = NormalizeScreenLoginEmail(loginIdentity),
-                Password = "dummy", // We don't store passwords, only use for initial registration
+                Password = password!,
             };
 
-            // If we have credentials from new storage but need password, try legacy
-            if (credential != null && legacyCredentials == null)
-                legacyCredentials = await _legacyCredentialStorage.GetCredentialsAsync();
-
-            if (legacyCredentials != null)
-                loginRequest.Password = legacyCredentials.Password;
-
             var response = await _apiClient.PostLoginAsync(false, false, loginRequest);
-
             _logger.LogInformation("Login successful for backend {BackendId}", backend.Id);
 
-            // Save credentials to new database storage
-            await _credentialManager.SaveCredentialsAsync(
+            await _credentials.SaveCredentialsAsync(
                 backend.Id,
                 loginRequest.Email,
                 response.AccessToken,
@@ -198,12 +156,8 @@ public class AuthenticationService : IAuthenticationService
                 DateTime.UtcNow.AddSeconds(response.ExpiresIn)
             );
 
-            _logger.LogInformation(
-                "Credentials saved to database for backend {BackendId}",
-                backend.Id
-            );
+            _logger.LogInformation("Credentials saved to database for backend {BackendId}", backend.Id);
 
-            // Connect to SignalR Hub
             await _hubService.ConnectAsync();
             _logger.LogInformation("Connected to SignalR hub");
 
@@ -221,6 +175,28 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
+    private async Task<(string? loginIdentity, string? password)> ResolveLoginCredentialsAsync(Guid backendId)
+    {
+        var credential = await _credentials.GetCredentialsAsync(backendId);
+        var legacyCredentials = await _credentials.GetLegacyCredentialsAsync();
+
+        if (credential == null && legacyCredentials == null)
+        {
+            _logger.LogWarning("No credentials found for backend {BackendId}", backendId);
+            return (null, null);
+        }
+
+        if (credential != null)
+        {
+            _logger.LogInformation("Using stored credentials for backend {BackendId}", backendId);
+            var password = legacyCredentials?.Password ?? "dummy";
+            return (credential.Username, password);
+        }
+
+        _logger.LogInformation("Using legacy credentials for migration");
+        return (legacyCredentials!.Username, legacyCredentials.Password);
+    }
+
     public async Task<ScreenInfo?> GetScreenInfoAsync()
     {
         try
@@ -232,7 +208,7 @@ public class AuthenticationService : IAuthenticationService
                 return null;
             }
 
-            var credential = await _credentialManager.GetCredentialsAsync(backend.Id);
+            var credential = await _credentials.GetCredentialsAsync(backend.Id);
             if (credential == null || string.IsNullOrEmpty(credential.AccessToken))
             {
                 _logger.LogWarning(
@@ -292,7 +268,7 @@ public class AuthenticationService : IAuthenticationService
             _logger.LogDebug("Disconnected from SignalR hub");
 
             // Delete credentials from database
-            await _credentialManager.DeleteCredentialsAsync(backend.Id);
+            await _credentials.DeleteCredentialsAsync(backend.Id);
             _logger.LogInformation("Credentials deleted for backend {BackendId}", backend.Id);
         }
         catch (Exception ex)
@@ -302,10 +278,7 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public string? GetAccessToken()
-    {
-        return _tokenProvider.GetAccessToken();
-    }
+    public string? GetAccessToken() => _credentials.GetAccessToken();
 
     private static string GenerateUsername()
     {
