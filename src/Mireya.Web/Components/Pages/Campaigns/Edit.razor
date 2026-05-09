@@ -1,0 +1,146 @@
+@page "/campaigns/create"
+@page "/campaigns/edit/{Id:guid}"
+@attribute [Authorize]
+@inject ICampaignService CampaignService
+@inject IAssetService AssetService
+@inject NavigationManager Navigation
+@using Mireya.Database.Models
+
+<PageTitle>@(Id == null ? "New Campaign" : "Edit Campaign") - Mireya Admin</PageTitle>
+<h1 class="mb-4">@(Id == null ? "New Campaign" : "Edit Campaign")</h1>
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Name *</label>
+                    <input class="form-control" @bind="_name" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" @bind="_description"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Assets in Campaign</div>
+            <div class="card-body">
+                @if (_selectedAssets.Count == 0)
+                {
+                    <p class="text-muted">No assets added. Pick from the list on the right.</p>
+                }
+                @foreach (var (asset, i) in _selectedAssets.Select((a, i) => (a, i)))
+                {
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
+                        <span class="flex-grow-1">@(i + 1). @asset.Name (@asset.Type)</span>
+                        @if (asset.Type != AssetType.Video)
+                        {
+                            <input type="number" class="form-control form-control-sm" style="width:90px"
+                                   placeholder="secs" @bind="asset.DurationSeconds" min="1" />
+                        }
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveAsset(asset)">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <button class="btn btn-primary me-2" @onclick="SaveAsync">
+            @(Id == null ? "Create" : "Save Changes")
+        </button>
+        <a href="/campaigns" class="btn btn-secondary">Cancel</a>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Available Assets</div>
+            <div class="list-group list-group-flush" style="max-height:500px;overflow-y:auto">
+                @foreach (var asset in _availableAssets)
+                {
+                    <button class="list-group-item list-group-item-action d-flex justify-content-between"
+                            @onclick="() => AddAsset(asset)">
+                        <span>@asset.Name</span>
+                        <small class="text-muted">@asset.Type</small>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private string _name = "", _description = "";
+    private List<SelectedCampaignAsset> _selectedAssets = [];
+    private List<Mireya.Database.Models.Asset> _availableAssets = [];
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await AssetService.GetAssetsAsync(1, 1000, null, "name");
+        _availableAssets = all.Items;
+
+        if (Id.HasValue)
+        {
+            var campaign = await CampaignService.GetCampaignAsync(Id.Value);
+            _name = campaign.Name;
+            _description = campaign.Description ?? "";
+            _selectedAssets = campaign.Assets.Select(a => new SelectedCampaignAsset
+            {
+                AssetId = a.AssetId,
+                Name = a.AssetName,
+                Type = a.AssetType,
+                DurationSeconds = a.DurationSeconds,
+            }).ToList();
+        }
+    }
+
+    private void AddAsset(Mireya.Database.Models.Asset asset)
+    {
+        if (_selectedAssets.Any(a => a.AssetId == asset.Id)) return;
+        _selectedAssets.Add(new SelectedCampaignAsset
+        {
+            AssetId = asset.Id,
+            Name = asset.Name,
+            Type = asset.Type,
+            DurationSeconds = asset.Type == AssetType.Video ? null : 10,
+        });
+    }
+
+    private void RemoveAsset(SelectedCampaignAsset asset) => _selectedAssets.Remove(asset);
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_name)) { _error = "Name is required."; return; }
+        if (_selectedAssets.Count == 0) { _error = "Add at least one asset."; return; }
+
+        try
+        {
+            var assets = _selectedAssets.Select((a, i) => new CampaignAssetDto(a.AssetId, i + 1, a.DurationSeconds)).ToList();
+            if (Id.HasValue)
+                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_name, _description, assets, []));
+            else
+                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_name, _description, assets, []));
+
+            Navigation.NavigateTo("/campaigns");
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+
+    private class SelectedCampaignAsset
+    {
+        public Guid AssetId { get; set; }
+        public string Name { get; set; } = "";
+        public AssetType Type { get; set; }
+        public int? DurationSeconds { get; set; }
+    }
+}

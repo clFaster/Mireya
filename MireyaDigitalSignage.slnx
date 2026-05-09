@@ -13,6 +13,7 @@
   </Folder>
   <Folder Name="/Server/">
     <Project Path="src/Mireya.Api/Mireya.Api.csproj" />
+    <Project Path="src/Mireya.Web/Mireya.Web.csproj" />
     <Project Path="src/Mireya.Application/Mireya.Application.csproj" />
     <Project Path="src/Mireya.Database.Postgres/Mireya.Database.Postgres.csproj" />
     <Project Path="src/Mireya.Database.Sqlite/Mireya.Database.Sqlite.csproj" />

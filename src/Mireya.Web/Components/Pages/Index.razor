@@ -1,0 +1,71 @@
+@page "/"
+@attribute [Authorize]
+@inject IAssetService AssetService
+@inject ICampaignService CampaignService
+@inject IScreenManagementService ScreenManagementService
+@inject IScreenConnectionTracker ConnectionTracker
+
+<PageTitle>Dashboard - Mireya Admin</PageTitle>
+<h1 class="mb-4">Dashboard</h1>
+
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-images me-2"></i>Assets</h5>
+                    <p class="card-text display-6">@_assetCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-success">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-collection-play me-2"></i>Campaigns</h5>
+                    <p class="card-text display-6">@_campaignCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-info">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-tv me-2"></i>Screens</h5>
+                    <p class="card-text display-6">@_screenCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-wifi me-2"></i>Online</h5>
+                    <p class="card-text display-6">@_onlineCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private int _assetCount, _campaignCount, _screenCount, _onlineCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var assets = await AssetService.GetAssetsAsync(1, 1, null, "name");
+        _assetCount = assets.Total;
+
+        var campaigns = await CampaignService.GetCampaignsAsync();
+        _campaignCount = campaigns.Count;
+
+        var screens = await ScreenManagementService.GetScreensAsync(1, 1, null, null);
+        _screenCount = screens.Total;
+
+        _onlineCount = ConnectionTracker.GetOnlineScreenCount();
+        _loading = false;
+    }
+}

@@ -1,0 +1,94 @@
+@page "/screens/{Id:guid}"
+@attribute [Authorize]
+@inject Mireya.Database.MireyaDbContext Db
+@inject IScreenManagementService ScreenManagementService
+@inject IScreenSynchronizationService SyncService
+@inject NavigationManager Navigation
+@using Mireya.Database.Models
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Screen Details - Mireya Admin</PageTitle>
+
+@if (_screen == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="d-flex justify-content-between mb-4">
+        <h1>@_screen.Name</h1>
+        <div class="d-flex gap-2">
+            <a href="/screens/edit/@_screen.Id" class="btn btn-outline-secondary">Edit</a>
+            @if (_screen.ApprovalStatus == ApprovalStatus.Pending)
+            {
+                <button class="btn btn-success" @onclick="ApproveAsync">Approve</button>
+                <button class="btn btn-danger" @onclick="RejectAsync">Reject</button>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="alert @(_isError ? "alert-danger" : "alert-success")">@_message</div>
+    }
+
+    <div class="row">
+        <div class="col-md-6">
+            <dl class="row">
+                <dt class="col-sm-4">Status</dt>
+                <dd class="col-sm-8"><span class="badge @(_screen.IsActive ? "bg-success" : "bg-secondary")">@(_screen.IsActive ? "Online" : "Offline")</span></dd>
+                <dt class="col-sm-4">Approval</dt>
+                <dd class="col-sm-8">@_screen.ApprovalStatus</dd>
+                <dt class="col-sm-4">Location</dt>
+                <dd class="col-sm-8">@_screen.Location</dd>
+                <dt class="col-sm-4">Resolution</dt>
+                <dd class="col-sm-8">@_screen.ResolutionWidth x @_screen.ResolutionHeight</dd>
+                <dt class="col-sm-4">Last Seen</dt>
+                <dd class="col-sm-8">@(_screen.LastSeenAt?.ToLocalTime().ToString("g") ?? "-")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <h5 class="mt-3">Assigned Campaigns</h5>
+    @if (!_campaigns.Any())
+    {
+        <p class="text-muted">No campaigns assigned. <a href="/screens/edit/@_screen.Id">Assign campaigns</a>.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var c in _campaigns)
+            {
+                <li class="list-group-item">@c.Name</li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Display? _screen;
+    private List<Campaign> _campaigns = [];
+    private string? _message;
+    private bool _isError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _screen = await Db.Displays
+            .Include(d => d.CampaignAssignments).ThenInclude(ca => ca.Campaign)
+            .FirstOrDefaultAsync(d => d.Id == Id);
+        _campaigns = _screen?.CampaignAssignments.Select(ca => ca.Campaign).ToList() ?? [];
+    }
+
+    private async Task ApproveAsync()
+    {
+        try { await ScreenManagementService.ApproveScreenAsync(Id); _message = "Screen approved."; _isError = false; await OnInitializedAsync(); }
+        catch (Exception ex) { _message = ex.Message; _isError = true; }
+    }
+
+    private async Task RejectAsync()
+    {
+        try { await ScreenManagementService.RejectScreenAsync(Id); _message = "Screen rejected."; _isError = false; await OnInitializedAsync(); }
+        catch (Exception ex) { _message = ex.Message; _isError = true; }
+    }
+}

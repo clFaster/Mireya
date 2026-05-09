@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mireya.Application\Mireya.Application.csproj" />
+    <ProjectReference Include="..\Mireya.Database.Postgres\Mireya.Database.Postgres.csproj" />
+    <ProjectReference Include="..\Mireya.Database.Sqlite\Mireya.Database.Sqlite.csproj" />
+    <ProjectReference Include="..\MireyaDigitalSignage.ServiceDefaults\MireyaDigitalSignage.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

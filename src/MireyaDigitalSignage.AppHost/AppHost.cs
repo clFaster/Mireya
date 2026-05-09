@@ -10,4 +10,9 @@ builder
     .WithReference(postgres)
     .WithEnvironment("provider", "Postgres");
 
+builder
+    .AddProject<Projects.Mireya_Web>("mireya-web")
+    .WithReference(postgres)
+    .WithEnvironment("provider", "Postgres");
+
 builder.Build().Run();
