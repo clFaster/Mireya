@@ -102,12 +102,12 @@ public class AssetSyncService : IAssetSyncService
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync<List<AssetSyncStatusDto>>()
-                ?? new List<AssetSyncStatusDto>();
+                ?? [];
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get sync status");
-            return new List<AssetSyncStatusDto>();
+            return [];
         }
     }
 

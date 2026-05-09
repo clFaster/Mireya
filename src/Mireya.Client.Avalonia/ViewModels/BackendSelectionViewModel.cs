@@ -18,7 +18,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private readonly Action<BackendInstance> _onBackendSelected;
 
     [ObservableProperty]
-    private ObservableCollection<BackendInstance> _backends = new();
+    private ObservableCollection<BackendInstance> _backends = [];
 
     [ObservableProperty]
     private bool _isStatusError;
