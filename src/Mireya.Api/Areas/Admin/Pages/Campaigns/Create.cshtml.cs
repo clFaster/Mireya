@@ -2,7 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Mireya.Api.Services.Campaign;
+using Mireya.Application.Services.Campaign;
 using Mireya.Database;
 using Mireya.Database.Models;
 

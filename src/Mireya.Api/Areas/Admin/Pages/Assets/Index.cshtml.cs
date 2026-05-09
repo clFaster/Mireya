@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Mireya.Api.Services.Asset;
+using Mireya.Application.Services.Asset;
 using Mireya.Database;
 using Mireya.Database.Models;
 

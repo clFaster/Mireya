@@ -2,16 +2,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Mireya.Api;
-using Mireya.Api.Constants;
 using Mireya.Api.Extensions;
 using Mireya.Api.Hubs;
 using Mireya.Api.Middleware;
-using Mireya.Api.Services;
-using Mireya.Api.Services.Asset;
-using Mireya.Api.Services.AssetSync;
-using Mireya.Api.Services.Campaign;
-using Mireya.Api.Services.ScreenManagement;
 using Mireya.Api.Startup;
+using Mireya.Application.Constants;
+using Mireya.Application.Hubs;
+using Mireya.Application.Services;
+using Mireya.Application.Services.Asset;
+using Mireya.Application.Services.AssetSync;
+using Mireya.Application.Services.Campaign;
+using Mireya.Application.Services.ScreenManagement;
 using Mireya.Database;
 using Mireya.Database.Models;
 
@@ -113,6 +114,7 @@ builder.Services.AddSingleton<IScreenConnectionTracker, ScreenConnectionTracker>
 builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
+builder.Services.AddScoped<IScreenHubContext, ScreenHubContextAdapter>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>

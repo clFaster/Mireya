@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Mireya.Api.Constants;
-using Mireya.Api.Services.Campaign;
+using Mireya.Application.Constants;
+using Mireya.Application.Services.Campaign;
 
 namespace Mireya.Api.Controllers;
 
