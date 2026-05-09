@@ -106,7 +106,7 @@ public class AuthenticationService : IAuthenticationService
                 ResolutionHeight = null,
             };
 
-            var response = await _apiClient.ScreenManagement_RegisterScreenAsync(request);
+            var response = await _apiClient.PostApiScreenmanagementRegisterAsync(request);
 
             _logger.LogInformation(
                 "Registration successful. Screen identifier: {ScreenIdentifier}",
@@ -244,7 +244,7 @@ public class AuthenticationService : IAuthenticationService
 
             _logger.LogDebug("Fetching screen info for backend {BackendId}", backend.Id);
 
-            var response = await _apiClient.ScreenManagement_BonjourAsync();
+            var response = await _apiClient.GetApiScreenmanagementBonjourAsync();
 
             _logger.LogInformation(
                 "Successfully fetched screen info: {ScreenIdentifier}",

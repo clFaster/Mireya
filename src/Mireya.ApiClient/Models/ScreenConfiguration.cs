@@ -1,5 +1,3 @@
-using Mireya.ApiClient.Generated;
-
 namespace Mireya.ApiClient.Models;
 
 public class ScreenConfiguration
