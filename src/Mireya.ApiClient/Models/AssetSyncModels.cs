@@ -31,5 +31,5 @@ public class CampaignSyncInfo
 {
     public Guid CampaignId { get; set; }
     public string CampaignName { get; set; } = string.Empty;
-    public List<AssetDownloadInfo> Assets { get; set; } = new();
+    public List<AssetDownloadInfo> Assets { get; set; } = [];
 }

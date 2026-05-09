@@ -45,7 +45,7 @@ public class ScreenConnectionTracker : IScreenConnectionTracker
             _connectionToUser[connectionId] = userId;
 
             if (!_userToConnections.ContainsKey(userId))
-                _userToConnections[userId] = new HashSet<string>();
+                _userToConnections[userId] = [];
 
             _userToConnections[userId].Add(connectionId);
         }
