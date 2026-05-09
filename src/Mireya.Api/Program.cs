@@ -30,13 +30,6 @@ var config = builder
 // Add services to the container.
 
 builder.Services.AddCarter();
-builder.Services.AddRazorPages(options =>
-{
-    // Require authentication for all pages in the Admin area by default
-    options
-        .Conventions.AuthorizeAreaFolder("Admin", "/", Roles.Admin)
-        .AllowAnonymousToAreaPage("Admin", "/Login");
-});
 builder.Services.AddEndpointsApiExplorer();
 
 // Add NSwag OpenAPI document generation
@@ -80,27 +73,14 @@ builder
     .AddEntityFrameworkStores<MireyaDbContext>()
     .AddDefaultTokenProviders();
 
-// Configure authentication to support both Bearer tokens (API) and Cookies (Razor Pages)
-builder.Services.AddAuthentication(options =>
-{
-    // This ensures Razor Pages get redirected when unauthorized
-    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
-    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
-});
+// API uses Bearer tokens only — no cookie challenge scheme needed
+builder.Services.AddAuthentication();
 
 builder.Services.AddAuthorization(options =>
 {
     // Add policy for Admin role
     options.AddPolicy(Roles.Admin, policy => policy.RequireRole(Roles.Admin));
-});
-
-// Configure cookie authentication to redirect to login page on unauthorized access
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.LoginPath = "/Admin/Login";
-    options.AccessDeniedPath = "/Admin/Login";
-    options.SlidingExpiration = true;
-    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+    options.AddPolicy(Roles.Screen, policy => policy.RequireRole(Roles.Screen));
 });
 
 // Register services
@@ -174,9 +154,6 @@ app.UseResponseDebug();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Serve static files for Razor Pages (CSS, JS, images)
-app.UseStaticFiles();
-
 // Serve uploaded files
 // Erstelle das Verzeichnis "uploads", falls es nicht existiert
 Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "uploads"));
@@ -194,11 +171,8 @@ app.UseStaticFiles(
 app.MapIdentityApi<User>();
 app.MapIdentityApiAdditionalEndpoints<User>();
 
-// Map Carter modules, Razor Pages and SignalR
+// Map Carter modules and SignalR hub
 app.MapCarter();
-app.MapRazorPages();
 app.MapHub<ScreenHub>("/hubs/screen");
-
-// Root page is handled by Pages/Index.cshtml (no redirect needed)
 
 await app.RunAsync();
