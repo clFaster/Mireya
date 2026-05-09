@@ -1,3 +1,4 @@
+using Carter;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -28,7 +29,7 @@ var config = builder
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddCarter();
 builder.Services.AddRazorPages(options =>
 {
     // Require authentication for all pages in the Admin area by default
@@ -193,8 +194,8 @@ app.UseStaticFiles(
 app.MapIdentityApi<User>();
 app.MapIdentityApiAdditionalEndpoints<User>();
 
-// Map Controllers and Razor Pages
-app.MapControllers();
+// Map Carter modules, Razor Pages and SignalR
+app.MapCarter();
 app.MapRazorPages();
 app.MapHub<ScreenHub>("/hubs/screen");
 

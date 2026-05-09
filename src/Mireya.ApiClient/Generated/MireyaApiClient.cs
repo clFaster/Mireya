@@ -30,6 +30,27 @@ namespace Mireya.ApiClient.Generated
     public partial interface IMireyaApiClient
     {
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<RegisterScreenResponse> PostApiScreenmanagementRegisterAsync(RegisterScreenRequest request);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<RegisterScreenResponse> PostApiScreenmanagementRegisterAsync(RegisterScreenRequest request, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<BonjourResponse> GetApiScreenmanagementBonjourAsync();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<BonjourResponse> GetApiScreenmanagementBonjourAsync(System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task PostRegisterAsync(RegisterRequest registration);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -107,158 +128,137 @@ namespace Mireya.ApiClient.Generated
         System.Threading.Tasks.Task PostAccountLogoutAsync(System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSummary>> Asset_UploadAssetsAsync(System.Collections.Generic.IEnumerable<FileParameter> files);
+        System.Threading.Tasks.Task PostApiAssetsUploadAsync(UploadFilesRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSummary>> Asset_UploadAssetsAsync(System.Collections.Generic.IEnumerable<FileParameter> files, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task PostApiAssetsUploadAsync(UploadFilesRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedAssets> Asset_GetAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedAssets> Asset_GetAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> Asset_DeleteAssetAsync(System.Guid id);
+        System.Threading.Tasks.Task GetApiAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> Asset_DeleteAssetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task GetApiAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<Asset> Asset_UpdateAssetMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<Asset> Asset_UpdateAssetMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<AssetSummary> Asset_CreateWebsiteAssetAsync(CreateWebsiteAssetRequest request);
+        System.Threading.Tasks.Task DeleteApiAssetsAsync(System.Guid id);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<AssetSummary> Asset_CreateWebsiteAssetAsync(CreateWebsiteAssetRequest request, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task DeleteApiAssetsAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> AssetSync_UpdateSyncStatusAsync(UpdateAssetSyncRequest request);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> AssetSync_UpdateSyncStatusAsync(UpdateAssetSyncRequest request, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusAsync();
+        System.Threading.Tasks.Task PutApiAssetsMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusAsync(System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task PutApiAssetsMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSyncInfo>> AssetSync_GetCampaignsToSyncAsync();
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSyncInfo>> AssetSync_GetCampaignsToSyncAsync(System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusForDisplayAsync(System.Guid displayId);
+        System.Threading.Tasks.Task PostApiAssetsWebsiteAsync(CreateWebsiteAssetRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusForDisplayAsync(System.Guid displayId, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task PostApiAssetsWebsiteAsync(CreateWebsiteAssetRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSummary>> Campaign_GetCampaignsAsync(System.Guid? displayId);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSummary>> Campaign_GetCampaignsAsync(System.Guid? displayId, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CampaignDetail> Campaign_CreateCampaignAsync(CreateCampaignRequest request);
+        System.Threading.Tasks.Task PostApiAssetsyncStatusAsync(UpdateAssetSyncRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CampaignDetail> Campaign_CreateCampaignAsync(CreateCampaignRequest request, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task PostApiAssetsyncStatusAsync(UpdateAssetSyncRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CampaignDetail> Campaign_GetCampaignAsync(System.Guid id);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CampaignDetail> Campaign_GetCampaignAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CampaignDetail> Campaign_UpdateCampaignAsync(System.Guid id, UpdateCampaignRequest request);
+        System.Threading.Tasks.Task GetApiAssetsyncStatus2Async();
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<CampaignDetail> Campaign_UpdateCampaignAsync(System.Guid id, UpdateCampaignRequest request, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task GetApiAssetsyncStatus2Async(System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> Campaign_DeleteCampaignAsync(System.Guid id);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<FileResponse> Campaign_DeleteCampaignAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<RegisterScreenResponse> ScreenManagement_RegisterScreenAsync(RegisterScreenRequest request);
+        System.Threading.Tasks.Task GetApiAssetsyncCampaignsAsync();
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<RegisterScreenResponse> ScreenManagement_RegisterScreenAsync(RegisterScreenRequest request, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task GetApiAssetsyncCampaignsAsync(System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<BonjourResponse> ScreenManagement_BonjourAsync();
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<BonjourResponse> ScreenManagement_BonjourAsync(System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedScreensResponse> ScreenManagement_GetScreensAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy);
+        System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedScreensResponse> ScreenManagement_GetScreensAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_GetScreenByIdAsync(System.Guid id);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_GetScreenByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_UpdateScreenAsync(System.Guid id, UpdateScreenRequest request);
+        System.Threading.Tasks.Task PostApiCampaignAsync(CreateCampaignRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_UpdateScreenAsync(System.Guid id, UpdateScreenRequest request, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task PostApiCampaignAsync(CreateCampaignRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApproveScreenResponse> ScreenManagement_ApproveScreenAsync(System.Guid id);
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApproveScreenResponse> ScreenManagement_ApproveScreenAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_RejectScreenAsync(System.Guid id);
+        System.Threading.Tasks.Task GetApiCampaign2Async(System.Guid id);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_RejectScreenAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task GetApiCampaign2Async(System.Guid id, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<int> ScreenManagement_GetOnlineScreenCountAsync();
+        System.Threading.Tasks.Task PutApiCampaignAsync(System.Guid id, UpdateCampaignRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<int> ScreenManagement_GetOnlineScreenCountAsync(System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task PutApiCampaignAsync(System.Guid id, UpdateCampaignRequest request, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task DeleteApiCampaignAsync(System.Guid id);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task DeleteApiCampaignAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiScreenmanagementAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiScreenmanagementAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiScreenmanagement2Async(System.Guid id);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiScreenmanagement2Async(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PutApiScreenmanagementAsync(System.Guid id, UpdateScreenRequest request);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PutApiScreenmanagementAsync(System.Guid id, UpdateScreenRequest request, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PostApiScreenmanagementApproveAsync(System.Guid id);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PostApiScreenmanagementApproveAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PostApiScreenmanagementRejectAsync(System.Guid id);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PostApiScreenmanagementRejectAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiScreenmanagementOnlineCountAsync();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiScreenmanagementOnlineCountAsync(System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -309,6 +309,240 @@ namespace Mireya.ApiClient.Generated
         partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, string url);
         partial void PrepareRequest(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, System.Text.StringBuilder urlBuilder);
         partial void ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId)
+        {
+            return GetApiAssetsyncStatusAsync(displayId, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId, System.Threading.CancellationToken cancellationToken)
+        {
+            if (displayId == null)
+                throw new System.ArgumentNullException("displayId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/assetsync/{displayId}/status"
+                    urlBuilder_.Append("api/assetsync/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(displayId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/status");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<RegisterScreenResponse> PostApiScreenmanagementRegisterAsync(RegisterScreenRequest request)
+        {
+            return PostApiScreenmanagementRegisterAsync(request, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<RegisterScreenResponse> PostApiScreenmanagementRegisterAsync(RegisterScreenRequest request, System.Threading.CancellationToken cancellationToken)
+        {
+            if (request == null)
+                throw new System.ArgumentNullException("request");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(request, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/screenmanagement/register"
+                    urlBuilder_.Append("api/screenmanagement/register");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<RegisterScreenResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<BonjourResponse> GetApiScreenmanagementBonjourAsync()
+        {
+            return GetApiScreenmanagementBonjourAsync(System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<BonjourResponse> GetApiScreenmanagementBonjourAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/screenmanagement/bonjour"
+                    urlBuilder_.Append("api/screenmanagement/bonjour");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<BonjourResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task PostRegisterAsync(RegisterRequest registration)
@@ -1264,44 +1498,34 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSummary>> Asset_UploadAssetsAsync(System.Collections.Generic.IEnumerable<FileParameter> files)
+        public virtual System.Threading.Tasks.Task PostApiAssetsUploadAsync(UploadFilesRequest request)
         {
-            return Asset_UploadAssetsAsync(files, System.Threading.CancellationToken.None);
+            return PostApiAssetsUploadAsync(request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSummary>> Asset_UploadAssetsAsync(System.Collections.Generic.IEnumerable<FileParameter> files, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PostApiAssetsUploadAsync(UploadFilesRequest request, System.Threading.CancellationToken cancellationToken)
         {
+            if (request == null)
+                throw new System.ArgumentNullException("request");
+
             var client_ = _httpClient;
             var disposeClient_ = false;
             try
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var boundary_ = System.Guid.NewGuid().ToString();
-                    var content_ = new System.Net.Http.MultipartFormDataContent(boundary_);
-                    content_.Headers.Remove("Content-Type");
-                    content_.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary_);
-
-                    if (files != null)
-                    {
-                        foreach (var item_ in files)
-                        {
-                            var content_files_ = new System.Net.Http.StreamContent(item_.Data);
-                            if (!string.IsNullOrEmpty(item_.ContentType))
-                                content_files_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(item_.ContentType);
-                            content_.Add(content_files_, "files", item_.FileName ?? "files");
-                        }
-                    }
-                    request_.Content = content_;
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
                     request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Asset/upload"
-                    urlBuilder_.Append("api/Asset/upload");
+                    // Operation Path: "api/assets/upload"
+                    urlBuilder_.Append("api/assets/upload");
+                    urlBuilder_.Append('?');
+                    urlBuilder_.Append(System.Uri.EscapeDataString("request")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(request, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    urlBuilder_.Length--;
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -1328,12 +1552,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<AssetSummary>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -1356,14 +1575,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedAssets> Asset_GetAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy)
+        public virtual System.Threading.Tasks.Task GetApiAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy)
         {
-            return Asset_GetAssetsAsync(page, pageSize, type, sortBy, System.Threading.CancellationToken.None);
+            return GetApiAssetsAsync(page, pageSize, type, sortBy, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedAssets> Asset_GetAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiAssetsAsync(int? page, int? pageSize, AssetType? type, string? sortBy, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1372,12 +1591,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Asset"
-                    urlBuilder_.Append("api/Asset");
+                    // Operation Path: "api/assets"
+                    urlBuilder_.Append("api/assets");
                     urlBuilder_.Append('?');
                     if (page != null)
                     {
@@ -1422,12 +1640,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<PagedAssets>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -1450,14 +1663,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<FileResponse> Asset_DeleteAssetAsync(System.Guid id)
+        public virtual System.Threading.Tasks.Task DeleteApiAssetsAsync(System.Guid id)
         {
-            return Asset_DeleteAssetAsync(id, System.Threading.CancellationToken.None);
+            return DeleteApiAssetsAsync(id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<FileResponse> Asset_DeleteAssetAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task DeleteApiAssetsAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -1469,12 +1682,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Asset/{id}"
-                    urlBuilder_.Append("api/Asset/");
+                    // Operation Path: "api/assets/{id}"
+                    urlBuilder_.Append("api/assets/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -1500,12 +1712,9 @@ namespace Mireya.ApiClient.Generated
                         ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
-                        if (status_ == 200 || status_ == 206)
+                        if (status_ == 200)
                         {
-                            var responseStream_ = response_.Content == null ? System.IO.Stream.Null : await ReadAsStreamAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            var fileResponse_ = new FileResponse(status_, headers_, responseStream_, null, response_);
-                            disposeClient_ = false; disposeResponse_ = false; // response and client are disposed by FileResponse
-                            return fileResponse_;
+                            return;
                         }
                         else
                         {
@@ -1528,14 +1737,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<Asset> Asset_UpdateAssetMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request)
+        public virtual System.Threading.Tasks.Task PutApiAssetsMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request)
         {
-            return Asset_UpdateAssetMetadataAsync(id, request, System.Threading.CancellationToken.None);
+            return PutApiAssetsMetadataAsync(id, request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<Asset> Asset_UpdateAssetMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PutApiAssetsMetadataAsync(System.Guid id, UpdateAssetMetadataRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -1554,12 +1763,11 @@ namespace Mireya.ApiClient.Generated
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Asset/{id}/metadata"
-                    urlBuilder_.Append("api/Asset/");
+                    // Operation Path: "api/assets/{id}/metadata"
+                    urlBuilder_.Append("api/assets/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/metadata");
 
@@ -1588,12 +1796,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<Asset>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -1616,14 +1819,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<AssetSummary> Asset_CreateWebsiteAssetAsync(CreateWebsiteAssetRequest request)
+        public virtual System.Threading.Tasks.Task PostApiAssetsWebsiteAsync(CreateWebsiteAssetRequest request)
         {
-            return Asset_CreateWebsiteAssetAsync(request, System.Threading.CancellationToken.None);
+            return PostApiAssetsWebsiteAsync(request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<AssetSummary> Asset_CreateWebsiteAssetAsync(CreateWebsiteAssetRequest request, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PostApiAssetsWebsiteAsync(CreateWebsiteAssetRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (request == null)
                 throw new System.ArgumentNullException("request");
@@ -1639,12 +1842,11 @@ namespace Mireya.ApiClient.Generated
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Asset/website"
-                    urlBuilder_.Append("api/Asset/website");
+                    // Operation Path: "api/assets/website"
+                    urlBuilder_.Append("api/assets/website");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -1671,12 +1873,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<AssetSummary>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -1699,14 +1896,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<FileResponse> AssetSync_UpdateSyncStatusAsync(UpdateAssetSyncRequest request)
+        public virtual System.Threading.Tasks.Task PostApiAssetsyncStatusAsync(UpdateAssetSyncRequest request)
         {
-            return AssetSync_UpdateSyncStatusAsync(request, System.Threading.CancellationToken.None);
+            return PostApiAssetsyncStatusAsync(request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<FileResponse> AssetSync_UpdateSyncStatusAsync(UpdateAssetSyncRequest request, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PostApiAssetsyncStatusAsync(UpdateAssetSyncRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (request == null)
                 throw new System.ArgumentNullException("request");
@@ -1722,86 +1919,11 @@ namespace Mireya.ApiClient.Generated
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/AssetSync/status"
-                    urlBuilder_.Append("api/AssetSync/status");
-
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200 || status_ == 206)
-                        {
-                            var responseStream_ = response_.Content == null ? System.IO.Stream.Null : await ReadAsStreamAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            var fileResponse_ = new FileResponse(status_, headers_, responseStream_, null, response_);
-                            disposeClient_ = false; disposeResponse_ = false; // response and client are disposed by FileResponse
-                            return fileResponse_;
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusAsync()
-        {
-            return AssetSync_GetSyncStatusAsync(System.Threading.CancellationToken.None);
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusAsync(System.Threading.CancellationToken cancellationToken)
-        {
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/AssetSync/status"
-                    urlBuilder_.Append("api/AssetSync/status");
+                    // Operation Path: "api/assetsync/status"
+                    urlBuilder_.Append("api/assetsync/status");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -1828,12 +1950,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<AssetSyncStatusDto>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -1856,14 +1973,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSyncInfo>> AssetSync_GetCampaignsToSyncAsync()
+        public virtual System.Threading.Tasks.Task GetApiAssetsyncStatus2Async()
         {
-            return AssetSync_GetCampaignsToSyncAsync(System.Threading.CancellationToken.None);
+            return GetApiAssetsyncStatus2Async(System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSyncInfo>> AssetSync_GetCampaignsToSyncAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiAssetsyncStatus2Async(System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1872,12 +1989,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/AssetSync/campaigns"
-                    urlBuilder_.Append("api/AssetSync/campaigns");
+                    // Operation Path: "api/assetsync/status"
+                    urlBuilder_.Append("api/assetsync/status");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -1904,12 +2020,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<CampaignSyncInfo>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -1932,18 +2043,15 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusForDisplayAsync(System.Guid displayId)
+        public virtual System.Threading.Tasks.Task GetApiAssetsyncCampaignsAsync()
         {
-            return AssetSync_GetSyncStatusForDisplayAsync(displayId, System.Threading.CancellationToken.None);
+            return GetApiAssetsyncCampaignsAsync(System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AssetSyncStatusDto>> AssetSync_GetSyncStatusForDisplayAsync(System.Guid displayId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiAssetsyncCampaignsAsync(System.Threading.CancellationToken cancellationToken)
         {
-            if (displayId == null)
-                throw new System.ArgumentNullException("displayId");
-
             var client_ = _httpClient;
             var disposeClient_ = false;
             try
@@ -1951,14 +2059,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/AssetSync/{displayId}/status"
-                    urlBuilder_.Append("api/AssetSync/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(displayId, System.Globalization.CultureInfo.InvariantCulture)));
-                    urlBuilder_.Append("/status");
+                    // Operation Path: "api/assetsync/campaigns"
+                    urlBuilder_.Append("api/assetsync/campaigns");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -1985,12 +2090,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<AssetSyncStatusDto>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2013,14 +2113,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSummary>> Campaign_GetCampaignsAsync(System.Guid? displayId)
+        public virtual System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId)
         {
-            return Campaign_GetCampaignsAsync(displayId, System.Threading.CancellationToken.None);
+            return GetApiCampaignAsync(displayId, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<CampaignSummary>> Campaign_GetCampaignsAsync(System.Guid? displayId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2029,12 +2129,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Campaign"
-                    urlBuilder_.Append("api/Campaign");
+                    // Operation Path: "api/campaign"
+                    urlBuilder_.Append("api/campaign");
                     urlBuilder_.Append('?');
                     if (displayId != null)
                     {
@@ -2067,12 +2166,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<CampaignSummary>>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2095,14 +2189,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CampaignDetail> Campaign_CreateCampaignAsync(CreateCampaignRequest request)
+        public virtual System.Threading.Tasks.Task PostApiCampaignAsync(CreateCampaignRequest request)
         {
-            return Campaign_CreateCampaignAsync(request, System.Threading.CancellationToken.None);
+            return PostApiCampaignAsync(request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CampaignDetail> Campaign_CreateCampaignAsync(CreateCampaignRequest request, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PostApiCampaignAsync(CreateCampaignRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (request == null)
                 throw new System.ArgumentNullException("request");
@@ -2118,12 +2212,11 @@ namespace Mireya.ApiClient.Generated
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Campaign"
-                    urlBuilder_.Append("api/Campaign");
+                    // Operation Path: "api/campaign"
+                    urlBuilder_.Append("api/campaign");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -2150,12 +2243,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<CampaignDetail>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2178,14 +2266,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CampaignDetail> Campaign_GetCampaignAsync(System.Guid id)
+        public virtual System.Threading.Tasks.Task GetApiCampaign2Async(System.Guid id)
         {
-            return Campaign_GetCampaignAsync(id, System.Threading.CancellationToken.None);
+            return GetApiCampaign2Async(id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CampaignDetail> Campaign_GetCampaignAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiCampaign2Async(System.Guid id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2197,12 +2285,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Campaign/{id}"
-                    urlBuilder_.Append("api/Campaign/");
+                    // Operation Path: "api/campaign/{id}"
+                    urlBuilder_.Append("api/campaign/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -2230,12 +2317,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<CampaignDetail>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2258,14 +2340,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CampaignDetail> Campaign_UpdateCampaignAsync(System.Guid id, UpdateCampaignRequest request)
+        public virtual System.Threading.Tasks.Task PutApiCampaignAsync(System.Guid id, UpdateCampaignRequest request)
         {
-            return Campaign_UpdateCampaignAsync(id, request, System.Threading.CancellationToken.None);
+            return PutApiCampaignAsync(id, request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CampaignDetail> Campaign_UpdateCampaignAsync(System.Guid id, UpdateCampaignRequest request, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PutApiCampaignAsync(System.Guid id, UpdateCampaignRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2284,12 +2366,11 @@ namespace Mireya.ApiClient.Generated
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Campaign/{id}"
-                    urlBuilder_.Append("api/Campaign/");
+                    // Operation Path: "api/campaign/{id}"
+                    urlBuilder_.Append("api/campaign/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -2317,12 +2398,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<CampaignDetail>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2345,14 +2421,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<FileResponse> Campaign_DeleteCampaignAsync(System.Guid id)
+        public virtual System.Threading.Tasks.Task DeleteApiCampaignAsync(System.Guid id)
         {
-            return Campaign_DeleteCampaignAsync(id, System.Threading.CancellationToken.None);
+            return DeleteApiCampaignAsync(id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<FileResponse> Campaign_DeleteCampaignAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task DeleteApiCampaignAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2364,12 +2440,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/octet-stream"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/Campaign/{id}"
-                    urlBuilder_.Append("api/Campaign/");
+                    // Operation Path: "api/campaign/{id}"
+                    urlBuilder_.Append("api/campaign/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -2395,95 +2470,9 @@ namespace Mireya.ApiClient.Generated
                         ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
-                        if (status_ == 200 || status_ == 206)
-                        {
-                            var responseStream_ = response_.Content == null ? System.IO.Stream.Null : await ReadAsStreamAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            var fileResponse_ = new FileResponse(status_, headers_, responseStream_, null, response_);
-                            disposeClient_ = false; disposeResponse_ = false; // response and client are disposed by FileResponse
-                            return fileResponse_;
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<RegisterScreenResponse> ScreenManagement_RegisterScreenAsync(RegisterScreenRequest request)
-        {
-            return ScreenManagement_RegisterScreenAsync(request, System.Threading.CancellationToken.None);
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<RegisterScreenResponse> ScreenManagement_RegisterScreenAsync(RegisterScreenRequest request, System.Threading.CancellationToken cancellationToken)
-        {
-            if (request == null)
-                throw new System.ArgumentNullException("request");
-
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(request, JsonSerializerSettings);
-                    var content_ = new System.Net.Http.ByteArrayContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
-                    request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement/register"
-                    urlBuilder_.Append("api/ScreenManagement/register");
-
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<RegisterScreenResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2506,14 +2495,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<BonjourResponse> ScreenManagement_BonjourAsync()
+        public virtual System.Threading.Tasks.Task GetApiScreenmanagementAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy)
         {
-            return ScreenManagement_BonjourAsync(System.Threading.CancellationToken.None);
+            return GetApiScreenmanagementAsync(page, pageSize, status, sortBy, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<BonjourResponse> ScreenManagement_BonjourAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiScreenmanagementAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2522,88 +2511,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement/bonjour"
-                    urlBuilder_.Append("api/ScreenManagement/bonjour");
-
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<BonjourResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedScreensResponse> ScreenManagement_GetScreensAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy)
-        {
-            return ScreenManagement_GetScreensAsync(page, pageSize, status, sortBy, System.Threading.CancellationToken.None);
-        }
-
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedScreensResponse> ScreenManagement_GetScreensAsync(int? page, int? pageSize, ApprovalStatus? status, string? sortBy, System.Threading.CancellationToken cancellationToken)
-        {
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement"
-                    urlBuilder_.Append("api/ScreenManagement");
+                    // Operation Path: "api/screenmanagement"
+                    urlBuilder_.Append("api/screenmanagement");
                     urlBuilder_.Append('?');
                     if (page != null)
                     {
@@ -2648,12 +2560,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<PagedScreensResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2676,14 +2583,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_GetScreenByIdAsync(System.Guid id)
+        public virtual System.Threading.Tasks.Task GetApiScreenmanagement2Async(System.Guid id)
         {
-            return ScreenManagement_GetScreenByIdAsync(id, System.Threading.CancellationToken.None);
+            return GetApiScreenmanagement2Async(id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_GetScreenByIdAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiScreenmanagement2Async(System.Guid id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2695,12 +2602,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement/{id}"
-                    urlBuilder_.Append("api/ScreenManagement/");
+                    // Operation Path: "api/screenmanagement/{id}"
+                    urlBuilder_.Append("api/screenmanagement/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -2728,12 +2634,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ScreenDetailsResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2756,14 +2657,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_UpdateScreenAsync(System.Guid id, UpdateScreenRequest request)
+        public virtual System.Threading.Tasks.Task PutApiScreenmanagementAsync(System.Guid id, UpdateScreenRequest request)
         {
-            return ScreenManagement_UpdateScreenAsync(id, request, System.Threading.CancellationToken.None);
+            return PutApiScreenmanagementAsync(id, request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_UpdateScreenAsync(System.Guid id, UpdateScreenRequest request, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PutApiScreenmanagementAsync(System.Guid id, UpdateScreenRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2782,12 +2683,11 @@ namespace Mireya.ApiClient.Generated
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("PUT");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement/{id}"
-                    urlBuilder_.Append("api/ScreenManagement/");
+                    // Operation Path: "api/screenmanagement/{id}"
+                    urlBuilder_.Append("api/screenmanagement/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -2815,12 +2715,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ScreenDetailsResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2843,14 +2738,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<ApproveScreenResponse> ScreenManagement_ApproveScreenAsync(System.Guid id)
+        public virtual System.Threading.Tasks.Task PostApiScreenmanagementApproveAsync(System.Guid id)
         {
-            return ScreenManagement_ApproveScreenAsync(id, System.Threading.CancellationToken.None);
+            return PostApiScreenmanagementApproveAsync(id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApproveScreenResponse> ScreenManagement_ApproveScreenAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PostApiScreenmanagementApproveAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2863,12 +2758,11 @@ namespace Mireya.ApiClient.Generated
                 {
                     request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
                     request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement/{id}/approve"
-                    urlBuilder_.Append("api/ScreenManagement/");
+                    // Operation Path: "api/screenmanagement/{id}/approve"
+                    urlBuilder_.Append("api/screenmanagement/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/approve");
 
@@ -2897,12 +2791,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ApproveScreenResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -2925,14 +2814,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_RejectScreenAsync(System.Guid id)
+        public virtual System.Threading.Tasks.Task PostApiScreenmanagementRejectAsync(System.Guid id)
         {
-            return ScreenManagement_RejectScreenAsync(id, System.Threading.CancellationToken.None);
+            return PostApiScreenmanagementRejectAsync(id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ScreenDetailsResponse> ScreenManagement_RejectScreenAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task PostApiScreenmanagementRejectAsync(System.Guid id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2945,12 +2834,11 @@ namespace Mireya.ApiClient.Generated
                 {
                     request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
                     request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement/{id}/reject"
-                    urlBuilder_.Append("api/ScreenManagement/");
+                    // Operation Path: "api/screenmanagement/{id}/reject"
+                    urlBuilder_.Append("api/screenmanagement/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/reject");
 
@@ -2979,12 +2867,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ScreenDetailsResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -3007,14 +2890,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<int> ScreenManagement_GetOnlineScreenCountAsync()
+        public virtual System.Threading.Tasks.Task GetApiScreenmanagementOnlineCountAsync()
         {
-            return ScreenManagement_GetOnlineScreenCountAsync(System.Threading.CancellationToken.None);
+            return GetApiScreenmanagementOnlineCountAsync(System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<int> ScreenManagement_GetOnlineScreenCountAsync(System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiScreenmanagementOnlineCountAsync(System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -3023,12 +2906,11 @@ namespace Mireya.ApiClient.Generated
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/ScreenManagement/online/count"
-                    urlBuilder_.Append("api/ScreenManagement/online/count");
+                    // Operation Path: "api/screenmanagement/online/count"
+                    urlBuilder_.Append("api/screenmanagement/online/count");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -3055,12 +2937,7 @@ namespace Mireya.ApiClient.Generated
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<int>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
+                            return;
                         }
                         else
                         {
@@ -3209,6 +3086,73 @@ namespace Mireya.ApiClient.Generated
             var result = System.Convert.ToString(value, cultureInfo);
             return result == null ? "" : result;
         }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class RegisterScreenResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("screenIdentifier")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ScreenIdentifier { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("userId")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string UserId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("screenName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ScreenName { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class RegisterScreenRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("username")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(256, MinimumLength = 1)]
+        public string Username { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("password")]
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.StringLength(int.MaxValue, MinimumLength = 9)]
+        public string Password { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("deviceName")]
+        public string? DeviceName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("resolutionWidth")]
+        public int? ResolutionWidth { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("resolutionHeight")]
+        public int? ResolutionHeight { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class BonjourResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("screenIdentifier")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ScreenIdentifier { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("screenName")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ScreenName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string? Description { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("approvalStatus")]
+        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
+        public string ApprovalStatus { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("location")]
+        public string? Location { get; set; } = default!;
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -3424,76 +3368,11 @@ namespace Mireya.ApiClient.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AssetSummary
+    public partial class UploadFilesRequest
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("source")]
-        public string Source { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PagedAssets
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("total")]
-        public int Total { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("page")]
-        public int Page { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("pageSize")]
-        public int PageSize { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("items")]
-        public System.Collections.Generic.ICollection<Asset> Items { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class Asset
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(200, MinimumLength = 1)]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        [System.ComponentModel.DataAnnotations.StringLength(1000)]
-        public string? Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public AssetType Type { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("source")]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(2000, MinimumLength = 1)]
-        public string Source { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("fileSizeBytes")]
-        public long? FileSizeBytes { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("durationSeconds")]
-        public int? DurationSeconds { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
-        public bool IsMuted { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
-        public System.DateTimeOffset CreatedAt { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("updatedAt")]
-        public System.DateTimeOffset UpdatedAt { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("files")]
+        public System.Collections.Generic.ICollection<byte[]> Files { get; set; } = default!;
 
     }
 
@@ -3566,168 +3445,6 @@ namespace Mireya.ApiClient.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AssetSyncStatusDto
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("assetId")]
-        public System.Guid AssetId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("syncState")]
-        public string SyncState { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("progress")]
-        public int Progress { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("errorMessage")]
-        public string? ErrorMessage { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CampaignSyncInfo
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("campaignId")]
-        public System.Guid CampaignId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("campaignName")]
-        public string CampaignName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("assets")]
-        public System.Collections.Generic.ICollection<AssetDownloadInfo> Assets { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AssetDownloadInfo
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("assetId")]
-        public System.Guid AssetId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public string Type { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("source")]
-        public string Source { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("fileSizeBytes")]
-        public long? FileSizeBytes { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("durationSeconds")]
-        public int? DurationSeconds { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
-        public bool IsMuted { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CampaignSummary
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("assetCount")]
-        public int AssetCount { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("displayCount")]
-        public int DisplayCount { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
-        public System.DateTimeOffset CreatedAt { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("updatedAt")]
-        public System.DateTimeOffset UpdatedAt { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CampaignDetail
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("assets")]
-        public System.Collections.Generic.ICollection<CampaignAssetDetail> Assets { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("displays")]
-        public System.Collections.Generic.ICollection<DisplayInfo> Displays { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
-        public System.DateTimeOffset CreatedAt { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("updatedAt")]
-        public System.DateTimeOffset UpdatedAt { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CampaignAssetDetail
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("assetId")]
-        public System.Guid AssetId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("assetName")]
-        public string AssetName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("assetType")]
-        public AssetType AssetType { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("source")]
-        public string Source { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("position")]
-        public int Position { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("durationSeconds")]
-        public int? DurationSeconds { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("resolvedDuration")]
-        public int ResolvedDuration { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
-        public bool IsMuted { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class DisplayInfo
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("location")]
-        public string Location { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreateCampaignRequest
     {
 
@@ -3779,136 +3496,6 @@ namespace Mireya.ApiClient.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class RegisterScreenResponse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("screenIdentifier")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ScreenIdentifier { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("userId")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string UserId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("screenName")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ScreenName { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class RegisterScreenRequest
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("username")]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(256, MinimumLength = 1)]
-        public string Username { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("password")]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(int.MaxValue, MinimumLength = 9)]
-        public string Password { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("deviceName")]
-        public string? DeviceName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("resolutionWidth")]
-        public int? ResolutionWidth { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("resolutionHeight")]
-        public int? ResolutionHeight { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class BonjourResponse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("screenIdentifier")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ScreenIdentifier { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("screenName")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ScreenName { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("approvalStatus")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public string ApprovalStatus { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("location")]
-        public string? Location { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PagedScreensResponse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("total")]
-        public int Total { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("page")]
-        public int Page { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("pageSize")]
-        public int PageSize { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("items")]
-        public System.Collections.Generic.ICollection<ScreenDetailsResponse> Items { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ScreenDetailsResponse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string? Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("location")]
-        public string Location { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("screenIdentifier")]
-        public string? ScreenIdentifier { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("approvalStatus")]
-        public string ApprovalStatus { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("userId")]
-        public string? UserId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("resolutionWidth")]
-        public int? ResolutionWidth { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("resolutionHeight")]
-        public int? ResolutionHeight { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("isActive")]
-        public bool IsActive { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("lastSeenAt")]
-        public System.DateTimeOffset? LastSeenAt { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
-        public System.DateTimeOffset CreatedAt { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("updatedAt")]
-        public System.DateTimeOffset UpdatedAt { get; set; } = default!;
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ApprovalStatus
     {
 
@@ -3935,78 +3522,6 @@ namespace Mireya.ApiClient.Generated
 
     }
 
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ApproveScreenResponse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("screen")]
-        [System.ComponentModel.DataAnnotations.Required]
-        public ScreenDetailsResponse Screen { get; set; } = new ScreenDetailsResponse();
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class FileParameter
-    {
-        public FileParameter(System.IO.Stream data)
-            : this (data, null, null)
-        {
-        }
-
-        public FileParameter(System.IO.Stream data, string? fileName)
-            : this (data, fileName, null)
-        {
-        }
-
-        public FileParameter(System.IO.Stream data, string? fileName, string? contentType)
-        {
-            Data = data;
-            FileName = fileName;
-            ContentType = contentType;
-        }
-
-        public System.IO.Stream Data { get; private set; }
-
-        public string? FileName { get; private set; }
-
-        public string? ContentType { get; private set; }
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class FileResponse : System.IDisposable
-    {
-        private System.IDisposable? _client;
-        private System.IDisposable? _response;
-
-        public int StatusCode { get; private set; }
-
-        public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
-
-        public System.IO.Stream Stream { get; private set; }
-
-        public bool IsPartial
-        {
-            get { return StatusCode == 206; }
-        }
-
-        public FileResponse(int statusCode, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.IO.Stream stream, System.IDisposable? client, System.IDisposable? response)
-        {
-            StatusCode = statusCode;
-            Headers = headers;
-            Stream = stream;
-            _client = client;
-            _response = response;
-        }
-
-        public void Dispose()
-        {
-            Stream.Dispose();
-            if (_response != null)
-                _response.Dispose();
-            if (_client != null)
-                _client.Dispose();
-        }
-    }
 
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]

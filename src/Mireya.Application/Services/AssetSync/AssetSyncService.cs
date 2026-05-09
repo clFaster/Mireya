@@ -11,6 +11,7 @@ public interface IAssetSyncService
     Task<List<AssetSyncStatusDto>> GetSyncStatusForDisplayAsync(Guid displayId);
     Task<List<CampaignSyncInfo>> GetCampaignsToSyncAsync(Guid displayId);
     Task CleanupSyncStatusAsync(Guid displayId, List<Guid> currentAssetIds);
+    Task<Guid?> GetDisplayIdByUserIdAsync(string userId);
 }
 
 public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logger)
@@ -150,6 +151,12 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
         }
 
         return result;
+    }
+
+    public async Task<Guid?> GetDisplayIdByUserIdAsync(string userId)
+    {
+        var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
+        return display?.Id;
     }
 
     public async Task CleanupSyncStatusAsync(Guid displayId, List<Guid> currentAssetIds)
