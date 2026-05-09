@@ -1,0 +1,208 @@
+@page "/assets"
+@attribute [Authorize]
+@inject IAssetService AssetService
+@inject NavigationManager Navigation
+@using Mireya.Database.Models
+
+<PageTitle>Assets - Mireya Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Assets</h1>
+    <a href="/assets/upload" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Upload</a>
+</div>
+
+@if (!string.IsNullOrEmpty(_message))
+{
+    <div class="alert @(_isError ? "alert-danger" : "alert-success") alert-dismissible">
+        @_message
+        <button type="button" class="btn-close" @onclick="() => _message = null"></button>
+    </div>
+}
+
+<div class="mb-3 d-flex gap-2">
+    @foreach (var filter in new[] { (null as string, "All"), ("Image", "Images"), ("Video", "Videos"), ("Website", "Websites") })
+    {
+        <button class="btn btn-sm @(_typeFilter == filter.Item1 ? "btn-primary" : "btn-outline-secondary")"
+                @onclick="() => SetFilter(filter.Item1)">@filter.Item2</button>
+    }
+</div>
+
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else if (_assets.Count == 0)
+{
+    <p class="text-muted">No assets found.</p>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var asset in _assets)
+        {
+            <div class="col-md-3">
+                <div class="card h-100">
+                    @if (asset.Type == AssetType.Image)
+                    {
+                        <img src="@asset.Source" class="card-img-top" style="height:160px;object-fit:cover;" alt="@asset.Name" />
+                    }
+                    else if (asset.Type == AssetType.Video)
+                    {
+                        <div class="bg-dark d-flex align-items-center justify-content-center" style="height:160px;">
+                            <i class="bi bi-play-circle text-white fs-1"></i>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="bg-secondary d-flex align-items-center justify-content-center" style="height:160px;">
+                            <i class="bi bi-globe text-white fs-1"></i>
+                        </div>
+                    }
+                    <div class="card-body p-2">
+                        <p class="card-title fw-semibold mb-1 text-truncate" title="@asset.Name">@asset.Name</p>
+                        <small class="text-muted">@asset.Type</small>
+                    </div>
+                    <div class="card-footer p-2 d-flex gap-1">
+                        <button class="btn btn-sm btn-outline-secondary flex-grow-1"
+                                @onclick="() => StartEdit(asset)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="() => DeleteAsync(asset.Id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <span class="text-muted">@_total assets total</span>
+        <div class="d-flex gap-1">
+            <button class="btn btn-sm btn-outline-secondary" disabled="@(_page <= 1)" @onclick="PrevPage">Prev</button>
+            <span class="btn btn-sm disabled">@_page / @_totalPages</span>
+            <button class="btn btn-sm btn-outline-secondary" disabled="@(_page >= _totalPages)" @onclick="NextPage">Next</button>
+        </div>
+    </div>
+}
+
+@if (_editAsset != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Asset</h5>
+                    <button type="button" class="btn-close" @onclick="CancelEdit"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input class="form-control" @bind="_editName" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" @bind="_editDescription"></textarea>
+                    </div>
+                    @if (_editAsset.Type != AssetType.Video)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Duration (seconds)</label>
+                            <input type="number" class="form-control" @bind="_editDuration" min="1" />
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                    <button class="btn btn-primary" @onclick="SaveEdit">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Mireya.Database.Models.Asset> _assets = [];
+    private int _page = 1, _totalPages = 1, _total;
+    private const int PageSize = 12;
+    private string? _typeFilter;
+    private bool _loading = true;
+    private string? _message;
+    private bool _isError;
+    private Mireya.Database.Models.Asset? _editAsset;
+    private string _editName = "", _editDescription = "";
+    private int? _editDuration;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        AssetType? type = _typeFilter == null ? null : Enum.Parse<AssetType>(_typeFilter);
+        var result = await AssetService.GetAssetsAsync(_page, PageSize, type, "name");
+        _assets = result.Items;
+        _total = result.Total;
+        _totalPages = (int)Math.Ceiling(_total / (double)PageSize);
+        if (_totalPages == 0) _totalPages = 1;
+        _loading = false;
+    }
+
+    private async Task SetFilter(string? filter)
+    {
+        _typeFilter = filter;
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        try
+        {
+            await AssetService.DeleteAssetAsync(id);
+            _message = "Asset deleted.";
+            _isError = false;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+    }
+
+    private void StartEdit(Mireya.Database.Models.Asset asset)
+    {
+        _editAsset = asset;
+        _editName = asset.Name;
+        _editDescription = asset.Description ?? "";
+        _editDuration = asset.DurationSeconds;
+    }
+
+    private void CancelEdit() => _editAsset = null;
+
+    private async Task SaveEdit()
+    {
+        if (_editAsset == null) return;
+        try
+        {
+            var req = new UpdateAssetMetadataRequest
+            {
+                Name = _editName,
+                Description = _editDescription,
+                DurationSeconds = _editDuration,
+            };
+            await AssetService.UpdateAssetMetadataAsync(_editAsset.Id, req);
+            _message = "Asset updated.";
+            _isError = false;
+            _editAsset = null;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+    }
+
+    private async Task PrevPage() { _page--; await LoadAsync(); }
+    private async Task NextPage() { _page++; await LoadAsync(); }
+}

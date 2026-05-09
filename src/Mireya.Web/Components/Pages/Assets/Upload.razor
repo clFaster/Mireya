@@ -1,0 +1,90 @@
+@page "/assets/upload"
+@attribute [Authorize]
+@inject IAssetService AssetService
+@inject NavigationManager Navigation
+@using Mireya.Web.Services
+
+<PageTitle>Upload Assets - Mireya Admin</PageTitle>
+<h1 class="mb-4">Upload Assets</h1>
+
+@if (!string.IsNullOrEmpty(_message))
+{
+    <div class="alert @(_isError ? "alert-danger" : "alert-success")">@_message</div>
+}
+
+<div class="card mb-4">
+    <div class="card-header">Upload Files</div>
+    <div class="card-body">
+        <InputFile OnChange="HandleFiles" multiple class="form-control mb-3" accept="image/*,video/*" />
+        <button class="btn btn-primary" @onclick="UploadAsync" disabled="@(_files.Count == 0 || _uploading)">
+            @if (_uploading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+            Upload @(_files.Count > 0 ? $"({_files.Count} file(s))" : "")
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Add Website</div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">URL</label>
+            <input type="url" class="form-control" @bind="_websiteUrl" placeholder="https://example.com" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input class="form-control" @bind="_websiteName" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <input class="form-control" @bind="_websiteDesc" />
+        </div>
+        <button class="btn btn-primary" @onclick="AddWebsiteAsync">Add Website</button>
+    </div>
+</div>
+
+@code {
+    private List<IBrowserFile> _files = [];
+    private bool _uploading;
+    private string? _message;
+    private bool _isError;
+    private string _websiteUrl = "", _websiteName = "", _websiteDesc = "";
+
+    private void HandleFiles(InputFileChangeEventArgs e)
+        => _files = e.GetMultipleFiles(100).ToList();
+
+    private async Task UploadAsync()
+    {
+        _uploading = true;
+        _message = null;
+        try
+        {
+            var formFiles = _files.Select(f => (IFormFile)new BrowserIFormFile(f)).ToList();
+            var results = await AssetService.UploadAssetsAsync(formFiles);
+            _message = $"Successfully uploaded {results.Count} asset(s).";
+            _isError = false;
+            _files = [];
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+        finally { _uploading = false; }
+    }
+
+    private async Task AddWebsiteAsync()
+    {
+        try
+        {
+            await AssetService.CreateWebsiteAssetAsync(_websiteUrl, _websiteName, _websiteDesc);
+            _message = $"Website '{_websiteName}' added.";
+            _isError = false;
+            _websiteUrl = _websiteName = _websiteDesc = "";
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _isError = true;
+        }
+    }
+}
