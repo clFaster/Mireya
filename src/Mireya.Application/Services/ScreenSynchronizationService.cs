@@ -50,8 +50,24 @@ public class ScreenSynchronizationService(
             return;
         }
 
-        var campaigns = display
-            .CampaignAssignments.Select(ca => ca.Campaign)
+        var campaigns = BuildCampaignList(display);
+        var config = BuildScreenConfiguration(display, campaigns);
+
+        logger.LogInformation(
+            "SYNC SCREEN: {ScreenName} - CampaignAssignments: {Count}, Config campaigns: {ConfigCampaigns}, UserId: {UserId}",
+            display.Name,
+            display.CampaignAssignments.Count,
+            campaigns.Count,
+            display.UserId
+        );
+
+        await hubContext.SendConfigurationUpdateAsync(display.UserId, config);
+        await NotifyAssetSyncAsync(display, campaigns);
+    }
+
+    private static List<CampaignDetail> BuildCampaignList(Display display) =>
+        display.CampaignAssignments
+            .Select(ca => ca.Campaign)
             .Select(c => new CampaignDetail(
                 c.Id,
                 c.Name,
@@ -69,13 +85,14 @@ public class ScreenSynchronizationService(
                         a.Asset.IsMuted
                     ))
                     .ToList(),
-                [], // Displays list not needed for screen client
+                [],
                 c.CreatedAt,
                 c.UpdatedAt
             ))
             .ToList();
 
-        var config = new ScreenConfiguration
+    private static ScreenConfiguration BuildScreenConfiguration(Display display, List<CampaignDetail> campaigns) =>
+        new()
         {
             DisplayId = display.Id,
             ScreenName = display.Name,
@@ -87,30 +104,19 @@ public class ScreenSynchronizationService(
             Campaigns = campaigns,
         };
 
-        logger.LogInformation(
-            "SYNC SCREEN: {ScreenName} - CampaignAssignments: {Count}, Config campaigns: {ConfigCampaigns}, UserId: {UserId}",
-            display.Name,
-            display.CampaignAssignments.Count,
-            campaigns.Count,
-            display.UserId
-        );
-
-        await hubContext.SendConfigurationUpdateAsync(display.UserId, config);
-
-        // Get all unique asset IDs from all campaigns
+    private async Task NotifyAssetSyncAsync(Display display, List<CampaignDetail> campaigns)
+    {
         var allAssetIds = campaigns
             .SelectMany(c => c.Assets)
             .Select(a => a.AssetId)
             .Distinct()
             .ToList();
 
-        // Initialize sync status for all assets and cleanup old ones
-        await assetSyncService.CleanupSyncStatusAsync(displayId, allAssetIds);
-        await assetSyncService.InitializeSyncStatusForDisplayAsync(displayId, allAssetIds);
+        await assetSyncService.CleanupSyncStatusAsync(display.Id, allAssetIds);
+        await assetSyncService.InitializeSyncStatusForDisplayAsync(display.Id, allAssetIds);
 
-        // Notify client to start asset sync
-        var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(displayId);
-        await hubContext.StartAssetSyncAsync(display.UserId, campaignsToSync);
+        var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(display.Id);
+        await hubContext.StartAssetSyncAsync(display.UserId!, campaignsToSync);
 
         logger.LogInformation(
             "NOTIFY SYNC: {CampaignCount} campaigns, {AssetCount} assets",

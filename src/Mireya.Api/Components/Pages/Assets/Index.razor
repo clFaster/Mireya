@@ -138,7 +138,7 @@ else
     {
         _loading = true;
         AssetType? type = _typeFilter == null ? null : Enum.Parse<AssetType>(_typeFilter);
-        var result = await AssetService.GetAssetsAsync(_page, PageSize, type, "name");
+        var result = await AssetService.GetAssetsAsync(new(_page, PageSize, type));
         _assets = result.Items;
         _total = result.Total;
         _totalPages = (int)Math.Ceiling(_total / (double)PageSize);

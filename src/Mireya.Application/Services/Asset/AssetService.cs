@@ -5,11 +5,13 @@ using Xabe.FFmpeg;
 
 namespace Mireya.Application.Services.Asset;
 
+public record AssetFilter(int Page = 1, int PageSize = 10, AssetType? Type = null, string SortBy = "name");
+
 public interface IAssetService
 {
     Task<List<AssetSummary>> UploadAssetsAsync(List<IFormFile> files);
     Task<AssetSummary> CreateWebsiteAssetAsync(string url, string name, string? description);
-    Task<PagedAssets> GetAssetsAsync(int page, int pageSize, AssetType? type, string sortBy);
+    Task<PagedAssets> GetAssetsAsync(AssetFilter filter);
     Task DeleteAssetAsync(Guid id);
     Task<Database.Models.Asset> UpdateAssetMetadataAsync(
         Guid id,
@@ -36,85 +38,11 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
         var errors = new List<string>();
 
         foreach (var file in files)
-        {
-            if (file.Length == 0)
-                continue;
-
-            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            var isImage = ImageExtensions.Contains(extension);
-            var isVideo = VideoExtensions.Contains(extension);
-
-            if (!isImage && !isVideo)
-            {
-                errors.Add($"{file.FileName}: Unsupported file type");
-                continue;
-            }
-
-            // Validate file size
-            if (isImage && file.Length > MaxImageSizeBytes)
-            {
-                errors.Add($"{file.FileName}: Image exceeds maximum size of 10 MB");
-                continue;
-            }
-
-            if (isVideo && file.Length > MaxVideoSizeBytes)
-            {
-                errors.Add($"{file.FileName}: Video exceeds maximum size of 100 MB");
-                continue;
-            }
-
-            // Validate MIME type for additional security
-            var contentType = file.ContentType.ToLowerInvariant();
-            if (isImage && !contentType.StartsWith("image/"))
-            {
-                errors.Add($"{file.FileName}: Invalid image file (MIME type mismatch)");
-                continue;
-            }
-
-            if (isVideo && !contentType.StartsWith("video/"))
-            {
-                errors.Add($"{file.FileName}: Invalid video file (MIME type mismatch)");
-                continue;
-            }
-
-            var fileName = Guid.NewGuid() + extension;
-            var filePath = Path.Combine(_uploadsFolder, fileName);
-
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            int? videoDurationSeconds = null;
-            if (isVideo)
-            {
-                try
-                {
-                    var mediaInfo = await FFmpeg.GetMediaInfo(filePath);
-                    var duration = mediaInfo.Duration;
-                    videoDurationSeconds = (int)Math.Round(duration.TotalSeconds);
-                }
-                catch
-                {
-                    // Log but don't fail upload if duration extraction fails
-                    errors.Add($"{file.FileName}: Could not extract duration (will use default)");
-                }
-            }
-
-            var asset = new Database.Models.Asset
-            {
-                Name = Path.GetFileNameWithoutExtension(file.FileName),
-                Type = isImage ? AssetType.Image : AssetType.Video,
-                Source = $"/uploads/{fileName}",
-                FileSizeBytes = file.Length,
-                DurationSeconds = videoDurationSeconds,
-            };
-            assets.Add(asset);
-        }
+            await TryProcessUploadedFileAsync(file, assets, errors);
 
         if (assets.Count == 0)
         {
-            var errorMessage = errors.Any()
+            var errorMessage = errors.Count != 0
                 ? $"No valid files uploaded. Errors: {string.Join("; ", errors)}"
                 : "No valid image or video files provided";
             throw new ArgumentException(errorMessage);
@@ -124,37 +52,122 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
         await db.SaveChangesAsync();
 
         return assets
-            .Select(a => new AssetSummary
-            {
-                Id = a.Id,
-                Name = a.Name,
-                Source = a.Source,
-            })
+            .Select(a => new AssetSummary { Id = a.Id, Name = a.Name, Source = a.Source })
             .ToList();
     }
 
-    public async Task<PagedAssets> GetAssetsAsync(
-        int page,
-        int pageSize,
-        AssetType? type,
-        string sortBy
-    )
+    private async Task TryProcessUploadedFileAsync(IFormFile file, List<Database.Models.Asset> assets, List<string> errors)
     {
-        if (page < 1)
-            page = 1;
-        if (pageSize is < 1 or > 100)
-            pageSize = 10;
+        if (file.Length == 0)
+            return;
+
+        var validationError = ValidateFile(file);
+        if (validationError != null)
+        {
+            errors.Add(validationError);
+            return;
+        }
+
+        var (asset, error) = await ProcessFileAsync(file);
+        if (asset != null)
+            assets.Add(asset);
+        else if (error != null)
+            errors.Add(error);
+    }
+
+    private string? ValidateFile(IFormFile file)
+    {
+        var ctx = new FileValidationContext(file);
+        return ValidateFileType(ctx) ?? ValidateFileSize(ctx) ?? ValidateContentType(ctx);
+    }
+
+    private static string? ValidateFileType(FileValidationContext ctx) =>
+        (!ctx.IsImage && !ctx.IsVideo) ? $"{ctx.File.FileName}: Unsupported file type" : null;
+
+    private static string? ValidateFileSize(FileValidationContext ctx)
+    {
+        if (ctx.IsImage && ctx.File.Length > MaxImageSizeBytes)
+            return $"{ctx.File.FileName}: Image exceeds maximum size of 10 MB";
+        if (ctx.IsVideo && ctx.File.Length > MaxVideoSizeBytes)
+            return $"{ctx.File.FileName}: Video exceeds maximum size of 100 MB";
+        return null;
+    }
+
+    private static string? ValidateContentType(FileValidationContext ctx)
+    {
+        var contentType = ctx.File.ContentType.ToLowerInvariant();
+        if (ctx.IsImage && !contentType.StartsWith("image/"))
+            return $"{ctx.File.FileName}: Invalid image file (MIME type mismatch)";
+        if (ctx.IsVideo && !contentType.StartsWith("video/"))
+            return $"{ctx.File.FileName}: Invalid video file (MIME type mismatch)";
+        return null;
+    }
+
+    private async Task<(Database.Models.Asset? asset, string? error)> ProcessFileAsync(IFormFile file)
+    {
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var isImage = ImageExtensions.Contains(extension);
+        var fileName = Guid.NewGuid() + extension;
+        var filePath = Path.Combine(_uploadsFolder, fileName);
+
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+            await file.CopyToAsync(stream);
+
+        int? videoDurationSeconds = null;
+        string? durationError = null;
+
+        if (!isImage)
+            (videoDurationSeconds, durationError) = await ExtractVideoDurationAsync(filePath, file.FileName);
+
+        var asset = new Database.Models.Asset
+        {
+            Name = Path.GetFileNameWithoutExtension(file.FileName),
+            Type = isImage ? AssetType.Image : AssetType.Video,
+            Source = $"/uploads/{fileName}",
+            FileSizeBytes = file.Length,
+            DurationSeconds = videoDurationSeconds,
+        };
+
+        return (asset, durationError);
+    }
+
+    private static async Task<(int? duration, string? error)> ExtractVideoDurationAsync(string filePath, string fileName)
+    {
+        try
+        {
+            var mediaInfo = await FFmpeg.GetMediaInfo(filePath);
+            return ((int)Math.Round(mediaInfo.Duration.TotalSeconds), null);
+        }
+        catch
+        {
+            return (null, $"{fileName}: Could not extract duration (will use default)");
+        }
+    }
+
+    private record FileValidationContext(IFormFile File)
+    {
+        private string Extension => Path.GetExtension(File.FileName).ToLowerInvariant();
+        public bool IsImage => ImageExtensions.Contains(Extension);
+        public bool IsVideo => VideoExtensions.Contains(Extension);
+    }
+
+    private static IQueryable<Database.Models.Asset> ApplyAssetSorting(
+        IQueryable<Database.Models.Asset> query, AssetFilter filter) =>
+        string.Equals(filter.SortBy, "date", StringComparison.OrdinalIgnoreCase)
+            ? query.OrderByDescending(a => a.CreatedAt)
+            : query.OrderBy(a => a.Name);
+
+    public async Task<PagedAssets> GetAssetsAsync(AssetFilter filter)
+    {
+        var page = filter.Page < 1 ? 1 : filter.Page;
+        var pageSize = filter.PageSize is < 1 or > 100 ? 10 : filter.PageSize;
 
         var query = db.Assets.AsQueryable();
 
-        if (type.HasValue)
-            query = query.Where(a => a.Type == type.Value);
+        if (filter.Type.HasValue)
+            query = query.Where(a => a.Type == filter.Type.Value);
 
-        query = sortBy.ToLower() switch
-        {
-            "date" => query.OrderByDescending(a => a.CreatedAt),
-            _ => query.OrderBy(a => a.Name),
-        };
+        query = ApplyAssetSorting(query, filter);
 
         var total = await query.CountAsync();
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
@@ -190,13 +203,8 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
             );
         }
 
-        // Delete the file if it exists
         var filePath = Path.Combine(_uploadsFolder, asset.Source["/uploads/".Length..]);
-        if (
-            !string.IsNullOrEmpty(filePath)
-            && asset.Source.StartsWith("/uploads/")
-            && File.Exists(filePath)
-        )
+        if (IsUploadedFile(asset.Source, filePath))
             File.Delete(filePath);
 
         db.Assets.Remove(asset);
@@ -233,6 +241,9 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
 
         return asset;
     }
+
+    private static bool IsUploadedFile(string source, string filePath) =>
+        !string.IsNullOrEmpty(filePath) && source.StartsWith("/uploads/") && File.Exists(filePath);
 
     public async Task<AssetSummary> CreateWebsiteAssetAsync(
         string url,

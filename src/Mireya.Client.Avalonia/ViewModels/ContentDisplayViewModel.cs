@@ -100,64 +100,15 @@ public partial class ContentDisplayViewModel : ViewModelBase
             StatusText = "Checking authentication...";
             ConnectionStatus = "Initializing...";
 
-            // Check authentication state and authenticate if needed
             var state = await _authenticationService.GetAuthenticationStateAsync();
             _logger.LogInformation("Authentication state: {State}", state);
             StatusText = $"Auth state: {state}";
 
-            if (state == AuthenticationState.NotRegistered)
-            {
-                StatusText = "Registering device...";
-                var registerResult = await _authenticationService.RegisterAsync();
-                if (!registerResult.Success)
-                {
-                    StatusText = $"Registration failed: {registerResult.ErrorMessage}";
-                    return;
-                }
-                state = await _authenticationService.GetAuthenticationStateAsync();
-            }
+            state = await EnsureRegisteredAsync(state);
+            if (state == AuthenticationState.Failed)
+                return;
 
-            if (state == AuthenticationState.NotAuthenticated)
-            {
-                StatusText = "Authenticating...";
-                var loginResult = await _authenticationService.LoginAsync();
-                if (!loginResult.Success)
-                {
-                    StatusText = $"Authentication failed: {loginResult.ErrorMessage}";
-                    return;
-                }
-                // LoginAsync already connects to SignalR
-            }
-            else if (state == AuthenticationState.Authenticated)
-            {
-                // Already authenticated, but need to connect to SignalR
-                StatusText = "Connecting to SignalR...";
-                ConnectionStatus = "Connecting...";
-                if (!_hubService.IsConnected)
-                {
-                    try
-                    {
-                        await _hubService.ConnectAsync();
-                        _logger.LogInformation("SignalR connected successfully");
-                    }
-                    catch (Exception connectEx)
-                    {
-                        _logger.LogError(connectEx, "Failed to connect to SignalR");
-                        StatusText = $"SignalR error: {connectEx.Message}";
-                        ConnectionStatus = "Failed ✗";
-                        return;
-                    }
-                }
-            }
-
-            ConnectionStatus = _hubService.IsConnected ? "Connected ✓" : "Disconnected ✗";
-            StatusText = _hubService.IsConnected
-                ? "Waiting for content..."
-                : "Not connected to server";
-            _logger.LogInformation(
-                "Authentication completed, SignalR connected: {IsConnected}",
-                _hubService.IsConnected
-            );
+            await EnsureAuthenticatedAndConnectedAsync(state);
         }
         catch (Exception ex)
         {
@@ -165,6 +116,75 @@ public partial class ContentDisplayViewModel : ViewModelBase
             StatusText = $"Connection error: {ex.Message}";
             ConnectionStatus = "Error ✗";
         }
+    }
+
+    private async Task<AuthenticationState> EnsureRegisteredAsync(AuthenticationState state)
+    {
+        if (state != AuthenticationState.NotRegistered)
+            return state;
+
+        StatusText = "Registering device...";
+        var registerResult = await _authenticationService.RegisterAsync();
+        if (!registerResult.Success)
+        {
+            StatusText = $"Registration failed: {registerResult.ErrorMessage}";
+            return AuthenticationState.Failed;
+        }
+        return await _authenticationService.GetAuthenticationStateAsync();
+    }
+
+    private async Task EnsureAuthenticatedAndConnectedAsync(AuthenticationState state)
+    {
+        if (state == AuthenticationState.NotAuthenticated)
+        {
+            StatusText = "Authenticating...";
+            var loginResult = await _authenticationService.LoginAsync();
+            if (!loginResult.Success)
+            {
+                StatusText = $"Authentication failed: {loginResult.ErrorMessage}";
+                return;
+            }
+        }
+        else if (state == AuthenticationState.Authenticated)
+        {
+            await ConnectToSignalRAsync();
+            return;
+        }
+
+        UpdateConnectionStatus();
+    }
+
+    private async Task ConnectToSignalRAsync()
+    {
+        if (_hubService.IsConnected)
+        {
+            UpdateConnectionStatus();
+            return;
+        }
+
+        StatusText = "Connecting to SignalR...";
+        ConnectionStatus = "Connecting...";
+        try
+        {
+            await _hubService.ConnectAsync();
+            _logger.LogInformation("SignalR connected successfully");
+        }
+        catch (Exception connectEx)
+        {
+            _logger.LogError(connectEx, "Failed to connect to SignalR");
+            StatusText = $"SignalR error: {connectEx.Message}";
+            ConnectionStatus = "Failed ✗";
+            return;
+        }
+
+        UpdateConnectionStatus();
+    }
+
+    private void UpdateConnectionStatus()
+    {
+        ConnectionStatus = _hubService.IsConnected ? "Connected ✓" : "Disconnected ✗";
+        StatusText = _hubService.IsConnected ? "Waiting for content..." : "Not connected to server";
+        _logger.LogInformation("Authentication completed, SignalR connected: {IsConnected}", _hubService.IsConnected);
     }
 
     private void OnConfigurationUpdateReceived(ScreenConfiguration config)
@@ -228,43 +248,14 @@ public partial class ContentDisplayViewModel : ViewModelBase
         _playlist.Clear();
         _currentIndex = 0;
 
-        // Build playlist from all campaigns
         foreach (var campaign in config.Campaigns)
         {
             var sortedAssets = campaign.Assets.OrderBy(a => a.Position).ToList();
-
             foreach (var asset in sortedAssets)
             {
-                var localPath = _assetSyncService.GetAssetLocalPath(asset.AssetId);
-                var needsLocalFile = asset.AssetType != AssetType.Website;
-                var hasLocalFile = !string.IsNullOrEmpty(localPath) && File.Exists(localPath);
-
-                // Skip if asset needs a downloaded file and it is missing
-                if (needsLocalFile && !hasLocalFile)
-                {
-                    _logger.LogWarning(
-                        "Asset {AssetId} ({AssetName}) not found locally, skipping",
-                        asset.AssetId,
-                        asset.AssetName
-                    );
-                    continue;
-                }
-
-                _playlist.Add(
-                    new PlaylistItem
-                    {
-                        CampaignId = campaign.Id,
-                        CampaignName = campaign.Name,
-                        AssetId = asset.AssetId,
-                        AssetName = asset.AssetName,
-                        AssetType = asset.AssetType,
-                        LocalPath = hasLocalFile ? localPath! : string.Empty,
-                        Source = asset.Source,
-                        DurationSeconds = asset.ResolvedDuration,
-                        Position = asset.Position,
-                        IsMuted = asset.IsMuted,
-                    }
-                );
+                var item = TryCreatePlaylistItem(campaign, asset);
+                if (item != null)
+                    _playlist.Add(item);
             }
         }
 
@@ -276,6 +267,39 @@ public partial class ContentDisplayViewModel : ViewModelBase
             StatusText = "No content available";
             CurrentContentType = ContentType.None;
         }
+    }
+
+    private PlaylistItem? TryCreatePlaylistItem(
+        Mireya.ApiClient.Models.CampaignDetail campaign,
+        Mireya.ApiClient.Models.CampaignAssetItem asset)
+    {
+        var localPath = _assetSyncService.GetAssetLocalPath(asset.AssetId);
+        var needsLocalFile = asset.AssetType != AssetType.Website;
+        var hasLocalFile = !string.IsNullOrEmpty(localPath) && File.Exists(localPath);
+
+        if (needsLocalFile && !hasLocalFile)
+        {
+            _logger.LogWarning(
+                "Asset {AssetId} ({AssetName}) not found locally, skipping",
+                asset.AssetId,
+                asset.AssetName
+            );
+            return null;
+        }
+
+        return new PlaylistItem
+        {
+            CampaignId = campaign.Id,
+            CampaignName = campaign.Name,
+            AssetId = asset.AssetId,
+            AssetName = asset.AssetName,
+            AssetType = asset.AssetType,
+            LocalPath = hasLocalFile ? localPath! : string.Empty,
+            Source = asset.Source,
+            DurationSeconds = asset.ResolvedDuration,
+            Position = asset.Position,
+            IsMuted = asset.IsMuted,
+        };
     }
 
     private void StartPlayback()
