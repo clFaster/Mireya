@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Mireya.Api.Services.Asset;
+using Mireya.Application.Services.Asset;
 
 namespace Mireya.Api.Areas.Admin.Pages.Assets;
 

@@ -2,8 +2,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Mireya.Api.Constants;
-using Mireya.Api.Services.AssetSync;
+using Mireya.Application.Constants;
+using Mireya.Application.Services.AssetSync;
 using Mireya.Database;
 
 namespace Mireya.Api.Controllers;

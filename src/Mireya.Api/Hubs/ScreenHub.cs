@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Mireya.Api.Constants;
-using Mireya.Api.Services;
-using Mireya.Api.Services.AssetSync;
-using Mireya.Api.Services.ScreenManagement;
+using Mireya.Application.Constants;
+using Mireya.Application.Hubs;
+using Mireya.Application.Services;
 using Mireya.Database;
 
 namespace Mireya.Api.Hubs;
@@ -97,8 +96,3 @@ public class ScreenHub(
     }
 }
 
-public interface IScreenClient
-{
-    Task ReceiveConfigurationUpdate(ScreenConfiguration configuration);
-    Task StartAssetSync(List<CampaignSyncInfo> campaigns);
-}

@@ -1,9 +1,9 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Mireya.Api.Constants;
-using Mireya.Api.Services;
-using Mireya.Api.Services.ScreenManagement;
+using Mireya.Application.Constants;
+using Mireya.Application.Services;
+using Mireya.Application.Services.ScreenManagement;
 using Mireya.Database.Models;
 
 namespace Mireya.Api.Controllers;
