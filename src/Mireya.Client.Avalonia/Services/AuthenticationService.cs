@@ -171,9 +171,10 @@ public class AuthenticationService : IAuthenticationService
             }
 
             // Login with backend (useCookies=false for JWT tokens)
+            var loginIdentity = credential?.Username ?? legacyCredentials!.Username;
             var loginRequest = new LoginRequest
             {
-                Email = credential?.Username ?? legacyCredentials!.Username,
+                Email = NormalizeScreenLoginEmail(loginIdentity),
                 Password = "dummy", // We don't store passwords, only use for initial registration
             };
 
@@ -315,5 +316,12 @@ public class AuthenticationService : IAuthenticationService
     {
         return Convert.ToBase64String(Guid.NewGuid().ToByteArray())
             + Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+    }
+
+    private static string NormalizeScreenLoginEmail(string usernameOrEmail)
+    {
+        return usernameOrEmail.Contains('@')
+            ? usernameOrEmail
+            : $"{usernameOrEmail}@mireya.local";
     }
 }
