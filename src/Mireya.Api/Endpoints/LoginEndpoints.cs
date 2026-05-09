@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Mireya.Database.Models;
 
-namespace Mireya.Web.Endpoints;
+namespace Mireya.Api.Endpoints;
 
 public static class LoginEndpoints
 {
