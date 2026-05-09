@@ -32,6 +32,7 @@ var config = builder
 // ─── Blazor Server ───────────────────────────────────────────────────────────
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
 
 // ─── Carter (REST API) ────────────────────────────────────────────────────────
 builder.Services.AddCarter();
