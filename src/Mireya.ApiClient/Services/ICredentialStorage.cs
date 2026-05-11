@@ -1,10 +1,9 @@
-using System.Threading.Tasks;
 using Mireya.ApiClient.Models;
 
-namespace Mireya.Client.Avalonia.Services;
+namespace Mireya.ApiClient.Services;
 
 /// <summary>
-///     Platform-specific credential storage interface
+///     Platform-specific credential storage interface (legacy file-based)
 /// </summary>
 public interface ICredentialStorage
 {

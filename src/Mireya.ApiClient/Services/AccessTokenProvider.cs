@@ -1,7 +1,4 @@
-using System.Threading.Tasks;
-using Mireya.ApiClient.Services;
-
-namespace Mireya.Client.Avalonia.Services;
+namespace Mireya.ApiClient.Services;
 
 /// <summary>
 ///     Database-backed access token provider
@@ -19,7 +16,7 @@ public class AccessTokenProvider : IAccessTokenProvider
     public string? GetAccessToken()
     {
         // This needs to be synchronous for HTTP client handlers
-        // Use Task.Run to make it work (not ideal but necessary for IAccessTokenProvider interface)
+        // Use Task.Run to avoid deadlocks with synchronization contexts
         var credential = Task.Run(async () =>
             await _credentialManager.GetCurrentCredentialsAsync()
         ).Result;
@@ -29,8 +26,7 @@ public class AccessTokenProvider : IAccessTokenProvider
 
     public void SetAccessToken(string? token)
     {
-        // This method is deprecated in favor of CredentialManager.SaveCredentialsAsync
+        // Deprecated in favor of CredentialManager.SaveCredentialsAsync
         // Left empty for backward compatibility
-        // Token management should be done via CredentialManager
     }
 }

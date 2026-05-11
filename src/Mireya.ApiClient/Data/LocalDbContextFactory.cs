@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Mireya.Client.Avalonia.Data;
+namespace Mireya.ApiClient.Data;
 
 /// <summary>
 ///     Design-time factory for LocalDbContext - used by EF migrations
