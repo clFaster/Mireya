@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Mireya.Application.Constants;
 using Mireya.Database;
 using Mireya.Database.Models;
 
@@ -17,7 +18,6 @@ public interface ICampaignService
 public class CampaignService(MireyaDbContext db, IScreenSynchronizationService syncService)
     : ICampaignService
 {
-    private const int DefaultDurationSeconds = 10;
 
     public async Task<List<CampaignSummary>> GetCampaignsAsync(Guid? displayId = null)
     {
@@ -68,7 +68,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 ca.Asset.Source,
                 ca.Position,
                 ca.DurationSeconds,
-                ResolveAssetDuration(ca.Asset, ca.DurationSeconds),
+                AssetDurationResolver.Resolve(ca.Asset, ca.DurationSeconds),
                 ca.Asset.IsMuted
             ))
             .ToList();
@@ -147,11 +147,9 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         db.CampaignAssets.RemoveRange(campaign.CampaignAssets);
         AddCampaignAssets(campaign.Id, request.Assets);
 
-        if (request.DisplayIds.Any())
-        {
-            db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
-            AddCampaignAssignments(campaign.Id, request.DisplayIds);
-        }
+        // Always process display assignments (empty list = unassign all)
+        db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
+        AddCampaignAssignments(campaign.Id, request.DisplayIds);
 
         await db.SaveChangesAsync();
 
@@ -164,12 +162,22 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
     public async Task DeleteCampaignAsync(Guid id)
     {
-        var campaign = await db.Campaigns.FindAsync(id);
+        var campaign = await db.Campaigns
+            .Include(c => c.CampaignAssignments)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
+        // Collect affected displays before deletion (cascade will remove assignments)
+        var affectedDisplayIds = campaign.CampaignAssignments.Select(ca => ca.DisplayId).ToList();
+
         db.Campaigns.Remove(campaign);
         await db.SaveChangesAsync();
+
+        // Notify affected screens so they stop showing deleted campaign content
+        if (affectedDisplayIds.Count > 0)
+            await syncService.SyncScreensAsync(affectedDisplayIds);
     }
 
     public async Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId)
@@ -235,16 +243,5 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 CampaignId = campaignId,
                 DisplayId = displayId,
             });
-    }
-
-    private static int ResolveAssetDuration(Database.Models.Asset asset, int? campaignDuration)
-    {
-        if (campaignDuration > 0)
-            return campaignDuration.Value;
-
-        if (asset.Type == AssetType.Video && asset.DurationSeconds > 0)
-            return asset.DurationSeconds.Value;
-
-        return DefaultDurationSeconds;
     }
 }
