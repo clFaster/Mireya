@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Mireya.Application.Constants;
+using Mireya.Application.Services.Campaign;
 using Mireya.Database;
 using Mireya.Database.Models;
 using NanoidDotNet;
@@ -48,6 +49,31 @@ public interface IScreenManagementService
     ///     Rejects a screen registration
     /// </summary>
     Task<ScreenDetailsResponse> RejectScreenAsync(Guid id);
+
+    /// <summary>
+    ///     Marks a screen as active/online and updates LastSeenAt
+    /// </summary>
+    Task SetScreenActiveAsync(string userId, bool isActive);
+
+    /// <summary>
+    ///     Gets the count of screens with a specific approval status
+    /// </summary>
+    Task<int> GetScreenCountByStatusAsync(ApprovalStatus status);
+
+    /// <summary>
+    ///     Gets screen details with assigned campaigns
+    /// </summary>
+    Task<ScreenWithCampaignsResponse> GetScreenWithCampaignsAsync(Guid id);
+
+    /// <summary>
+    ///     Updates screen details and campaign assignments
+    /// </summary>
+    Task UpdateScreenWithCampaignsAsync(Guid id, UpdateScreenRequest request, List<Guid> campaignIds);
+
+    /// <summary>
+    ///     Gets all approved screens, optionally filtering by active status
+    /// </summary>
+    Task<List<ScreenDetailsResponse>> GetApprovedScreensAsync(bool includeOffline);
 }
 
 public class ScreenManagementService(
@@ -283,6 +309,121 @@ public class ScreenManagementService(
         logger.LogInformation("Screen {DisplayId} rejected", display.Id);
 
         return MapToDetailsResponse(display);
+    }
+
+    public async Task SetScreenActiveAsync(string userId, bool isActive)
+    {
+        var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
+        if (display == null)
+        {
+            logger.LogWarning("No display found for user {UserId} when setting active state", userId);
+            return;
+        }
+
+        display.IsActive = isActive;
+        display.LastSeenAt = DateTime.UtcNow;
+        display.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        logger.LogInformation("Updated IsActive={IsActive} for screen {DisplayId}", isActive, display.Id);
+    }
+
+    public async Task<int> GetScreenCountByStatusAsync(ApprovalStatus status)
+    {
+        return await db.Displays.CountAsync(d => d.ApprovalStatus == status);
+    }
+
+    public async Task<ScreenWithCampaignsResponse> GetScreenWithCampaignsAsync(Guid id)
+    {
+        var display = await db.Displays
+            .Include(d => d.CampaignAssignments).ThenInclude(ca => ca.Campaign)
+                .ThenInclude(c => c.CampaignAssets)
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (display == null)
+            throw new KeyNotFoundException($"Screen with ID {id} not found");
+
+        var allCampaigns = await db.Campaigns
+            .Include(c => c.CampaignAssets)
+            .Include(c => c.CampaignAssignments)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        var response = MapToDetailsResponse(display);
+
+        return new ScreenWithCampaignsResponse
+        {
+            Id = response.Id,
+            Name = response.Name,
+            Description = response.Description,
+            Location = response.Location,
+            ScreenIdentifier = response.ScreenIdentifier,
+            ApprovalStatus = response.ApprovalStatus,
+            UserId = response.UserId,
+            ResolutionWidth = response.ResolutionWidth,
+            ResolutionHeight = response.ResolutionHeight,
+            IsActive = response.IsActive,
+            LastSeenAt = response.LastSeenAt,
+            CreatedAt = response.CreatedAt,
+            UpdatedAt = response.UpdatedAt,
+            AssignedCampaigns = display.CampaignAssignments
+                .Select(ca => ca.Campaign)
+                .Select(c => new CampaignSummary(c.Id, c.Name, c.Description,
+                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt))
+                .ToList(),
+            AllCampaigns = allCampaigns
+                .Select(c => new CampaignSummary(c.Id, c.Name, c.Description,
+                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt))
+                .ToList(),
+        };
+    }
+
+    public async Task UpdateScreenWithCampaignsAsync(Guid id, UpdateScreenRequest request, List<Guid> campaignIds)
+    {
+        var display = await db.Displays.FindAsync(id);
+        if (display == null)
+            throw new KeyNotFoundException($"Screen with ID {id} not found");
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+            display.Name = request.Name;
+        if (request.Description != null)
+            display.Description = request.Description;
+        if (!string.IsNullOrWhiteSpace(request.Location))
+            display.Location = request.Location;
+
+        display.UpdatedAt = DateTime.UtcNow;
+
+        // Update campaign assignments
+        var currentAssignments = await db.CampaignAssignments
+            .Where(ca => ca.DisplayId == id)
+            .ToListAsync();
+
+        var toRemove = currentAssignments.Where(ca => !campaignIds.Contains(ca.CampaignId)).ToList();
+        db.CampaignAssignments.RemoveRange(toRemove);
+
+        var existingCampaignIds = currentAssignments.Select(ca => ca.CampaignId).ToHashSet();
+        foreach (var campaignId in campaignIds.Where(cid => !existingCampaignIds.Contains(cid)))
+            db.CampaignAssignments.Add(new CampaignAssignment
+            {
+                CampaignId = campaignId,
+                DisplayId = id,
+                CreatedAt = DateTime.UtcNow,
+            });
+
+        await db.SaveChangesAsync();
+        logger.LogInformation("Screen {DisplayId} updated with {CampaignCount} campaigns", display.Id, campaignIds.Count);
+
+        await syncService.SyncScreenAsync(display.Id);
+    }
+
+    public async Task<List<ScreenDetailsResponse>> GetApprovedScreensAsync(bool includeOffline)
+    {
+        var query = db.Displays.Where(d => d.ApprovalStatus == ApprovalStatus.Approved);
+        if (!includeOffline)
+            query = query.Where(d => d.IsActive);
+
+        var displays = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
+        return displays.Select(MapToDetailsResponse).ToList();
     }
 
     private static ScreenDetailsResponse MapToDetailsResponse(Display display)

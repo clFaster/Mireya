@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Mireya.Application.Constants;
 using Mireya.Application.Hubs;
 using Mireya.Application.Services.AssetSync;
 using Mireya.Application.Services.Campaign;
@@ -12,6 +13,7 @@ public interface IScreenSynchronizationService
 {
     Task SyncScreenAsync(Guid displayId);
     Task SyncScreensAsync(IEnumerable<Guid> displayIds);
+    Task<Guid?> GetDisplayIdByUserIdAsync(string userId);
 }
 
 public class ScreenSynchronizationService(
@@ -21,10 +23,10 @@ public class ScreenSynchronizationService(
     ILogger<ScreenSynchronizationService> logger
 ) : IScreenSynchronizationService
 {
-    private const int DefaultAssetDuration = 10;
 
     public async Task SyncScreensAsync(IEnumerable<Guid> displayIds)
     {
+        // Sequential execution required: DbContext is not thread-safe
         foreach (var displayId in displayIds.Distinct())
             await SyncScreenAsync(displayId);
     }
@@ -65,6 +67,12 @@ public class ScreenSynchronizationService(
         await NotifyAssetSyncAsync(display, campaigns);
     }
 
+    public async Task<Guid?> GetDisplayIdByUserIdAsync(string userId)
+    {
+        var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
+        return display?.Id;
+    }
+
     private static List<CampaignDetail> BuildCampaignList(Display display) =>
         display.CampaignAssignments
             .Select(ca => ca.Campaign)
@@ -81,7 +89,7 @@ public class ScreenSynchronizationService(
                         a.Asset.Source,
                         a.Position,
                         a.DurationSeconds,
-                        ResolveAssetDuration(a.Asset, a.DurationSeconds),
+                        AssetDurationResolver.Resolve(a.Asset, a.DurationSeconds),
                         a.Asset.IsMuted
                     ))
                     .ToList(),
@@ -123,16 +131,5 @@ public class ScreenSynchronizationService(
             campaignsToSync.Count,
             allAssetIds.Count
         );
-    }
-
-    private static int ResolveAssetDuration(Database.Models.Asset asset, int? campaignDuration)
-    {
-        if (campaignDuration > 0)
-            return campaignDuration.Value;
-
-        if (asset.Type == AssetType.Video && asset.DurationSeconds > 0)
-            return asset.DurationSeconds.Value;
-
-        return DefaultAssetDuration;
     }
 }
