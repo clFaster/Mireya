@@ -1,4 +1,5 @@
 using Carter;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -80,6 +81,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(24);
 });
 
+// AddIdentityApiEndpoints sets Bearer as the default challenge scheme (returns 401).
+// Override it so browser-facing Blazor pages redirect to /login instead.
+builder.Services.PostConfigure<AuthenticationOptions>(options =>
+{
+    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+});
+
 // ─── Authorization ────────────────────────────────────────────────────────────
 builder.Services.AddAuthorization(options =>
 {
@@ -120,12 +128,6 @@ using (var scope = app.Services.CreateScope())
     await context.Database.MigrateAsync();
     var adminInitializer = services.GetRequiredService<IInitializerService>();
     await adminInitializer.InitializeAsync();
-
-    if (app.Environment.IsDevelopment())
-    {
-        var db = services.GetRequiredService<MireyaDbContext>();
-        await MireyaDbContext.InitializeAsync(db);
-    }
 }
 
 // ─── Middleware pipeline ──────────────────────────────────────────────────────
@@ -142,16 +144,34 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles(); // Blazor static assets (wwwroot)
 
 // Serve uploaded media files from /uploads
-Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "uploads"));
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
+Directory.CreateDirectory(uploadsPath);
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+    FileProvider = new PhysicalFileProvider(uploadsPath),
     RequestPath = "/uploads",
 });
 
 app.UseRouting();
-app.UseResponseDebug();
+
+if (app.Environment.IsDevelopment())
+    app.UseResponseDebug();
+
+// SignalR WebSocket connections send the access token as a query-string parameter
+// (?access_token=...) because HTTP headers cannot be set on WebSocket upgrade requests.
+// The Identity Bearer handler only reads from the Authorization header, so we copy
+// the query-string token into the header before authentication runs.
+app.Use(async (context, next) =>
+{
+    var accessToken = context.Request.Query["access_token"];
+    if (!string.IsNullOrEmpty(accessToken)
+        && context.Request.Path.StartsWithSegments("/hubs"))
+    {
+        context.Request.Headers.Authorization = $"Bearer {accessToken}";
+    }
+    await next();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();

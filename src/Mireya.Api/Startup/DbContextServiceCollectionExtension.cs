@@ -20,10 +20,14 @@ public static class DbContextServiceCollectionExtension
         else if (provider == Provider.Postgres.Name)
         {
             var connectionString = config.GetConnectionString(Provider.Postgres.Name)!;
-            var npgsqlBuilder = new NpgsqlConnectionStringBuilder(connectionString)
+            var npgsqlBuilder = new NpgsqlConnectionStringBuilder(connectionString);
+
+            // Only override SSL mode if not already specified in the connection string
+            if (!connectionString.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase)
+                && !connectionString.Contains("SslMode", StringComparison.OrdinalIgnoreCase))
             {
-                SslMode = SslMode.Disable,
-            };
+                npgsqlBuilder.SslMode = SslMode.Prefer;
+            }
 
             services.AddDbContext<MireyaDbContext>(options =>
                 options.UseNpgsql(
@@ -31,6 +35,11 @@ public static class DbContextServiceCollectionExtension
                     x => x.MigrationsAssembly(Provider.Postgres.Assembly)
                 )
             );
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"Unsupported database provider: '{provider}'. Supported providers: '{Provider.Sqlite.Name}', '{Provider.Postgres.Name}'.");
         }
     }
 }
