@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Microsoft.Web.WebView2.Core;
 
@@ -13,15 +14,18 @@ public partial class WebsiteAssetDisplay : UserControl
     private Grid? _browserContainer;
     private StackPanel? _loadingPanel;
     private StackPanel? _errorPanel;
+    private TextBlock? _errorMessage;
     private CoreWebView2Environment? _webViewEnvironment;
     private CoreWebView2Controller? _webViewController;
     private bool _isInitialized;
+    private bool _isCreating;
     private Uri? _pendingUri;
+    private IntPtr _cachedParentHwnd = IntPtr.Zero;
+    private bool _windowOpened;
 
     public WebsiteAssetDisplay()
     {
         InitializeComponent();
-        InitializeWebView();
     }
 
     private void InitializeComponent()
@@ -30,198 +34,283 @@ public partial class WebsiteAssetDisplay : UserControl
         _browserContainer = this.FindControl<Grid>("BrowserContainer");
         _loadingPanel = this.FindControl<StackPanel>("LoadingPanel");
         _errorPanel = this.FindControl<StackPanel>("ErrorPanel");
+        _errorMessage = this.FindControl<TextBlock>("ErrorMessage");
     }
 
-    private void InitializeWebView()
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        if (_browserContainer == null || !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            ShowError();
-            return;
-        }
+        base.OnAttachedToVisualTree(e);
 
-        try
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return;
+
+        // Try to get the HWND now — it might already be available if the window
+        // was opened before this control was attached.
+        if (e.Root is Window window)
         {
-            // Wait for the control to be loaded and get its window handle
-            this.Loaded += async (_, __) => await CreateWebViewControllerAsync();
+            var hwnd = TryGetHwnd(window);
+            if (hwnd != IntPtr.Zero)
+            {
+                _cachedParentHwnd = hwnd;
+                _windowOpened = true;
+                System.Diagnostics.Debug.WriteLine(
+                    $"WebsiteAssetDisplay attached — HWND ready: 0x{hwnd:X}"
+                );
+            }
+            else
+            {
+                // The native Win32 window hasn't been created yet.
+                // Subscribe to Opened, which fires after the HWND exists.
+                System.Diagnostics.Debug.WriteLine(
+                    "WebsiteAssetDisplay attached — HWND not ready, waiting for Window.Opened"
+                );
+                window.Opened += OnWindowOpened;
+            }
         }
-        catch (Exception ex)
+    }
+
+    private void OnWindowOpened(object? sender, EventArgs e)
+    {
+        if (sender is Window window)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to initialize WebView2: {ex}");
-            ShowError();
+            window.Opened -= OnWindowOpened;
+
+            _cachedParentHwnd = TryGetHwnd(window);
+            _windowOpened = true;
+
+            System.Diagnostics.Debug.WriteLine(
+                $"Window.Opened — HWND = 0x{_cachedParentHwnd:X}"
+            );
+
+            // If the control is already visible and waiting for the HWND,
+            // kick off WebView2 creation now.
+            if (IsEffectivelyVisible && !_isInitialized && !_isCreating)
+            {
+                Dispatcher.UIThread.Post(
+                    async () => await CreateWebViewControllerAsync(),
+                    DispatcherPriority.Render
+                );
+            }
+        }
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _cachedParentHwnd = IntPtr.Zero;
+        _windowOpened = false;
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == IsVisibleProperty)
+            OnEffectiveVisibilityChanged(IsEffectivelyVisible);
+    }
+
+    private void OnEffectiveVisibilityChanged(bool isVisible)
+    {
+        if (isVisible)
+        {
+            if (!_isInitialized && !_isCreating && _windowOpened)
+            {
+                // Window is open, HWND should be available — create the WebView2 controller.
+                Dispatcher.UIThread.Post(
+                    async () => await CreateWebViewControllerAsync(),
+                    DispatcherPriority.Render
+                );
+            }
+            else if (_isInitialized && _webViewController != null)
+            {
+                // Already created — show and resize.
+                _webViewController.IsVisible = true;
+                Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
+            }
+            // else: window not opened yet — OnWindowOpened will trigger creation later.
+        }
+        else
+        {
+            if (_webViewController != null)
+                _webViewController.IsVisible = false;
         }
     }
 
     private async System.Threading.Tasks.Task CreateWebViewControllerAsync()
     {
+        if (_isCreating || _isInitialized)
+            return;
+
+        if (_browserContainer == null || !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            ShowError("Not running on Windows or browser container is missing.");
+            return;
+        }
+
+        // Final attempt to get the HWND if we still don't have it.
+        if (_cachedParentHwnd == IntPtr.Zero && this.VisualRoot is Window window)
+            _cachedParentHwnd = TryGetHwnd(window);
+
+        if (_cachedParentHwnd == IntPtr.Zero)
+        {
+            ShowError(
+                "Could not obtain the parent window handle (HWND).\n"
+                + $"VisualRoot type: {this.VisualRoot?.GetType().Name ?? "null"}\n"
+                + "The native window may not have been created yet."
+            );
+            return;
+        }
+
+        _isCreating = true;
+
         try
         {
-            // Get the user data folder for WebView2
+            // Pre-flight: verify WebView2 runtime is accessible
+            string runtimeVersion;
+            try
+            {
+                runtimeVersion = CoreWebView2Environment.GetAvailableBrowserVersionString();
+                System.Diagnostics.Debug.WriteLine($"WebView2 runtime: {runtimeVersion}");
+            }
+            catch (Exception ex)
+            {
+                ShowError($"WebView2 runtime not found or not accessible.\n{ex.Message}");
+                return;
+            }
+
             var userDataFolder = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Mireya",
-                "WebView2"
+                AppContext.BaseDirectory,
+                "WebView2Data"
             );
 
-            // Create WebView2 environment
-            _webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+            _webViewEnvironment = await CoreWebView2Environment.CreateAsync(
+                null, userDataFolder
+            );
 
-            // Get the parent window handle from the visual root
-            if (this.VisualRoot is TopLevel topLevel)
+            System.Diagnostics.Debug.WriteLine(
+                $"Creating controller for HWND 0x{_cachedParentHwnd:X}"
+            );
+
+            _webViewController = await _webViewEnvironment.CreateCoreWebView2ControllerAsync(
+                _cachedParentHwnd
+            );
+
+            // Configure
+            var settings = _webViewController.CoreWebView2.Settings;
+            settings.IsScriptEnabled = true;
+            settings.IsStatusBarEnabled = false;
+            settings.AreDefaultContextMenusEnabled = false;
+            settings.IsZoomControlEnabled = false;
+
+            _browserContainer.SizeChanged += (_, _) =>
             {
-                var hwnd = GetWindowHandleFromTopLevel(topLevel);
+                if (IsEffectivelyVisible) UpdateWebViewBounds();
+            };
 
-                if (hwnd != IntPtr.Zero)
-                {
-                    // Create the WebView2 controller
-                    _webViewController =
-                        await _webViewEnvironment.CreateCoreWebView2ControllerAsync(hwnd);
+            this.LayoutUpdated += (_, _) =>
+            {
+                if (IsEffectivelyVisible && _webViewController != null) UpdateWebViewBounds();
+            };
 
-                    // Configure the WebView2 settings
-                    var settings = _webViewController.CoreWebView2.Settings;
-                    settings.IsScriptEnabled = true;
-                    settings.IsStatusBarEnabled = false;
-                    settings.AreDefaultContextMenusEnabled = false;
-                    settings.IsZoomControlEnabled = false;
+            _isInitialized = true;
 
-                    // Set bounds to fill the container
-                    UpdateWebViewBounds();
+            _loadingPanel!.IsVisible = false;
+            _browserContainer.IsVisible = true;
+            _errorPanel!.IsVisible = false;
 
-                    // Subscribe to size changes
-                    _browserContainer!.SizeChanged += (_, __) => UpdateWebViewBounds();
-
-                    // Hide WebView initially until Navigate is called
-                    _webViewController.IsVisible = false;
-                    _isInitialized = true;
-
-                    // If there's a pending URI, navigate to it now
-                    if (_pendingUri != null)
-                    {
-                        NavigateInternal(_pendingUri);
-                        _pendingUri = null;
-                    }
-
-                    _loadingPanel!.IsVisible = false;
-                    _browserContainer.IsVisible = true;
-                    _errorPanel!.IsVisible = false;
-
-                    System.Diagnostics.Debug.WriteLine(
-                        "WebView2 controller created and initialized"
-                    );
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("Failed to get window handle for WebView2");
-                    ShowError();
-                }
+            if (IsEffectivelyVisible)
+            {
+                _webViewController.IsVisible = true;
+                Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("No VisualRoot found");
-                ShowError();
+                _webViewController.IsVisible = false;
             }
+
+            if (_pendingUri != null)
+            {
+                NavigateInternal(_pendingUri);
+                _pendingUri = null;
+            }
+
+            System.Diagnostics.Debug.WriteLine("WebView2 controller created successfully.");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to create WebView2 controller: {ex}");
-            ShowError();
+            var msg = $"WebView2 creation failed:\n{ex.GetType().Name}: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine(msg);
+            System.Diagnostics.Debug.WriteLine(ex.StackTrace);
+            ShowError(msg);
+        }
+        finally
+        {
+            _isCreating = false;
         }
     }
 
-    private static IntPtr GetWindowHandleFromTopLevel(TopLevel topLevel)
+    private static IntPtr TryGetHwnd(TopLevel topLevel)
     {
         try
         {
-            // Try to get HWND through TryGetPlatformHandle
-            var platformHandle = topLevel.TryGetPlatformHandle();
-            if (platformHandle != null)
-            {
-                // platformHandle is an IPlatformHandle - get the handle directly
-                return new IntPtr(platformHandle.Handle.ToInt64());
-            }
+            var handle = topLevel.TryGetPlatformHandle();
+            if (handle != null)
+                return handle.Handle;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to get window handle: {ex}");
+            System.Diagnostics.Debug.WriteLine($"TryGetHwnd failed: {ex}");
         }
-
         return IntPtr.Zero;
     }
 
     private void UpdateWebViewBounds()
     {
         if (_webViewController == null || _browserContainer == null)
-        {
             return;
-        }
 
         try
         {
-            // Get the position of the container relative to the window
             if (this.VisualRoot is TopLevel topLevel)
             {
-                // Transform the container's position to window coordinates
-                var containerBounds = _browserContainer.Bounds;
                 var transformedPoint = _browserContainer.TranslatePoint(new Point(0, 0), topLevel);
+                var containerBounds = _browserContainer.Bounds;
 
                 if (transformedPoint.HasValue)
                 {
-                    // Get the scaling factor for the window
                     var scaling = topLevel.RenderScaling;
-
-                    // Calculate pixel coordinates (WebView2 uses physical pixels)
                     var x = (int)(transformedPoint.Value.X * scaling);
                     var y = (int)(transformedPoint.Value.Y * scaling);
                     var width = (int)(containerBounds.Width * scaling);
                     var height = (int)(containerBounds.Height * scaling);
 
-                    // Only update if we have valid dimensions
                     if (width > 0 && height > 0)
                     {
-                        _webViewController.Bounds = new System.Drawing.Rectangle(
-                            x,
-                            y,
-                            width,
-                            height
-                        );
-                        System.Diagnostics.Debug.WriteLine(
-                            $"WebView2 bounds set to: {x}, {y}, {width}x{height}"
-                        );
+                        _webViewController.Bounds = new System.Drawing.Rectangle(x, y, width, height);
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to update WebView bounds: {ex}");
+            System.Diagnostics.Debug.WriteLine($"UpdateWebViewBounds failed: {ex}");
         }
     }
 
-    /// <summary>
-    /// Navigate to a specific URL and mute audio.
-    /// </summary>
     public void Navigate(Uri? uri)
     {
         if (uri == null)
         {
-            // Hide webview when no URI
             if (_webViewController != null)
-            {
                 _webViewController.IsVisible = false;
-            }
             return;
         }
 
-        System.Diagnostics.Debug.WriteLine(
-            $"Navigate called for URL: {uri.AbsoluteUri}, initialized: {_isInitialized}"
-        );
-
         if (!_isInitialized || _webViewController?.CoreWebView2 == null)
         {
-            // Store the URI to navigate once initialized
             _pendingUri = uri;
-            _loadingPanel!.IsVisible = true;
-            _errorPanel!.IsVisible = false;
+            if (_loadingPanel != null) _loadingPanel.IsVisible = true;
+            if (_errorPanel != null)   _errorPanel.IsVisible = false;
             return;
         }
 
@@ -231,31 +320,24 @@ public partial class WebsiteAssetDisplay : UserControl
     private void NavigateInternal(Uri uri)
     {
         if (_webViewController?.CoreWebView2 == null)
-        {
             return;
-        }
 
         try
         {
-            System.Diagnostics.Debug.WriteLine($"NavigateInternal to URL: {uri.AbsoluteUri}");
             _loadingPanel!.IsVisible = false;
             _browserContainer!.IsVisible = true;
             _errorPanel!.IsVisible = false;
 
-            // Make sure WebView is visible and bounds are updated
             _webViewController.IsVisible = true;
-            UpdateWebViewBounds();
+            Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
 
-            // Navigate to the URL
             _webViewController.CoreWebView2.Navigate(uri.AbsoluteUri);
-
-            // Inject script to mute audio/video after navigation completes
             _webViewController.CoreWebView2.NavigationCompleted += OnNavigationCompleted;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to navigate to {uri}: {ex}");
-            ShowError();
+            System.Diagnostics.Debug.WriteLine($"NavigateInternal failed: {ex}");
+            ShowError($"Navigation failed:\n{ex.Message}");
         }
     }
 
@@ -265,58 +347,53 @@ public partial class WebsiteAssetDisplay : UserControl
     )
     {
         if (_webViewController?.CoreWebView2 == null)
-        {
             return;
-        }
 
-        // Unsubscribe to prevent multiple calls
         _webViewController.CoreWebView2.NavigationCompleted -= OnNavigationCompleted;
 
         try
         {
-            var muteScript =
-                @"
+            const string muteScript = """
                 (function() {
-                    var videos = document.getElementsByTagName('video');
-                    for (var i = 0; i < videos.length; i++) {
-                        videos[i].muted = true;
-                        videos[i].volume = 0;
-                    }
-                    var audios = document.getElementsByTagName('audio');
-                    for (var i = 0; i < audios.length; i++) {
-                        audios[i].muted = true;
-                        audios[i].volume = 0;
-                    }
+                    document.querySelectorAll('video, audio').forEach(el => {
+                        el.muted = true;
+                        el.volume = 0;
+                    });
                 })();
-            ";
+                """;
             await _webViewController.CoreWebView2.ExecuteScriptAsync(muteScript);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to execute mute script: {ex}");
+            System.Diagnostics.Debug.WriteLine($"Mute script failed: {ex}");
         }
     }
 
-    private void ShowError()
+    private void ShowError(string? reason = null)
     {
         if (_loadingPanel != null)
-        {
             _loadingPanel.IsVisible = false;
-        }
 
         if (_errorPanel != null)
-        {
             _errorPanel.IsVisible = true;
+
+        if (_errorMessage != null)
+        {
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                _errorMessage.Text = reason;
+                _errorMessage.IsVisible = true;
+            }
+            else
+            {
+                _errorMessage.IsVisible = false;
+            }
         }
 
         if (_browserContainer != null)
-        {
             _browserContainer.IsVisible = false;
-        }
 
         if (_webViewController != null)
-        {
             _webViewController.IsVisible = false;
-        }
     }
 }

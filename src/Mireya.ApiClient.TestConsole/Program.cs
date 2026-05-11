@@ -10,9 +10,9 @@ services.AddMireyaApiClient();
 
 var provider = services.BuildServiceProvider();
 
-var mireyaClient = provider.GetRequiredService<IMireyaService>();
+var apiConfig = provider.GetRequiredService<IApiClientConfiguration>();
 
-mireyaClient.SetBaseUrl("https://localhost:5001");
+apiConfig.UpdateBaseUrlAsync("https://localhost:5001").Wait();
 
 while (true)
 {

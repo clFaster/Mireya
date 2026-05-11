@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using Mireya.Client.Avalonia.Data;
-using Mireya.Client.Avalonia.Services;
+using Mireya.ApiClient.Data;
+using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 

@@ -2,8 +2,8 @@ using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Mireya.Client.Avalonia.Data;
-using Mireya.Client.Avalonia.Services;
+using Mireya.ApiClient.Data;
+using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 

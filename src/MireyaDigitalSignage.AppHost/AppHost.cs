@@ -5,9 +5,10 @@ var postgres = builder
     .WithDataVolume("mireya-db")
     .AddDatabase("Postgres");
 
-builder
+var mireya = builder
     .AddProject<Projects.Mireya_Api>("mireya-api")
     .WithReference(postgres)
+    .WaitFor(postgres)
     .WithEnvironment("provider", "Postgres");
 
-builder.Build().Run();
+await builder.Build().RunAsync();

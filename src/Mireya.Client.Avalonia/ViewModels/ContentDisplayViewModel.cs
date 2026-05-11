@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
 using Mireya.ApiClient.Services;
-using Mireya.Client.Avalonia.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
@@ -334,6 +333,9 @@ public partial class ContentDisplayViewModel : ViewModelBase
         CurrentAssetPosition = _currentIndex + 1;
         StatusText = $"Playing: {item.CampaignName}";
 
+        // Report now-playing to the server for real-time admin visibility
+        _ = ReportNowPlayingAsync(item);
+
         // Stop any existing timer
         _advanceTimer?.Stop();
 
@@ -521,6 +523,18 @@ public partial class ContentDisplayViewModel : ViewModelBase
         _advanceTimer?.Stop();
         _hubService.OnConfigurationUpdateReceived -= OnConfigurationUpdateReceived;
         _hubService.OnStartAssetSync -= OnStartAssetSync;
+    }
+
+    private async Task ReportNowPlayingAsync(PlaylistItem item)
+    {
+        try
+        {
+            await _hubService.ReportNowPlayingAsync(item.AssetId, item.AssetName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to report now-playing to server");
+        }
     }
 }
 
