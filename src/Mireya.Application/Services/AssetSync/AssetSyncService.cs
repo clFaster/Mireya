@@ -25,35 +25,33 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
             assetIds.Count
         );
 
-        foreach (var assetId in assetIds.Distinct())
+        var distinctAssetIds = assetIds.Distinct().ToList();
+
+        // Batch-query all existing sync statuses for this display upfront
+        var existingAssetIdsList = await db.AssetSyncStatuses
+            .Where(ass => ass.DisplayId == displayId && distinctAssetIds.Contains(ass.AssetId))
+            .Select(ass => ass.AssetId)
+            .ToListAsync();
+        var existingAssetIds = existingAssetIdsList.ToHashSet();
+
+        var newStatuses = distinctAssetIds
+            .Where(assetId => !existingAssetIds.Contains(assetId))
+            .Select(assetId => new AssetSyncStatus
+            {
+                DisplayId = displayId,
+                AssetId = assetId,
+                SyncState = SyncState.Pending,
+                Progress = 0,
+                LastUpdatedAt = DateTime.UtcNow,
+            })
+            .ToList();
+
+        if (newStatuses.Count > 0)
         {
-            // Check if sync status already exists
-            var existingStatus = await db.AssetSyncStatuses.FirstOrDefaultAsync(ass =>
-                ass.DisplayId == displayId && ass.AssetId == assetId
-            );
-
-            if (existingStatus == null)
-            {
-                // Create new sync status entry
-                var syncStatus = new AssetSyncStatus
-                {
-                    DisplayId = displayId,
-                    AssetId = assetId,
-                    SyncState = SyncState.Pending,
-                    Progress = 0,
-                    LastUpdatedAt = DateTime.UtcNow,
-                };
-
-                db.AssetSyncStatuses.Add(syncStatus);
-                logger.LogDebug("Created sync status for asset {AssetId}", assetId);
-            }
-            else
-            {
-                logger.LogDebug("Sync status already exists for asset {AssetId}", assetId);
-            }
+            db.AssetSyncStatuses.AddRange(newStatuses);
+            await db.SaveChangesAsync();
+            logger.LogDebug("Created {Count} new sync status entries", newStatuses.Count);
         }
-
-        await db.SaveChangesAsync();
     }
 
     public async Task UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request)

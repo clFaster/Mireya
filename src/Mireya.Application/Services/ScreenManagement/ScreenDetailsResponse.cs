@@ -1,3 +1,5 @@
+using Mireya.Application.Services.Campaign;
+
 namespace Mireya.Application.Services.ScreenManagement;
 
 /// <summary>
@@ -18,4 +20,13 @@ public class ScreenDetailsResponse
     public DateTime? LastSeenAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>
+///     Response payload for screen details with assigned campaigns
+/// </summary>
+public class ScreenWithCampaignsResponse : ScreenDetailsResponse
+{
+    public List<CampaignSummary> AssignedCampaigns { get; set; } = [];
+    public List<CampaignSummary> AllCampaigns { get; set; } = [];
 }
