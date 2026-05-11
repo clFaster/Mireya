@@ -19,7 +19,11 @@ public static class LoginEndpoints
 
             var result = await signInManager.PasswordSignInAsync(email, password, rememberMe, true);
             if (result.Succeeded)
-                return Results.Redirect(returnUrl ?? "/");
+            {
+                // Validate returnUrl to prevent open redirect attacks
+                var safeUrl = IsLocalUrl(returnUrl) ? returnUrl! : "/";
+                return Results.Redirect(safeUrl);
+            }
 
             return Results.Redirect($"/login?error=invalid");
         }).AllowAnonymous();
@@ -31,5 +35,15 @@ public static class LoginEndpoints
         });
 
         return group;
+    }
+
+    private static bool IsLocalUrl(string? url)
+    {
+        if (string.IsNullOrEmpty(url))
+            return false;
+
+        // Only allow relative paths starting with /
+        // Reject protocol-relative URLs (//evil.com) and absolute URLs
+        return url.StartsWith('/') && (url.Length == 1 || url[1] != '/');
     }
 }

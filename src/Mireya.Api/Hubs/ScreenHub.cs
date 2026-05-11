@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Mireya.Application.Constants;
 using Mireya.Application.Hubs;
 using Mireya.Application.Services;
-using Mireya.Database;
+using Mireya.Application.Services.ScreenManagement;
 
 namespace Mireya.Api.Hubs;
 
@@ -13,7 +12,7 @@ public class ScreenHub(
     ILogger<ScreenHub> logger,
     IScreenConnectionTracker connectionTracker,
     IScreenSynchronizationService screenSyncService,
-    MireyaDbContext db
+    IScreenManagementService screenManagementService
 ) : Hub<IScreenClient>
 {
     public override async Task OnConnectedAsync()
@@ -35,23 +34,18 @@ public class ScreenHub(
                 connectionTracker.GetOnlineScreenCount()
             );
 
-            // Update IsActive and LastSeenAt in database
-            var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
-            if (display != null)
-            {
-                display.IsActive = true;
-                display.LastSeenAt = DateTime.UtcNow;
-                display.UpdatedAt = DateTime.UtcNow;
-                await db.SaveChangesAsync();
-                logger.LogInformation("Updated IsActive=true for screen {DisplayId}", display.Id);
+            await screenManagementService.SetScreenActiveAsync(userId, true);
 
-                // Trigger sync when client connects/reconnects
-                logger.LogInformation(
-                    "Triggering sync for display {DisplayId} on connect",
-                    display.Id
-                );
-                await screenSyncService.SyncScreenAsync(display.Id);
-            }
+            // Trigger sync when client connects/reconnects
+            var bonjour = await screenManagementService.GetBonjourAsync(userId);
+            logger.LogInformation(
+                "Triggering sync for screen {ScreenIdentifier} on connect",
+                bonjour.ScreenIdentifier
+            );
+
+            var displayId = await screenSyncService.GetDisplayIdByUserIdAsync(userId);
+            if (displayId.HasValue)
+                await screenSyncService.SyncScreenAsync(displayId.Value);
         }
 
         await base.OnConnectedAsync();
@@ -81,18 +75,28 @@ public class ScreenHub(
             && !connectionTracker.GetConnectedUserIds().Contains(userId)
         )
         {
-            var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
-            if (display != null)
-            {
-                display.IsActive = false;
-                display.LastSeenAt = DateTime.UtcNow;
-                display.UpdatedAt = DateTime.UtcNow;
-                await db.SaveChangesAsync();
-                logger.LogInformation("Updated IsActive=false for screen {DisplayId}", display.Id);
-            }
+            await screenManagementService.SetScreenActiveAsync(userId, false);
         }
 
         await base.OnDisconnectedAsync(exception);
     }
-}
 
+    /// <summary>
+    ///     Called by screen clients to report which asset they are currently displaying.
+    ///     This enables real-time "now playing" visibility in the admin UI.
+    /// </summary>
+    public Task ReportNowPlaying(Guid? assetId, string? assetName)
+    {
+        var userId = Context.UserIdentifier;
+        if (string.IsNullOrEmpty(userId))
+            return Task.CompletedTask;
+
+        logger.LogDebug(
+            "Screen {UserId} now playing: {AssetName} ({AssetId})",
+            userId, assetName, assetId
+        );
+
+        connectionTracker.UpdateNowPlaying(userId, assetId, assetName);
+        return Task.CompletedTask;
+    }
+}

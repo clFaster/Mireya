@@ -1,12 +1,25 @@
 namespace Mireya.Api.Middleware;
 
 /// <summary>
-///     Middleware to debug API responses, especially for unauthorized and error responses
+///     Middleware to debug API responses, especially for unauthorized and error responses.
+///     Only buffers response bodies for API paths to avoid performance impact on static files and streaming.
 /// </summary>
 public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebugMiddleware> logger)
 {
+    private static readonly string[] ApiPrefixes = ["/api/", "/auth/", "/hubs/"];
+
     public async Task InvokeAsync(HttpContext context)
     {
+        // Only buffer responses for API paths to avoid overhead on static files and streaming
+        var path = context.Request.Path.Value ?? string.Empty;
+        var isApiPath = ApiPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+
+        if (!isApiPath)
+        {
+            await next(context);
+            return;
+        }
+
         // Capture the original response body stream
         var originalBodyStream = context.Response.Body;
 
@@ -59,7 +72,8 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
             };
 
             responseBody.Seek(0, SeekOrigin.Begin);
-            var responseBodyText = new StreamReader(responseBody).ReadToEnd();
+            using var reader = new StreamReader(responseBody, leaveOpen: true);
+            var responseBodyText = reader.ReadToEnd();
             responseBody.Seek(0, SeekOrigin.Begin);
 
             var authHeader = context.Request.Headers["Authorization"].ToString();
@@ -69,8 +83,7 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
             logger.Log(
                 logLevel,
                 "API Response Debug | Status: {StatusCode} | Method: {Method} | Path: {Path}{QueryString} | "
-                    + "Auth: {AuthType} | User: {User} | ContentType: {ContentType} | ResponseLength: {Length} | "
-                    + "Response: {Response}",
+                    + "Auth: {AuthType} | User: {User} | ContentType: {ContentType} | ResponseLength: {Length}",
                 statusCode,
                 method,
                 path,
@@ -78,10 +91,7 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
                 authType,
                 context.User?.Identity?.Name ?? "Anonymous",
                 context.Response.ContentType,
-                responseBodyText.Length,
-                responseBodyText.Length > 1000
-                    ? responseBodyText.Substring(0, 1000) + "..."
-                    : responseBodyText
+                responseBodyText.Length
             );
 
             // Additional debug info for 401 Unauthorized
