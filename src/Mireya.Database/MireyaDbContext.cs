@@ -101,9 +101,4 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
-
-    public static async Task InitializeAsync(MireyaDbContext db)
-    {
-        // Generate initial data for development
-    }
 }

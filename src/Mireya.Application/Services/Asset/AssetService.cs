@@ -160,7 +160,7 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
     public async Task<PagedAssets> GetAssetsAsync(AssetFilter filter)
     {
         var page = filter.Page < 1 ? 1 : filter.Page;
-        var pageSize = filter.PageSize is < 1 or > 100 ? 10 : filter.PageSize;
+        var pageSize = filter.PageSize < 1 ? 10 : Math.Min(filter.PageSize, 10_000);
 
         var query = db.Assets.AsQueryable();
 
