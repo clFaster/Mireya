@@ -1,11 +1,8 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
-using Mireya.ApiClient.Services;
 
-namespace Mireya.Client.Avalonia.Services;
+namespace Mireya.ApiClient.Services;
 
 /// <summary>
 ///     Implementation of authentication service for screen clients
@@ -139,9 +136,12 @@ public class AuthenticationService : IAuthenticationService
             if (loginIdentity == null)
                 return new LoginResult(false, null, "No credentials found. Please register first.");
 
+            // The Identity API POST /login endpoint names the field "Email" but internally
+            // passes it to PasswordSignInAsync which looks up by UserName, not Email.
+            // Send the raw username (e.g. "screen-{guid}"), NOT the email form.
             var loginRequest = new LoginRequest
             {
-                Email = NormalizeScreenLoginEmail(loginIdentity),
+                Email = loginIdentity,
                 Password = password!,
             };
 
@@ -289,12 +289,5 @@ public class AuthenticationService : IAuthenticationService
     {
         return Convert.ToBase64String(Guid.NewGuid().ToByteArray())
             + Convert.ToBase64String(Guid.NewGuid().ToByteArray());
-    }
-
-    private static string NormalizeScreenLoginEmail(string usernameOrEmail)
-    {
-        return usernameOrEmail.Contains('@')
-            ? usernameOrEmail
-            : $"{usernameOrEmail}@mireya.local";
     }
 }

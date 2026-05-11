@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Mireya.Database.Models;
 
-namespace Mireya.Client.Avalonia.Data;
+namespace Mireya.ApiClient.Data;
 
 /// <summary>
 ///     Local client database context - stores downloaded campaign and asset data for offline use

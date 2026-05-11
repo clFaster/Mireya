@@ -1,11 +1,10 @@
-using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Mireya.ApiClient.Options;
 
-namespace Mireya.Client.Avalonia.Services;
+namespace Mireya.ApiClient.Services;
 
 /// <summary>
-///     Service to manage API client configuration
+///     Service to manage API client configuration at runtime
 /// </summary>
 public interface IApiClientConfiguration
 {

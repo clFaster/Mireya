@@ -1,6 +1,4 @@
-using System.Threading.Tasks;
-
-namespace Mireya.Client.Avalonia.Services;
+namespace Mireya.ApiClient.Services;
 
 /// <summary>
 ///     Service for managing application settings persistence

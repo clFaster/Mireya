@@ -15,6 +15,11 @@ public interface IScreenHubService : IAsyncDisposable
 
     Task ConnectAsync();
     Task DisconnectAsync();
+
+    /// <summary>
+    ///     Report the currently displaying asset to the server for real-time admin visibility
+    /// </summary>
+    Task ReportNowPlayingAsync(Guid? assetId, string? assetName);
 }
 
 public class ScreenHubService : IScreenHubService
@@ -120,6 +125,21 @@ public class ScreenHubService : IScreenHubService
         {
             _logger.LogInformation("Disconnecting from SignalR hub");
             await _hubConnection.StopAsync();
+        }
+    }
+
+    public async Task ReportNowPlayingAsync(Guid? assetId, string? assetName)
+    {
+        if (_hubConnection.State != HubConnectionState.Connected)
+            return;
+
+        try
+        {
+            await _hubConnection.InvokeAsync("ReportNowPlaying", assetId, assetName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to report now-playing to server");
         }
     }
 

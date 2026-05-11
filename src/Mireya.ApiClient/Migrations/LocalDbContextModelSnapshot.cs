@@ -2,25 +2,22 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Mireya.Client.Avalonia.Data;
+using Mireya.ApiClient.Data;
 
 #nullable disable
 
-namespace Mireya.Client.Avalonia.Migrations
+namespace Mireya.ApiClient.Migrations
 {
     [DbContext(typeof(LocalDbContext))]
-    [Migration("20260506202109_Initial")]
-    partial class Initial
+    partial class LocalDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendAsset", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.BackendAsset", b =>
                 {
                     b.Property<Guid>("BackendInstanceId")
                         .HasColumnType("TEXT");
@@ -38,7 +35,7 @@ namespace Mireya.Client.Avalonia.Migrations
                     b.ToTable("BackendAssets");
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCampaign", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.BackendCampaign", b =>
                 {
                     b.Property<Guid>("BackendInstanceId")
                         .HasColumnType("TEXT");
@@ -56,7 +53,7 @@ namespace Mireya.Client.Avalonia.Migrations
                     b.ToTable("BackendCampaigns");
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCredential", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.BackendCredential", b =>
                 {
                     b.Property<Guid>("BackendInstanceId")
                         .HasColumnType("TEXT");
@@ -84,7 +81,7 @@ namespace Mireya.Client.Avalonia.Migrations
                     b.ToTable("BackendCredentials");
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendInstance", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.BackendInstance", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -116,7 +113,7 @@ namespace Mireya.Client.Avalonia.Migrations
                     b.ToTable("BackendInstances");
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.DownloadedAsset", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.DownloadedAsset", b =>
                 {
                     b.Property<Guid>("BackendInstanceId")
                         .HasColumnType("TEXT");
@@ -329,7 +326,7 @@ namespace Mireya.Client.Avalonia.Migrations
                     b.ToTable("Display");
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendAsset", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.BackendAsset", b =>
                 {
                     b.HasOne("Mireya.Database.Models.Asset", "Asset")
                         .WithMany()
@@ -337,7 +334,7 @@ namespace Mireya.Client.Avalonia.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
+                    b.HasOne("Mireya.ApiClient.Data.BackendInstance", null)
                         .WithMany()
                         .HasForeignKey("BackendInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -346,9 +343,9 @@ namespace Mireya.Client.Avalonia.Migrations
                     b.Navigation("Asset");
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCampaign", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.BackendCampaign", b =>
                 {
-                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
+                    b.HasOne("Mireya.ApiClient.Data.BackendInstance", null)
                         .WithMany()
                         .HasForeignKey("BackendInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -363,18 +360,18 @@ namespace Mireya.Client.Avalonia.Migrations
                     b.Navigation("Campaign");
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.BackendCredential", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.BackendCredential", b =>
                 {
-                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
+                    b.HasOne("Mireya.ApiClient.Data.BackendInstance", null)
                         .WithMany()
                         .HasForeignKey("BackendInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Mireya.Client.Avalonia.Data.DownloadedAsset", b =>
+            modelBuilder.Entity("Mireya.ApiClient.Data.DownloadedAsset", b =>
                 {
-                    b.HasOne("Mireya.Client.Avalonia.Data.BackendInstance", null)
+                    b.HasOne("Mireya.ApiClient.Data.BackendInstance", null)
                         .WithMany()
                         .HasForeignKey("BackendInstanceId")
                         .OnDelete(DeleteBehavior.Cascade)
