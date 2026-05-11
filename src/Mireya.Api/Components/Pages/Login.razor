@@ -1,6 +1,8 @@
 @page "/login"
 @layout EmptyLayout
 @attribute [AllowAnonymous]
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Login - Mireya Admin</PageTitle>
 
@@ -14,7 +16,7 @@
                 <div class="alert alert-danger">Invalid email or password.</div>
             }
 
-            <form method="post" action="/auth/login?returnUrl=@ReturnUrl">
+            <form method="post" action="@_formAction">
                 <AntiforgeryToken />
                 <div class="mb-3">
                     <label class="form-label">Email</label>
@@ -37,4 +39,20 @@
 @code {
     [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
     [SupplyParameterFromQuery] private string? Error { get; set; }
+
+    private string _formAction = "/auth/login";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(ReturnUrl ?? "/", forceLoad: true);
+            return;
+        }
+
+        _formAction = string.IsNullOrEmpty(ReturnUrl)
+            ? "/auth/login"
+            : $"/auth/login?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
+    }
 }

@@ -1,11 +1,8 @@
 @page "/screens/{Id:guid}"
 @attribute [Authorize]
-@inject Mireya.Database.MireyaDbContext Db
 @inject IScreenManagementService ScreenManagementService
-@inject IScreenSynchronizationService SyncService
 @inject NavigationManager Navigation
 @using Mireya.Database.Models
-@using Microsoft.EntityFrameworkCore
 
 <PageTitle>Screen Details - Mireya Admin</PageTitle>
 
@@ -19,7 +16,7 @@ else
         <h1>@_screen.Name</h1>
         <div class="d-flex gap-2">
             <a href="/screens/edit/@_screen.Id" class="btn btn-outline-secondary">Edit</a>
-            @if (_screen.ApprovalStatus == ApprovalStatus.Pending)
+            @if (_screen.ApprovalStatus == nameof(ApprovalStatus.Pending))
             {
                 <button class="btn btn-success" @onclick="ApproveAsync">Approve</button>
                 <button class="btn btn-danger" @onclick="RejectAsync">Reject</button>
@@ -50,14 +47,14 @@ else
     </div>
 
     <h5 class="mt-3">Assigned Campaigns</h5>
-    @if (!_campaigns.Any())
+    @if (!_screen.AssignedCampaigns.Any())
     {
         <p class="text-muted">No campaigns assigned. <a href="/screens/edit/@_screen.Id">Assign campaigns</a>.</p>
     }
     else
     {
         <ul class="list-group">
-            @foreach (var c in _campaigns)
+            @foreach (var c in _screen.AssignedCampaigns)
             {
                 <li class="list-group-item">@c.Name</li>
             }
@@ -67,28 +64,26 @@ else
 
 @code {
     [Parameter] public Guid Id { get; set; }
-    private Display? _screen;
-    private List<Campaign> _campaigns = [];
+    private ScreenWithCampaignsResponse? _screen;
     private string? _message;
     private bool _isError;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
     {
-        _screen = await Db.Displays
-            .Include(d => d.CampaignAssignments).ThenInclude(ca => ca.Campaign)
-            .FirstOrDefaultAsync(d => d.Id == Id);
-        _campaigns = _screen?.CampaignAssignments.Select(ca => ca.Campaign).ToList() ?? [];
+        _screen = await ScreenManagementService.GetScreenWithCampaignsAsync(Id);
     }
 
     private async Task ApproveAsync()
     {
-        try { await ScreenManagementService.ApproveScreenAsync(Id); _message = "Screen approved."; _isError = false; await OnInitializedAsync(); }
+        try { await ScreenManagementService.ApproveScreenAsync(Id); _message = "Screen approved."; _isError = false; await LoadAsync(); }
         catch (Exception ex) { _message = ex.Message; _isError = true; }
     }
 
     private async Task RejectAsync()
     {
-        try { await ScreenManagementService.RejectScreenAsync(Id); _message = "Screen rejected."; _isError = false; await OnInitializedAsync(); }
+        try { await ScreenManagementService.RejectScreenAsync(Id); _message = "Screen rejected."; _isError = false; await LoadAsync(); }
         catch (Exception ex) { _message = ex.Message; _isError = true; }
     }
 }

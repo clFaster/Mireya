@@ -1,5 +1,6 @@
 @page "/"
 @attribute [Authorize]
+@implements IDisposable
 @inject IAssetService AssetService
 @inject ICampaignService CampaignService
 @inject IScreenManagementService ScreenManagementService
@@ -48,15 +49,51 @@ else
             </div>
         </div>
     </div>
+
+    @if (_onlineScreenStates.Count > 0)
+    {
+        <h4 class="mb-3">Live Screen Status</h4>
+        <div class="row g-3">
+            @foreach (var state in _onlineScreenStates)
+            {
+                <div class="col-md-4 col-lg-3">
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.6rem;"></i>
+                                <strong>@(GetScreenName(state.UserId) ?? state.UserId)</strong>
+                            </div>
+                            @if (state.CurrentAssetName != null)
+                            {
+                                <p class="card-text text-muted mb-0">
+                                    <i class="bi bi-play-circle me-1"></i>@state.CurrentAssetName
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="card-text text-muted mb-0">
+                                    <i class="bi bi-pause-circle me-1"></i>Idle
+                                </p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 }
 
 @code {
     private bool _loading = true;
     private int _assetCount, _campaignCount, _screenCount, _onlineCount;
+    private List<ScreenState> _onlineScreenStates = [];
+    private List<ScreenDetailsResponse> _allScreens = [];
 
     protected override async Task OnInitializedAsync()
     {
-        var assets = await AssetService.GetAssetsAsync(new(1, 1));
+        ConnectionTracker.OnScreenStateChanged += OnScreenStateChanged;
+
+        var assets = await AssetService.GetAssetsAsync(new AssetFilter(1, 1));
         _assetCount = assets.Total;
 
         var campaigns = await CampaignService.GetCampaignsAsync();
@@ -65,7 +102,32 @@ else
         var screens = await ScreenManagementService.GetScreensAsync(1, 1, null, null);
         _screenCount = screens.Total;
 
-        _onlineCount = ConnectionTracker.GetOnlineScreenCount();
+        // Load screen names for display
+        _allScreens = await ScreenManagementService.GetApprovedScreensAsync(true);
+
+        RefreshOnlineState();
         _loading = false;
+    }
+
+    private void OnScreenStateChanged(ScreenStateChangedEvent e)
+    {
+        RefreshOnlineState();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void RefreshOnlineState()
+    {
+        _onlineCount = ConnectionTracker.GetOnlineScreenCount();
+        _onlineScreenStates = ConnectionTracker.GetAllScreenStates().ToList();
+    }
+
+    private string? GetScreenName(string userId)
+    {
+        return _allScreens.FirstOrDefault(s => s.UserId == userId)?.Name;
+    }
+
+    public void Dispose()
+    {
+        ConnectionTracker.OnScreenStateChanged -= OnScreenStateChanged;
     }
 }
