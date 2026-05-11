@@ -65,10 +65,22 @@
             <div class="list-group list-group-flush" style="max-height:500px;overflow-y:auto">
                 @foreach (var asset in _availableAssets)
                 {
-                    <button class="list-group-item list-group-item-action d-flex justify-content-between"
-                            @onclick="() => AddAsset(asset)">
+                    var alreadyAdded = _selectedAssets.Any(s => s.AssetId == asset.Id);
+                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(alreadyAdded ? "disabled text-muted" : "")"
+                            @onclick="() => AddAsset(asset)"
+                            disabled="@alreadyAdded">
                         <span>@asset.Name</span>
-                        <small class="text-muted">@asset.Type</small>
+                        <span>
+                            <small class="text-muted me-2">@asset.Type</small>
+                            @if (alreadyAdded)
+                            {
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-plus-circle"></i>
+                            }
+                        </span>
                     </button>
                 }
             </div>

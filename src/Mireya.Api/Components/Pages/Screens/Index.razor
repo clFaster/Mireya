@@ -1,21 +1,25 @@
 @page "/screens"
 @attribute [Authorize]
+@implements IDisposable
 @inject IScreenManagementService ScreenManagementService
 @inject IScreenConnectionTracker ConnectionTracker
-@inject Mireya.Database.MireyaDbContext Db
 @using Mireya.Database.Models
-@using Microsoft.EntityFrameworkCore
 
 <PageTitle>Screens - Mireya Admin</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Screens</h1>
-    @if (_pendingCount > 0)
-    {
-        <a href="/screens/pending" class="btn btn-warning">
-            <i class="bi bi-hourglass me-1"></i>@_pendingCount Pending Approval
-        </a>
-    }
+    <div class="d-flex gap-2 align-items-center">
+        <span class="badge bg-success fs-6">
+            <i class="bi bi-wifi me-1"></i>@_onlineCount Online
+        </span>
+        @if (_pendingCount > 0)
+        {
+            <a href="/screens/pending" class="btn btn-warning">
+                <i class="bi bi-hourglass me-1"></i>@_pendingCount Pending Approval
+            </a>
+        }
+    </div>
 </div>
 
 @if (!string.IsNullOrEmpty(_message))
@@ -37,19 +41,55 @@ else if (_screens.Count == 0) { <p class="text-muted">No screens found.</p> }
 else
 {
     <div class="table-responsive">
-        <table class="table table-hover">
-            <thead><tr><th>Name</th><th>Location</th><th>Status</th><th>Last Seen</th><th></th></tr></thead>
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Now Playing</th>
+                    <th>Last Seen</th>
+                    <th></th>
+                </tr>
+            </thead>
             <tbody>
                 @foreach (var s in _screens)
                 {
-                    var online = s.IsActive;
+                    var isOnline = IsScreenOnline(s.UserId);
+                    var nowPlaying = GetNowPlaying(s.UserId);
+
                     <tr>
                         <td>
-                            <span class="badge @(online ? "bg-success" : "bg-secondary") me-2">@(online ? "Online" : "Offline")</span>
+                            @if (isOnline)
+                            {
+                                <span class="badge bg-success me-2">
+                                    <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>Online
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary me-2">Offline</span>
+                            }
                             @s.Name
                         </td>
                         <td>@s.Location</td>
                         <td>@s.ApprovalStatus</td>
+                        <td>
+                            @if (isOnline && nowPlaying != null)
+                            {
+                                <span class="text-success">
+                                    <i class="bi bi-play-circle me-1"></i>@nowPlaying
+                                </span>
+                            }
+                            else if (isOnline)
+                            {
+                                <span class="text-muted">Idle</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
                         <td>@(s.LastSeenAt?.ToLocalTime().ToString("g") ?? "-")</td>
                         <td>
                             <a href="/screens/@s.Id" class="btn btn-sm btn-outline-secondary">Details</a>
@@ -62,20 +102,71 @@ else
 }
 
 @code {
-    private List<Display> _screens = [];
+    private List<ScreenDetailsResponse> _screens = [];
     private bool _loading = true, _showOffline;
     private string? _message;
     private int _pendingCount;
+    private int _onlineCount;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    // Lookup of userId -> real-time screen state
+    private Dictionary<string, ScreenState> _screenStates = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to real-time screen state changes
+        ConnectionTracker.OnScreenStateChanged += OnScreenStateChanged;
+
+        // Load initial state
+        _onlineCount = ConnectionTracker.GetOnlineScreenCount();
+        foreach (var state in ConnectionTracker.GetAllScreenStates())
+        {
+            _screenStates[state.UserId] = state;
+        }
+
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
         _loading = true;
-        _pendingCount = await Db.Displays.CountAsync(d => d.ApprovalStatus == ApprovalStatus.Pending);
-        var query = Db.Displays.Where(d => d.ApprovalStatus == ApprovalStatus.Approved);
-        if (!_showOffline) query = query.Where(d => d.IsActive);
-        _screens = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
+        _pendingCount = await ScreenManagementService.GetScreenCountByStatusAsync(ApprovalStatus.Pending);
+        _screens = await ScreenManagementService.GetApprovedScreensAsync(_showOffline);
+        _onlineCount = ConnectionTracker.GetOnlineScreenCount();
         _loading = false;
+    }
+
+    private void OnScreenStateChanged(ScreenStateChangedEvent e)
+    {
+        // Update local state cache
+        _screenStates[e.UserId] = e.State;
+        _onlineCount = ConnectionTracker.GetOnlineScreenCount();
+
+        // Marshal to Blazor's synchronization context to trigger re-render
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsScreenOnline(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            return false;
+
+        return _screenStates.TryGetValue(userId, out var state)
+            ? state.IsOnline
+            : ConnectionTracker.GetConnectedUserIds().Contains(userId);
+    }
+
+    private string? GetNowPlaying(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            return null;
+
+        return _screenStates.TryGetValue(userId, out var state)
+            ? state.CurrentAssetName
+            : null;
+    }
+
+    public void Dispose()
+    {
+        ConnectionTracker.OnScreenStateChanged -= OnScreenStateChanged;
     }
 }

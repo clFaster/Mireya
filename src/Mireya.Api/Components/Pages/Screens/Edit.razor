@@ -1,10 +1,8 @@
 @page "/screens/edit/{Id:guid}"
 @attribute [Authorize]
-@inject Mireya.Database.MireyaDbContext Db
-@inject IScreenSynchronizationService SyncService
+@inject IScreenManagementService ScreenManagementService
 @inject NavigationManager Navigation
 @using Mireya.Database.Models
-@using Microsoft.EntityFrameworkCore
 
 <PageTitle>Edit Screen - Mireya Admin</PageTitle>
 <h1 class="mb-4">Edit Screen</h1>
@@ -21,28 +19,19 @@ else
         <div class="card-body">
             <div class="mb-3">
                 <label class="form-label">Name</label>
-                <input class="form-control" @bind="_screen.Name" />
+                <input class="form-control" @bind="_name" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Location</label>
-                <input class="form-control" @bind="_screen.Location" />
+                <input class="form-control" @bind="_location" />
             </div>
             <div class="mb-3">
                 <label class="form-label">Description</label>
-                <textarea class="form-control" @bind="_screen.Description"></textarea>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Approval Status</label>
-                <select class="form-select" @bind="_screen.ApprovalStatus">
-                    @foreach (var status in Enum.GetValues<ApprovalStatus>())
-                    {
-                        <option value="@status">@status</option>
-                    }
-                </select>
+                <textarea class="form-control" @bind="_description"></textarea>
             </div>
 
             <h6 class="mt-4">Campaign Assignments</h6>
-            @foreach (var campaign in _allCampaigns)
+            @foreach (var campaign in _screen.AllCampaigns)
             {
                 var assigned = _selectedCampaignIds.Contains(campaign.Id);
                 <div class="form-check">
@@ -63,20 +52,21 @@ else
 
 @code {
     [Parameter] public Guid Id { get; set; }
-    private Display? _screen;
-    private List<Campaign> _allCampaigns = [];
+    private ScreenWithCampaignsResponse? _screen;
     private HashSet<Guid> _selectedCampaignIds = [];
+    private string _name = string.Empty;
+    private string _location = string.Empty;
+    private string? _description;
     private string? _message;
     private bool _isError;
 
     protected override async Task OnInitializedAsync()
     {
-        _screen = await Db.Displays
-            .Include(d => d.CampaignAssignments)
-            .FirstOrDefaultAsync(d => d.Id == Id);
-
-        _selectedCampaignIds = _screen?.CampaignAssignments.Select(ca => ca.CampaignId).ToHashSet() ?? [];
-        _allCampaigns = await Db.Campaigns.OrderBy(c => c.Name).ToListAsync();
+        _screen = await ScreenManagementService.GetScreenWithCampaignsAsync(Id);
+        _name = _screen.Name;
+        _location = _screen.Location;
+        _description = _screen.Description;
+        _selectedCampaignIds = _screen.AssignedCampaigns.Select(c => c.Id).ToHashSet();
     }
 
     private void ToggleCampaign(Guid id, bool selected)
@@ -90,17 +80,13 @@ else
         if (_screen == null) return;
         try
         {
-            _screen.UpdatedAt = DateTime.UtcNow;
-            Db.Displays.Update(_screen);
-
-            var current = await Db.CampaignAssignments.Where(ca => ca.DisplayId == Id).ToListAsync();
-            var toRemove = current.Where(ca => !_selectedCampaignIds.Contains(ca.CampaignId)).ToList();
-            Db.CampaignAssignments.RemoveRange(toRemove);
-            foreach (var cid in _selectedCampaignIds.Where(cid => current.All(ca => ca.CampaignId != cid)))
-                Db.CampaignAssignments.Add(new CampaignAssignment { CampaignId = cid, DisplayId = Id, CreatedAt = DateTime.UtcNow });
-
-            await Db.SaveChangesAsync();
-            await SyncService.SyncScreenAsync(Id);
+            var request = new UpdateScreenRequest
+            {
+                Name = _name,
+                Description = _description,
+                Location = _location,
+            };
+            await ScreenManagementService.UpdateScreenWithCampaignsAsync(Id, request, _selectedCampaignIds.ToList());
             Navigation.NavigateTo($"/screens/{Id}");
         }
         catch (Exception ex) { _message = ex.Message; _isError = true; }

@@ -45,7 +45,9 @@ else
     private bool _loading = true, _isError;
     private string? _message;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
     {
         var result = await ScreenManagementService.GetScreensAsync(1, 100, ApprovalStatus.Pending, null);
         _screens = result.Items;
@@ -54,12 +56,12 @@ else
 
     private async Task ApproveAsync(Guid id)
     {
-        try { await ScreenManagementService.ApproveScreenAsync(id); _message = "Approved."; _isError = false; await OnInitializedAsync(); }
+        try { await ScreenManagementService.ApproveScreenAsync(id); _message = "Approved."; _isError = false; await LoadAsync(); }
         catch (Exception ex) { _message = ex.Message; _isError = true; }
     }
     private async Task RejectAsync(Guid id)
     {
-        try { await ScreenManagementService.RejectScreenAsync(id); _message = "Rejected."; _isError = false; await OnInitializedAsync(); }
+        try { await ScreenManagementService.RejectScreenAsync(id); _message = "Rejected."; _isError = false; await LoadAsync(); }
         catch (Exception ex) { _message = ex.Message; _isError = true; }
     }
 }
