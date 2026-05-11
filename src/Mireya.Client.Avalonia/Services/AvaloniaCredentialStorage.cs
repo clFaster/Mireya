@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Mireya.ApiClient.Models;
+using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.Services;
 

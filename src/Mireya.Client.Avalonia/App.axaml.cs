@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Net.Http;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -8,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Mireya.ApiClient.Generated;
+using Mireya.ApiClient;
+using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Options;
 using Mireya.ApiClient.Services;
-using Mireya.Client.Avalonia.Data;
 using Mireya.Client.Avalonia.Services;
 using Mireya.Client.Avalonia.ViewModels;
 using Mireya.Client.Avalonia.Views;
@@ -80,55 +79,13 @@ public class App : Application
             options.UseSqlite($"Data Source={dbPath}");
         });
 
-        // Register platform-specific services
-        services.AddSingleton<ISettingsService, SettingsService>();
+        // Register platform-specific implementations (these must be registered
+        // before AddMireyaApiClient which depends on them)
         services.AddSingleton<ICredentialStorage, AvaloniaCredentialStorage>();
-        services.AddSingleton<IApiClientConfiguration, ApiClientConfiguration>();
+        services.AddSingleton<ISettingsService, SettingsService>();
 
-        // Register backend and credential management services
-        services.AddSingleton<IBackendManager, BackendManager>();
-        services.AddSingleton<ICredentialManager, CredentialManager>();
-
-        // Register token provider (singleton to share state)
-        services.AddSingleton<IAccessTokenProvider, AccessTokenProvider>();
-        services.AddSingleton<ICredentialRepository, CredentialRepository>();
-
-        // Register authentication service
-        services.AddSingleton<IAuthenticationService, AuthenticationService>();
-
-        // Register the authentication handler
-        services.AddTransient<AuthenticationHandler>();
-
-        // Register HttpClient factory with authentication handler
-        services
-            .AddHttpClient(
-                "MireyaApiClient",
-                (sp, client) =>
-                {
-                    var options = sp.GetRequiredService<IOptions<MireyaApiClientOptions>>();
-                    client.BaseAddress = new Uri(options.Value.BaseUrl);
-                    client.DefaultRequestHeaders.TryAddWithoutValidation(
-                        "Accept",
-                        "application/json"
-                    );
-                }
-            )
-            .AddHttpMessageHandler<AuthenticationHandler>();
-
-        // Register MireyaApiClient
-        services.AddTransient<IMireyaApiClient>(sp =>
-        {
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            var options = sp.GetRequiredService<IOptions<MireyaApiClientOptions>>();
-            var httpClient = httpClientFactory.CreateClient("MireyaApiClient");
-            return new MireyaApiClient(options.Value.BaseUrl, httpClient);
-        });
-
-        // Register SignalR Hub Service
-        services.AddSingleton<IScreenHubService, ScreenHubService>();
-
-        // Register Asset Sync Service with local database
-        services.AddScoped<ILocalAssetSyncService, LocalAssetSyncService>();
+        // Register all API client services (token management, auth, SignalR, sync, etc.)
+        services.AddMireyaApiClient();
 
         // Register ViewModels
         services.AddTransient<MainWindowViewModel>();

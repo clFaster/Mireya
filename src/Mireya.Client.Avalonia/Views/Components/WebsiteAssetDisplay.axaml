@@ -8,11 +8,10 @@
              x:DataType="vm:ContentDisplayViewModel">
 
     <Grid Background="Black">
-        <!-- Placeholder for embedded browser - ready for future WebView2 integration -->
+        <!-- Host for the WebView2 HWND overlay — managed entirely from code-behind -->
         <Grid x:Name="BrowserContainer"
               HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch"
-              IsVisible="False" />
+              VerticalAlignment="Stretch" />
         
         <!-- Loading indicator shown while WebView2 initializes -->
         <StackPanel x:Name="LoadingPanel"
@@ -46,13 +45,13 @@
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
                        MaxWidth="1200" />
-            <TextBlock FontSize="14"
-                       Foreground="#999999"
+            <TextBlock x:Name="ErrorMessage"
+                       FontSize="14"
+                       Foreground="#FF6666"
                        HorizontalAlignment="Center"
-                       MaxWidth="800">
-                <Run Text="Website: " />
-                <Run Text="{Binding CurrentWebsiteUrl}" />
-            </TextBlock>
+                       TextWrapping="Wrap"
+                       MaxWidth="1200"
+                       IsVisible="False" />
             <TextBlock Text="WebView2 Runtime required for website display."
                        FontSize="14"
                        Foreground="#666666"

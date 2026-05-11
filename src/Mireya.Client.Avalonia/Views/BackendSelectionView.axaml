@@ -122,7 +122,7 @@
                                FontWeight="SemiBold"
                                FontSize="15" />
                     <TextBox Text="{Binding NewBackendUrl}"
-                             Watermark="https://your-mireya-backend.com"
+                             PlaceholderText="https://your-mireya-backend.com"
                              FontSize="15"
                              Padding="12"
                              Height="45" />
