@@ -148,7 +148,7 @@
         catch (Exception ex) { _error = ex.Message; }
     }
 
-    private class SelectedCampaignAsset
+    private sealed class SelectedCampaignAsset
     {
         public Guid AssetId { get; set; }
         public string Name { get; set; } = "";

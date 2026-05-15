@@ -1,5 +1,5 @@
 @inject NavigationManager Navigation
-@inject AuthenticationStateProvider AuthStateProvider
+
 
 <nav class="d-flex flex-column bg-dark text-white p-3" style="width: 240px; min-height: 100vh;">
     <div class="mb-4">
@@ -38,11 +38,4 @@
 </nav>
 
 @code {
-    private string? _username;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        _username = state.User.Identity?.Name;
-    }
 }

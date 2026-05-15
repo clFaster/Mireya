@@ -82,7 +82,7 @@ public class SettingsService : ISettingsService
     /// <summary>
     ///     Internal settings data structure
     /// </summary>
-    private class AppSettings
+    private sealed class AppSettings
     {
         public string? BackendUrl { get; set; }
     }

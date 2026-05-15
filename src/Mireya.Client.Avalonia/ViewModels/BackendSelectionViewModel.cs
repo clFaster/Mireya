@@ -174,12 +174,17 @@ public partial class BackendSelectionViewModel : ViewModelBase
             backend.BaseUrl
         );
 
-        // TODO: Implement delete logic (remove from database, clean up assets, etc.)
-        StatusMessage = "Delete functionality not yet implemented.";
+        await _backendManager.DeleteBackendAsync(backend.Id);
+        Backends.Remove(backend);
+
+        if (SelectedBackend?.Id == backend.Id)
+            SelectedBackend = null;
+
+        StatusMessage = "Backend deleted.";
         IsStatusError = false;
     }
 
-    private bool IsValidUrl(string url)
+    private static bool IsValidUrl(string url)
     {
         return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);

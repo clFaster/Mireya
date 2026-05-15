@@ -109,7 +109,7 @@ else
     private int _onlineCount;
 
     // Lookup of userId -> real-time screen state
-    private Dictionary<string, ScreenState> _screenStates = new();
+    private readonly Dictionary<string, ScreenState> _screenStates = new();
 
     protected override async Task OnInitializedAsync()
     {

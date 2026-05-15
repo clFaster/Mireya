@@ -120,20 +120,17 @@ public class ScreenConnectionTracker : IScreenConnectionTracker
 
         lock (_lock)
         {
-            if (_connectionToUser.Remove(connectionId, out userId))
+            if (_connectionToUser.Remove(connectionId, out userId) && _userToConnections.TryGetValue(userId, out var connections))
             {
-                if (_userToConnections.TryGetValue(userId, out var connections))
+                connections.Remove(connectionId);
+
+                if (connections.Count == 0)
                 {
-                    connections.Remove(connectionId);
+                    _userToConnections.Remove(userId);
 
-                    if (connections.Count == 0)
-                    {
-                        _userToConnections.Remove(userId);
-
-                        // Mark screen as offline, clear now-playing
-                        newState = new ScreenState(userId, IsOnline: false);
-                        _screenStates[userId] = newState;
-                    }
+                    // Mark screen as offline, clear now-playing
+                    newState = new ScreenState(userId, IsOnline: false);
+                    _screenStates[userId] = newState;
                 }
             }
         }

@@ -72,7 +72,7 @@ public class ScreenManagementEndpoints : ICarterModule
         }
     }
 
-    private record GetScreensQuery(
+    private sealed record GetScreensQuery(
         [property: FromQuery] int Page = 1,
         [property: FromQuery] int PageSize = 10,
         [property: FromQuery] ApprovalStatus? Status = null,

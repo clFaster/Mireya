@@ -71,13 +71,13 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             return;
         }
 
-        _logger.LogInformation("Syncing campaigns for backend {BackendId} - {BaseUrl}", backend.Id, backend.BaseUrl);
-
-        foreach (var campaign in campaigns)
-            _logger.LogInformation(
-                "Campaign: {CampaignId} - {CampaignName} with {AssetCount} assets",
-                campaign.CampaignId, campaign.CampaignName, campaign.Assets.Count
-            );
+        _logger.LogInformation(
+            "Syncing {CampaignCount} campaigns for backend {BackendId} - {BaseUrl}: {CampaignNames}",
+            campaigns.Count,
+            backend.Id,
+            backend.BaseUrl,
+            string.Join(", ", campaigns.Select(c => $"{c.CampaignName}({c.Assets.Count} assets)"))
+        );
 
         foreach (var campaign in campaigns)
         {
@@ -421,7 +421,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             _logger.LogError(ex, "Failed to download asset {AssetId} for backend {BackendId}", ctx.Asset.AssetId, ctx.BackendId);
             await UpsertDownloadedAssetAsync(ctx.BackendId, ctx.Asset.AssetId, new AssetDownloadState(null, null, false));
             await UpdateServerSyncStatusAsync(ctx.Asset.AssetId, new SyncStatusUpdate("Failed", 0, ex.Message));
-            throw;
+            return false;
         }
     }
 
@@ -543,11 +543,11 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             ["video/quicktime"] = ".mov",
         };
 
-    private record AssetDownloadState(string? LocalPath, string? Extension, bool IsDownloaded);
+    private sealed record AssetDownloadState(string? LocalPath, string? Extension, bool IsDownloaded);
 
-    private record AssetDownloadContext(AssetDownloadInfo Asset, Guid BackendId, Uri BaseUrl);
+    private sealed record AssetDownloadContext(AssetDownloadInfo Asset, Guid BackendId, Uri BaseUrl);
 
-    private record SyncStatusUpdate(string State, int Progress, string? ErrorMessage = null);
+    private sealed record SyncStatusUpdate(string State, int Progress, string? ErrorMessage = null);
 
     private async Task UpsertDownloadedAssetAsync(Guid backendId, Guid assetId, AssetDownloadState state)
     {
