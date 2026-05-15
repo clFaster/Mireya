@@ -1,4 +1,5 @@
 using System;
+using Avalonia;
 using Avalonia.Controls;
 using LibVLCSharp.Avalonia;
 using LibVLCSharp.Shared;
@@ -104,6 +105,25 @@ public partial class VideoAssetDisplay : UserControl
         _mediaPlayer?.Stop();
         _currentMedia?.Dispose();
         _currentMedia = null;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+
+        try
+        {
+            Stop();
+            VideoView.MediaPlayer = null;
+            _mediaPlayer?.Dispose();
+            _mediaPlayer = null;
+            _libVlc?.Dispose();
+            _libVlc = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to dispose VLC resources: {ex.Message}");
+        }
     }
 
     public MediaPlayer? MediaPlayer => _mediaPlayer;

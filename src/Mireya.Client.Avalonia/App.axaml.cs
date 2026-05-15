@@ -6,7 +6,6 @@ using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Mireya.ApiClient;
 using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Options;
@@ -47,7 +46,7 @@ public class App : Application
             desktop.MainWindow = new MainWindow { DataContext = mainViewModel };
 
             // Ensure ServiceProvider is disposed when application exits
-            desktop.Exit += (_, _) => serviceProvider.Dispose();
+            desktop.Exit += (_, _) => serviceProvider.DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -75,10 +74,7 @@ public class App : Application
         var dbPath = Path.Combine(appDataPath, "Mireya", "mireya_client.db");
         Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 
-        services.AddDbContext<LocalDbContext>(options =>
-        {
-            options.UseSqlite($"Data Source={dbPath}");
-        });
+        services.AddDbContext<LocalDbContext>(options => { options.UseSqlite($"Data Source={dbPath}"); });
 
         // Register platform-specific implementations (these must be registered
         // before AddMireyaApiClient which depends on them)
@@ -108,7 +104,8 @@ public class App : Application
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("Failed to apply database migrations. See inner exception for details.", ex);
+            throw new InvalidOperationException("Failed to apply database migrations. See inner exception for details.",
+                ex);
         }
 
         return serviceProvider;
