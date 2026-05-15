@@ -34,7 +34,7 @@ public class AssetEndpoints : ICarterModule
         }
     }
 
-    private record GetAssetsQuery(
+    private sealed record GetAssetsQuery(
         [property: FromQuery] int Page = 1,
         [property: FromQuery] int PageSize = 10,
         [property: FromQuery] AssetType? Type = null,

@@ -38,15 +38,6 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
             responseBody.Seek(0, SeekOrigin.Begin);
             await responseBody.CopyToAsync(originalBodyStream);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Unhandled exception in request pipeline for {Path}",
-                context.Request.Path
-            );
-            throw;
-        }
         finally
         {
             context.Response.Body = originalBodyStream;

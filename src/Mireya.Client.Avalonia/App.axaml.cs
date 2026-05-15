@@ -20,8 +20,6 @@ namespace Mireya.Client.Avalonia;
 
 public class App : Application
 {
-    private ServiceProvider? _serviceProvider;
-
     public override void Initialize()
     {
         // Configure Serilog
@@ -42,17 +40,20 @@ public class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Setup dependency injection
-            _serviceProvider = ConfigureServices();
+            var serviceProvider = ConfigureServices();
 
             // Create main window with dependency-injected ViewModel
-            var mainViewModel = _serviceProvider.GetRequiredService<MainWindowViewModel>();
+            var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow { DataContext = mainViewModel };
+
+            // Ensure ServiceProvider is disposed when application exits
+            desktop.Exit += (_, _) => serviceProvider.Dispose();
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private ServiceProvider ConfigureServices()
+    private static ServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
 
@@ -107,8 +108,7 @@ public class App : Application
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Failed to apply database migrations");
-            throw;
+            throw new InvalidOperationException("Failed to apply database migrations. See inner exception for details.", ex);
         }
 
         return serviceProvider;

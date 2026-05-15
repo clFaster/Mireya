@@ -5,7 +5,7 @@ var postgres = builder
     .WithDataVolume("mireya-db")
     .AddDatabase("Postgres");
 
-var mireya = builder
+builder
     .AddProject<Projects.Mireya_Api>("mireya-api")
     .WithReference(postgres)
     .WaitFor(postgres)

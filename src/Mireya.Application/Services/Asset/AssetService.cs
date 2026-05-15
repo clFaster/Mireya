@@ -75,7 +75,7 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
             errors.Add(error);
     }
 
-    private string? ValidateFile(IFormFile file)
+    private static string? ValidateFile(IFormFile file)
     {
         var ctx = new FileValidationContext(file);
         return ValidateFileType(ctx) ?? ValidateFileSize(ctx) ?? ValidateContentType(ctx);
@@ -144,7 +144,7 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
         }
     }
 
-    private record FileValidationContext(IFormFile File)
+    private sealed record FileValidationContext(IFormFile File)
     {
         private string Extension => Path.GetExtension(File.FileName).ToLowerInvariant();
         public bool IsImage => ImageExtensions.Contains(Extension);

@@ -12,6 +12,7 @@ public interface IBackendManager
     Task<List<BackendInstance>> GetAllBackendsAsync();
     Task<bool> HasCurrentBackendAsync();
     Task UpdateBackendNameAsync(Guid backendInstanceId, string name);
+    Task DeleteBackendAsync(Guid backendInstanceId);
 }
 
 public class BackendManager : IBackendManager
@@ -153,6 +154,23 @@ public class BackendManager : IBackendManager
         else
         {
             _logger.LogError("Backend {BackendId} not found!", backendInstanceId);
+        }
+    }
+
+    public async Task DeleteBackendAsync(Guid backendInstanceId)
+    {
+        _logger.LogInformation("Deleting backend {BackendId}", backendInstanceId);
+
+        var backend = await _db.BackendInstances.FindAsync(backendInstanceId);
+        if (backend != null)
+        {
+            _db.BackendInstances.Remove(backend);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Backend {BackendId} deleted successfully", backendInstanceId);
+        }
+        else
+        {
+            _logger.LogWarning("Backend {BackendId} not found for deletion", backendInstanceId);
         }
     }
 }

@@ -165,16 +165,9 @@ public partial class WebsiteAssetDisplay : UserControl
 
         try
         {
-            // Pre-flight: verify WebView2 runtime is accessible
-            string runtimeVersion;
-            try
+            if (!TryGetWebView2RuntimeVersion(out var errorMessage))
             {
-                runtimeVersion = CoreWebView2Environment.GetAvailableBrowserVersionString();
-                System.Diagnostics.Debug.WriteLine($"WebView2 runtime: {runtimeVersion}");
-            }
-            catch (Exception ex)
-            {
-                ShowError($"WebView2 runtime not found or not accessible.\n{ex.Message}");
+                ShowError(errorMessage);
                 return;
             }
 
@@ -218,15 +211,7 @@ public partial class WebsiteAssetDisplay : UserControl
             _browserContainer.IsVisible = true;
             _errorPanel!.IsVisible = false;
 
-            if (IsEffectivelyVisible)
-            {
-                _webViewController.IsVisible = true;
-                Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
-            }
-            else
-            {
-                _webViewController.IsVisible = false;
-            }
+            ApplyControllerVisibility();
 
             if (_pendingUri != null)
             {
@@ -246,6 +231,35 @@ public partial class WebsiteAssetDisplay : UserControl
         finally
         {
             _isCreating = false;
+        }
+    }
+
+    private static bool TryGetWebView2RuntimeVersion(out string errorMessage)
+    {
+        try
+        {
+            var version = CoreWebView2Environment.GetAvailableBrowserVersionString();
+            System.Diagnostics.Debug.WriteLine($"WebView2 runtime: {version}");
+            errorMessage = string.Empty;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"WebView2 runtime not found or not accessible.\n{ex.Message}";
+            return false;
+        }
+    }
+
+    private void ApplyControllerVisibility()
+    {
+        if (IsEffectivelyVisible)
+        {
+            _webViewController!.IsVisible = true;
+            Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
+        }
+        else
+        {
+            _webViewController!.IsVisible = false;
         }
     }
 

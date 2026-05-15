@@ -14,9 +14,9 @@ public static class NanoIdGen
     public const int ScreenIdentifierLength = 10;
 
     /// <summary>
-    ///     The numeric alphabet used for generating screen passwords
+    ///     The numeric alphabet used for generating screen pin codes
     /// </summary>
-    public const string ScreenPasswordAlphabet = "0123456789";
+    public const string ScreenPinAlphabet = "0123456789";
 
     /// <summary>
     ///     The length of the generated screen password

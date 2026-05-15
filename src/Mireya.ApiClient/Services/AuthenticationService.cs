@@ -146,7 +146,6 @@ public class AuthenticationService : IAuthenticationService
             };
 
             var response = await _apiClient.PostLoginAsync(false, false, loginRequest);
-            _logger.LogInformation("Login successful for backend {BackendId}", backend.Id);
 
             await _credentials.SaveCredentialsAsync(
                 backend.Id,
@@ -156,10 +155,8 @@ public class AuthenticationService : IAuthenticationService
                 DateTime.UtcNow.AddSeconds(response.ExpiresIn)
             );
 
-            _logger.LogInformation("Credentials saved to database for backend {BackendId}", backend.Id);
-
             await _hubService.ConnectAsync();
-            _logger.LogInformation("Connected to SignalR hub");
+            _logger.LogInformation("Login succeeded for backend {BackendId}: credentials saved, connected to hub", backend.Id);
 
             return new LoginResult(true, response.AccessToken, null);
         }
@@ -273,8 +270,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during logout");
-            throw;
+            throw new InvalidOperationException($"Logout failed for backend. See inner exception for details.", ex);
         }
     }
 

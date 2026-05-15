@@ -47,12 +47,22 @@
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState.User.Identity?.IsAuthenticated == true)
         {
-            Navigation.NavigateTo(ReturnUrl ?? "/", forceLoad: true);
+            var safeReturnUrl = IsLocalUrl(ReturnUrl) ? ReturnUrl! : "/";
+            Navigation.NavigateTo(safeReturnUrl, forceLoad: true);
             return;
         }
 
-        _formAction = string.IsNullOrEmpty(ReturnUrl)
-            ? "/auth/login"
-            : $"/auth/login?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
+        _formAction = IsLocalUrl(ReturnUrl)
+            ? $"/auth/login?returnUrl={Uri.EscapeDataString(ReturnUrl!)}"
+            : "/auth/login";
+    }
+
+    private bool IsLocalUrl(string? url)
+    {
+        if (string.IsNullOrEmpty(url))
+            return false;
+
+        // Must be a relative URL — reject absolute URLs (including protocol-relative //)
+        return url.StartsWith('/') && !url.StartsWith("//");
     }
 }

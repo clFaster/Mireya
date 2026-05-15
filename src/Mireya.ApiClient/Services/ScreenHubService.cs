@@ -149,17 +149,20 @@ public class ScreenHubService : IScreenHubService
     }
 
     // Simple logger provider to ensure we see SignalR internal logs in console
-    private class ConsoleLoggerProvider : ILoggerProvider
+    private sealed class ConsoleLoggerProvider : ILoggerProvider
     {
         public ILogger CreateLogger(string categoryName)
         {
             return new ConsoleLogger(categoryName);
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+        }
     }
 
-    private class ConsoleLogger(string categoryName) : ILogger
+    private sealed class ConsoleLogger(string categoryName) : ILogger
     {
         public IDisposable? BeginScope<TState>(TState state)
             where TState : notnull
