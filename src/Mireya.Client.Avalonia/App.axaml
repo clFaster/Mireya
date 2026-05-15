@@ -3,13 +3,12 @@
              x:Class="Mireya.Client.Avalonia.App"
              xmlns:local="using:Mireya.Client.Avalonia"
              xmlns:converters="using:Mireya.Client.Avalonia.Converters"
-             RequestedThemeVariant="Default">
-    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             RequestedThemeVariant="Dark">
 
     <Application.Resources>
         <converters:BoolToColorConverter x:Key="ErrorColorConverter"
-                                         TrueColor="#D32F2F"
-                                         FalseColor="#4CAF50" />
+                                         TrueColor="#EF5350"
+                                         FalseColor="#66BB6A" />
         <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
     </Application.Resources>
 
@@ -19,5 +18,9 @@
 
     <Application.Styles>
         <FluentTheme />
+
+        <Style Selector="Window">
+            <Setter Property="Background" Value="#1A1A2E" />
+        </Style>
     </Application.Styles>
 </Application>

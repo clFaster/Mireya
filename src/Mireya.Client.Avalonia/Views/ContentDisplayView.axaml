@@ -14,58 +14,29 @@
     </Design.DataContext>
 
     <Grid>
-        <!-- Main content area -->
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
         <!-- Image display -->
-        <components:ImageAssetDisplay Grid.Row="0"
-                                      DataContext="{Binding}"
+        <components:ImageAssetDisplay DataContext="{Binding}"
                                       IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Image}}" />
 
         <!-- Video display -->
         <components:VideoAssetDisplay x:Name="VideoDisplay"
-                                      Grid.Row="0"
                                       DataContext="{Binding}"
                                       IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Video}}" />
 
         <!-- Website display -->
         <components:WebsiteAssetDisplay x:Name="WebsiteDisplay"
-                                        Grid.Row="0"
                                         DataContext="{Binding}"
                                         IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Website}}" />
 
         <!-- No content message -->
-        <components:NoContentDisplay Grid.Row="0"
-                                     DataContext="{Binding}"
+        <components:NoContentDisplay DataContext="{Binding}"
                                      IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.None}}" />
 
         <!-- Status overlay (bottom-right corner) -->
-        <components:StatusOverlay Grid.Row="0"
-                                  DataContext="{Binding}"
+        <components:StatusOverlay DataContext="{Binding}"
                                   Margin="0,0,20,20"
                                   HorizontalAlignment="Right"
                                   VerticalAlignment="Bottom" />
-
-        <!-- Debug controls (hidden by default) -->
-        <StackPanel Grid.Row="0"
-                    Orientation="Horizontal"
-                    Spacing="10"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Margin="0,20,0,0"
-                    Opacity="0.3">
-            <Button Content="◀ Previous"
-                    Command="{Binding PreviousAssetCommand}"
-                    Padding="15,10" />
-            <Button Content="Toggle Overlay"
-                    Command="{Binding ToggleOverlayCommand}"
-                    Padding="15,10" />
-            <Button Content="Next ▶"
-                    Command="{Binding NextAssetCommand}"
-                    Padding="15,10" />
-        </StackPanel>
     </Grid>
 
 </UserControl>

@@ -7,48 +7,51 @@
              x:Class="Mireya.Client.Avalonia.Views.Components.StatusOverlay"
              x:DataType="vm:ContentDisplayViewModel">
 
-    <Border Background="#DD000000"
+    <Border Background="#CC111122"
             CornerRadius="8"
-            Padding="20"
+            Padding="16,12"
+            BorderBrush="#33FFFFFF"
+            BorderThickness="1"
             IsVisible="{Binding IsOverlayVisible}">
-        <StackPanel Spacing="8">
+        <StackPanel Spacing="6">
             <TextBlock Text="{Binding DisplayName}"
-                       FontSize="24"
+                       FontSize="18"
                        FontWeight="Bold"
                        Foreground="White" />
             <TextBlock Text="{Binding StatusText}"
-                       FontSize="14"
-                       Foreground="#CCCCCC" />
-            <StackPanel Orientation="Horizontal" Spacing="5">
-                <TextBlock Text="Campaign:"
-                           FontSize="12"
-                           Foreground="#AAAAAA" />
-                <TextBlock Text="{Binding CurrentCampaignName}"
-                           FontSize="12"
-                           Foreground="White" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="5">
-                <TextBlock Text="Asset:"
-                           FontSize="12"
-                           Foreground="#AAAAAA" />
-                <TextBlock Text="{Binding CurrentAssetName}"
-                           FontSize="12"
-                           Foreground="White" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="5">
-                <TextBlock Text="Progress:"
-                           FontSize="12"
-                           Foreground="#AAAAAA" />
-                <TextBlock Text="{Binding CurrentAssetPosition}"
-                           FontSize="12"
-                           Foreground="White" />
-                <TextBlock Text="/"
-                           FontSize="12"
-                           Foreground="#AAAAAA" />
-                <TextBlock Text="{Binding TotalAssets}"
-                           FontSize="12"
-                           Foreground="White" />
-            </StackPanel>
+                       FontSize="12"
+                       Foreground="#999" />
+            <Border Height="1" Background="#333" Margin="0,2" />
+            <Grid ColumnDefinitions="Auto,*">
+                <StackPanel Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Campaign:"
+                                   FontSize="11"
+                                   Foreground="#777" />
+                        <TextBlock Text="{Binding CurrentCampaignName}"
+                                   FontSize="11"
+                                   Foreground="#CCC" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Asset:"
+                                   FontSize="11"
+                                   Foreground="#777" />
+                        <TextBlock Text="{Binding CurrentAssetName}"
+                                   FontSize="11"
+                                   Foreground="#CCC" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Position:"
+                                   FontSize="11"
+                                   Foreground="#777" />
+                        <TextBlock FontSize="11" Foreground="#CCC">
+                            <Run Text="{Binding CurrentAssetPosition}" />
+                            <Run Text=" / " />
+                            <Run Text="{Binding TotalAssets}" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
         </StackPanel>
     </Border>
 

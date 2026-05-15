@@ -12,55 +12,48 @@
         <Grid x:Name="BrowserContainer"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch" />
-        
+
         <!-- Loading indicator shown while WebView2 initializes -->
         <StackPanel x:Name="LoadingPanel"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="10"
+                    Spacing="12"
                     IsVisible="True">
-            <TextBlock Text="🌐"
-                       FontSize="48"
-                       HorizontalAlignment="Center" />
             <TextBlock Text="Loading website..."
                        FontSize="18"
-                       Foreground="#AAAAAA"
+                       Foreground="#888"
                        HorizontalAlignment="Center" />
         </StackPanel>
-        
+
         <!-- Fallback message if WebView2 is not available -->
         <StackPanel x:Name="ErrorPanel"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="20"
+                    Spacing="16"
                     IsVisible="False">
-            <TextBlock Text="🌐 WEBSITE"
-                       FontSize="48"
+            <TextBlock Text="WEBSITE"
+                       FontSize="36"
                        FontWeight="Bold"
-                       Foreground="White"
+                       Foreground="#555"
                        HorizontalAlignment="Center" />
             <TextBlock Text="{Binding CurrentWebsiteUrl}"
-                       FontSize="24"
-                       Foreground="#AAAAAA"
+                       FontSize="18"
+                       Foreground="#666"
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
-                       MaxWidth="1200" />
+                       MaxWidth="1000" />
             <TextBlock x:Name="ErrorMessage"
-                       FontSize="14"
-                       Foreground="#FF6666"
+                       FontSize="13"
+                       Foreground="#EF5350"
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
-                       MaxWidth="1200"
+                       MaxWidth="1000"
                        IsVisible="False" />
-            <TextBlock Text="WebView2 Runtime required for website display."
-                       FontSize="14"
-                       Foreground="#666666"
-                       HorizontalAlignment="Center"
-                       Margin="0,20,0,0" />
-            <TextBlock Text="Install from: https://developer.microsoft.com/microsoft-edge/webview2"
+            <TextBlock Text="WebView2 Runtime is required for website display."
                        FontSize="12"
-                       Foreground="#555555"
-                       HorizontalAlignment="Center" />
+                       Foreground="#444"
+                       HorizontalAlignment="Center"
+                       Margin="0,12,0,0" />
         </StackPanel>
     </Grid>
 
