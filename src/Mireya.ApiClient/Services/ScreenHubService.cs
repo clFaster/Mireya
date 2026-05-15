@@ -145,6 +145,19 @@ public class ScreenHubService : IScreenHubService
 
     public async ValueTask DisposeAsync()
     {
+        try
+        {
+            if (_hubConnection.State != HubConnectionState.Disconnected)
+            {
+                _logger.LogInformation("Stopping SignalR connection during dispose");
+                await _hubConnection.StopAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error stopping SignalR connection during dispose");
+        }
+
         await _hubConnection.DisposeAsync();
     }
 

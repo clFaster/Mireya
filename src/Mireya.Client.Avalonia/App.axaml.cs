@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Threading;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +40,9 @@ public class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // Ensure the application shuts down when the main window is closed
+            desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+
             // Setup dependency injection
             var serviceProvider = ConfigureServices();
 
@@ -45,8 +50,40 @@ public class App : Application
             var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
             desktop.MainWindow = new MainWindow { DataContext = mainViewModel };
 
-            // Ensure ServiceProvider is disposed when application exits
-            desktop.Exit += (_, _) => serviceProvider.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            // Gracefully shut down services when the application exits:
+            // 1. Disconnect SignalR (stops auto-reconnect background threads)
+            // 2. Dispose the DI container (disposes all singletons/scoped services)
+            desktop.Exit += (_, _) =>
+            {
+                Log.Information("Application exiting, shutting down services...");
+
+                try
+                {
+                    // Disconnect SignalR first to stop auto-reconnect threads.
+                    // Use a timeout to prevent hanging on unresponsive connections.
+                    var hubService = serviceProvider.GetRequiredService<IScreenHubService>();
+                    hubService.DisconnectAsync()
+                        .Wait(TimeSpan.FromSeconds(3));
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error disconnecting SignalR during shutdown");
+                }
+
+                try
+                {
+                    // Dispose the service provider with a timeout to prevent hanging
+                    serviceProvider.DisposeAsync().AsTask()
+                        .Wait(TimeSpan.FromSeconds(3));
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error disposing services during shutdown");
+                }
+
+                Log.Information("Shutdown complete");
+                Log.CloseAndFlush();
+            };
         }
 
         base.OnFrameworkInitializationCompleted();

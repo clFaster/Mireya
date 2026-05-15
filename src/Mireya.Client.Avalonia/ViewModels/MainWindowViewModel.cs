@@ -7,10 +7,11 @@ using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
-public partial class MainWindowViewModel : ViewModelBase
+public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private bool _disposed;
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
@@ -32,6 +33,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ShowBackendSelection()
     {
         _logger.LogInformation("Showing backend selection view");
+
+        // Dispose the previous view if it supports disposal
+        DisposeCurrentView();
 
         var backendManager = _serviceProvider.GetRequiredService<IBackendManager>();
         var apiClientConfig = _serviceProvider.GetRequiredService<IApiClientConfiguration>();
@@ -60,6 +64,30 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _logger.LogInformation("Showing content display view");
 
+        // Dispose the previous view if it supports disposal
+        DisposeCurrentView();
+
         CurrentView = _serviceProvider.GetRequiredService<ContentDisplayViewModel>();
+    }
+
+    private void DisposeCurrentView()
+    {
+        if (CurrentView is IDisposable disposable)
+        {
+            _logger.LogDebug("Disposing current view: {ViewType}", CurrentView.GetType().Name);
+            disposable.Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        _logger.LogInformation("Disposing MainWindowViewModel");
+        DisposeCurrentView();
+        CurrentView = null;
+
+        GC.SuppressFinalize(this);
     }
 }

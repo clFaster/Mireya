@@ -14,7 +14,7 @@ using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
-public partial class ContentDisplayViewModel : ViewModelBase, IDisposable
+public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly ILocalAssetSyncService _assetSyncService;
