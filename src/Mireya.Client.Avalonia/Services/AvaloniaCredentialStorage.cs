@@ -84,7 +84,7 @@ public class AvaloniaCredentialStorage : ICredentialStorage
     }
 
     /// <summary>
-    ///     Encrypt data using DPAPI (Windows) or basic encryption (other platforms)
+    ///     Encrypt data using DPAPI (Windows) or AES-GCM (other platforms)
     /// </summary>
     private static byte[] ProtectData(string data)
     {
@@ -94,14 +94,12 @@ public class AvaloniaCredentialStorage : ICredentialStorage
         if (OperatingSystem.IsWindows())
             return ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser);
 
-        // For non-Windows platforms, use a simple XOR encryption
-        // Note: This is not as secure as DPAPI. Consider using platform-specific secure storage
-        // or a cross-platform encryption library in production
-        return XorEncrypt(bytes);
+        // For non-Windows platforms, use AES-GCM with a machine-derived key
+        return AesGcmEncrypt(bytes);
     }
 
     /// <summary>
-    ///     Decrypt data using DPAPI (Windows) or basic decryption (other platforms)
+    ///     Decrypt data using DPAPI (Windows) or AES-GCM (other platforms)
     /// </summary>
     private static string UnprotectData(byte[] encryptedData)
     {
@@ -110,25 +108,54 @@ public class AvaloniaCredentialStorage : ICredentialStorage
         if (OperatingSystem.IsWindows())
             bytes = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
         else
-            bytes = XorEncrypt(encryptedData); // XOR is symmetric
+            bytes = AesGcmDecrypt(encryptedData);
 
         return Encoding.UTF8.GetString(bytes);
     }
 
     /// <summary>
-    ///     Simple XOR encryption for non-Windows platforms
-    ///     Note: Not cryptographically secure - for demonstration only
+    ///     Encrypt data using AES-GCM with a machine-derived key.
+    ///     Output format: [12-byte nonce][16-byte tag][ciphertext]
     /// </summary>
-    private static byte[] XorEncrypt(byte[] data)
+    private static byte[] AesGcmEncrypt(byte[] plaintext)
     {
-        // Generate a simple key from machine-specific data
         var key = GetMachineKey();
-        var result = new byte[data.Length];
+        var nonce = new byte[AesGcm.NonceByteSizes.MaxSize]; // 12 bytes
+        RandomNumberGenerator.Fill(nonce);
 
-        for (var i = 0; i < data.Length; i++)
-            result[i] = (byte)(data[i] ^ key[i % key.Length]);
+        var ciphertext = new byte[plaintext.Length];
+        var tag = new byte[AesGcm.TagByteSizes.MaxSize]; // 16 bytes
 
+        using var aes = new AesGcm(key, AesGcm.TagByteSizes.MaxSize);
+        aes.Encrypt(nonce, plaintext, ciphertext, tag);
+
+        // Combine: nonce + tag + ciphertext
+        var result = new byte[nonce.Length + tag.Length + ciphertext.Length];
+        nonce.CopyTo(result, 0);
+        tag.CopyTo(result, nonce.Length);
+        ciphertext.CopyTo(result, nonce.Length + tag.Length);
         return result;
+    }
+
+    /// <summary>
+    ///     Decrypt data using AES-GCM with a machine-derived key.
+    ///     Input format: [12-byte nonce][16-byte tag][ciphertext]
+    /// </summary>
+    private static byte[] AesGcmDecrypt(byte[] encryptedData)
+    {
+        var key = GetMachineKey();
+        const int nonceSize = 12;
+        const int tagSize = 16;
+
+        var nonce = encryptedData.AsSpan(0, nonceSize);
+        var tag = encryptedData.AsSpan(nonceSize, tagSize);
+        var ciphertext = encryptedData.AsSpan(nonceSize + tagSize);
+
+        var plaintext = new byte[ciphertext.Length];
+
+        using var aes = new AesGcm(key, tagSize);
+        aes.Decrypt(nonce, ciphertext, tag, plaintext);
+        return plaintext;
     }
 
     /// <summary>

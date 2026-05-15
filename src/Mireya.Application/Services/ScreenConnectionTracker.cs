@@ -201,9 +201,11 @@ public class ScreenConnectionTracker : IScreenConnectionTracker
         {
             OnScreenStateChanged?.Invoke(new ScreenStateChangedEvent(userId, state));
         }
-        catch
+        catch (Exception ex)
         {
-            // Swallow subscriber exceptions to prevent hub disruption
+            // Swallow subscriber exceptions to prevent hub disruption, but log them
+            System.Diagnostics.Debug.WriteLine(
+                $"[ScreenConnectionTracker] Subscriber exception for user {userId}: {ex.Message}");
         }
     }
 }

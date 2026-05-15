@@ -45,7 +45,7 @@ public class CredentialRepository(
     // Token
     public string? GetAccessToken()
     {
-        var credential = Task.Run(async () => await manager.GetCurrentCredentialsAsync()).Result;
+        var credential = manager.GetCurrentCredentialsSynchronous();
         return credential?.AccessToken;
     }
 }

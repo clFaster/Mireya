@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
@@ -283,7 +284,7 @@ public class AuthenticationService : IAuthenticationService
 
     private static string GeneratePassword()
     {
-        return Convert.ToBase64String(Guid.NewGuid().ToByteArray())
-            + Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        return Convert.ToBase64String(bytes);
     }
 }

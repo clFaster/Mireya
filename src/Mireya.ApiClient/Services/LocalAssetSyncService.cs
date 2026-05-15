@@ -29,7 +29,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
     private readonly string _assetCacheBaseDirectory;
     private readonly IBackendManager _backendManager;
     private readonly LocalDbContext _db;
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<LocalAssetSyncService> _logger;
 
     public LocalAssetSyncService(
@@ -42,7 +42,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
     {
         _db = db;
         _backendManager = backendManager;
-        _httpClient = httpClientFactory.CreateClient();
+        _httpClientFactory = httpClientFactory;
         _accessTokenProvider = accessTokenProvider;
         _logger = logger;
 
@@ -62,8 +62,6 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogInformation("=== START SYNC === Syncing {CampaignCount} campaigns", campaigns.Count);
-
         var backend = await _backendManager.GetCurrentBackendAsync();
         if (backend == null)
         {
@@ -72,7 +70,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         }
 
         _logger.LogInformation(
-            "Syncing {CampaignCount} campaigns for backend {BackendId} - {BaseUrl}: {CampaignNames}",
+            "=== START SYNC === Syncing {CampaignCount} campaigns for backend {BackendId} - {BaseUrl}: {CampaignNames}",
             campaigns.Count,
             backend.Id,
             backend.BaseUrl,
@@ -86,7 +84,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         }
 
         var uniqueAssets = campaigns.SelectMany(c => c.Assets).GroupBy(a => a.AssetId).Select(g => g.First()).ToList();
-        _logger.LogInformation("Total unique assets to check: {Count}", uniqueAssets.Count);
+        _logger.LogDebug("Total unique assets to check: {Count}", uniqueAssets.Count);
 
         await DownloadUniqueAssetsAsync(uniqueAssets, backend.Id, new Uri(backend.BaseUrl.TrimEnd('/')), cancellationToken);
 
@@ -132,7 +130,8 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
     public string GetAssetLocalPath(Guid assetId)
     {
-        var backend = Task.Run(async () => await _backendManager.GetCurrentBackendAsync()).Result;
+        // Use synchronous EF Core query to avoid sync-over-async deadlock
+        var backend = _db.BackendInstances.FirstOrDefault(b => b.IsCurrentBackend);
         if (backend == null)
         {
             _logger.LogWarning("Cannot get asset path: No current backend");
@@ -472,7 +471,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        return await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        return await _httpClientFactory.CreateClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
     }
 
     private string RefineExtensionFromResponse(HttpResponseMessage response, string currentExtension)
@@ -604,7 +603,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             if (!string.IsNullOrEmpty(token))
                 httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await _httpClient.SendAsync(httpRequest);
+            var response = await _httpClientFactory.CreateClient().SendAsync(httpRequest);
             response.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
