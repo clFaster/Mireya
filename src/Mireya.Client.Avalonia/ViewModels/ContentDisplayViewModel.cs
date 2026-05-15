@@ -14,7 +14,7 @@ using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
-public partial class ContentDisplayViewModel : ViewModelBase
+public partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly ILocalAssetSyncService _assetSyncService;
@@ -24,6 +24,7 @@ public partial class ContentDisplayViewModel : ViewModelBase
     private int _currentIndex;
     private DispatcherTimer? _advanceTimer;
     private ScreenConfiguration? _pendingConfiguration;
+    private bool _disposed;
 
     [ObservableProperty]
     private string _displayName = "(not received yet)";
@@ -89,7 +90,9 @@ public partial class ContentDisplayViewModel : ViewModelBase
         _logger.LogInformation("ContentDisplayViewModel initialized");
 
         // Start authentication and connection in background
-        _ = InitializeAsync();
+        _ = InitializeAsync().ContinueWith(
+            t => _logger.LogError(t.Exception, "Background initialization failed"),
+            TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private async Task InitializeAsync()
@@ -382,18 +385,24 @@ public partial class ContentDisplayViewModel : ViewModelBase
         {
             if (File.Exists(item.LocalPath))
             {
+                var oldImage = CurrentImage;
                 CurrentImage = new Bitmap(item.LocalPath);
+                oldImage?.Dispose();
             }
             else
             {
                 _logger.LogWarning("Image file not found: {Path}", item.LocalPath);
+                var oldImage = CurrentImage;
                 CurrentImage = null;
+                oldImage?.Dispose();
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load image: {Path}", item.LocalPath);
+            var oldImage = CurrentImage;
             CurrentImage = null;
+            oldImage?.Dispose();
         }
 
         // Set timer to advance after duration
@@ -457,13 +466,21 @@ public partial class ContentDisplayViewModel : ViewModelBase
 
     private void StartAdvanceTimer(int durationSeconds)
     {
-        _advanceTimer?.Stop();
+        // Stop existing timer
+        if (_advanceTimer != null)
+        {
+            _advanceTimer.Stop();
+        }
+        else
+        {
+            // Create the timer only once and reuse it to avoid event handler leaks
+            _advanceTimer = new DispatcherTimer();
+            _advanceTimer.Tick += OnAdvanceTimerTick;
+        }
 
         // Ensure minimum duration of 1 second to prevent rapid cycling
         var duration = Math.Max(durationSeconds, 1);
-
-        _advanceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(duration) };
-        _advanceTimer.Tick += OnAdvanceTimerTick;
+        _advanceTimer.Interval = TimeSpan.FromSeconds(duration);
         _advanceTimer.Start();
 
         _logger.LogDebug("Timer started for {Duration} seconds", duration);
@@ -520,9 +537,23 @@ public partial class ContentDisplayViewModel : ViewModelBase
     public void Cleanup()
     {
         _logger.LogInformation("Cleaning up ContentDisplayViewModel");
-        _advanceTimer?.Stop();
+        if (_advanceTimer != null)
+        {
+            _advanceTimer.Stop();
+            _advanceTimer.Tick -= OnAdvanceTimerTick;
+        }
         _hubService.OnConfigurationUpdateReceived -= OnConfigurationUpdateReceived;
         _hubService.OnStartAssetSync -= OnStartAssetSync;
+        CurrentImage?.Dispose();
+        CurrentImage = null;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        Cleanup();
+        GC.SuppressFinalize(this);
     }
 
     private async Task ReportNowPlayingAsync(PlaylistItem item)

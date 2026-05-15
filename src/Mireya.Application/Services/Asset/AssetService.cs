@@ -138,8 +138,10 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
             var mediaInfo = await FFmpeg.GetMediaInfo(filePath);
             return ((int)Math.Round(mediaInfo.Duration.TotalSeconds), null);
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine(
+                $"[AssetService] Failed to extract duration for '{fileName}': {ex.Message}");
             return (null, $"{fileName}: Could not extract duration (will use default)");
         }
     }

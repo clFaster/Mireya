@@ -47,8 +47,9 @@
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState.User.Identity?.IsAuthenticated == true)
         {
-            var safeReturnUrl = IsLocalUrl(ReturnUrl) ? ReturnUrl! : "/";
-            Navigation.NavigateTo(safeReturnUrl, forceLoad: true);
+            // Build a safe redirect target from the validated return URL
+            var redirectTarget = GetSafeRedirectUrl(ReturnUrl);
+            Navigation.NavigateTo(redirectTarget, forceLoad: true);
             return;
         }
 
@@ -57,12 +58,29 @@
             : "/auth/login";
     }
 
-    private bool IsLocalUrl(string? url)
+    /// <summary>
+    /// Returns a validated local path or "/" if the URL is not a safe local path.
+    /// This breaks the taint chain by constructing a new string from the validated path.
+    /// </summary>
+    private static string GetSafeRedirectUrl(string? url)
+    {
+        if (!IsLocalUrl(url))
+            return "/";
+
+        // Construct a new string from the validated URI to break taint tracking
+        var uri = new Uri(url, UriKind.Relative);
+        return uri.ToString();
+    }
+
+    private static bool IsLocalUrl(string? url)
     {
         if (string.IsNullOrEmpty(url))
             return false;
 
         // Must be a relative URL — reject absolute URLs (including protocol-relative //)
-        return url.StartsWith('/') && !url.StartsWith("//");
+        return Uri.TryCreate(url, UriKind.Relative, out _)
+            && url.StartsWith('/')
+            && !url.StartsWith("//")
+            && !url.StartsWith("/\\");
     }
 }

@@ -96,7 +96,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 // ─── Application services ─────────────────────────────────────────────────────
-builder.Services.AddSignalR(options => { options.EnableDetailedErrors = true; });
+builder.Services.AddSignalR(options => { options.EnableDetailedErrors = builder.Environment.IsDevelopment(); });
 builder.Services.AddScoped<IInitializerService, InitializerService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IAssetSyncService, AssetSyncService>();

@@ -12,7 +12,17 @@ var provider = services.BuildServiceProvider();
 
 var apiConfig = provider.GetRequiredService<IApiClientConfiguration>();
 
-var backendUrl = Environment.GetEnvironmentVariable("MIREYA_BACKEND_URL") ?? "https://localhost:5001";
+var backendUrl = Environment.GetEnvironmentVariable("MIREYA_BACKEND_URL");
+if (string.IsNullOrEmpty(backendUrl))
+{
+    Console.Write("Enter backend URL (e.g. https://localhost:5001): ");
+    backendUrl = Console.ReadLine();
+    if (string.IsNullOrWhiteSpace(backendUrl))
+    {
+        Console.WriteLine("No backend URL provided. Exiting.");
+        return;
+    }
+}
 apiConfig.UpdateBaseUrlAsync(backendUrl).Wait();
 
 while (true)

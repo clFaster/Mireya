@@ -16,6 +16,14 @@ public interface ICredentialManager
 
     Task<BackendCredential?> GetCredentialsAsync(Guid backendInstanceId);
     Task<BackendCredential?> GetCurrentCredentialsAsync();
+
+    /// <summary>
+    /// Synchronous version of GetCurrentCredentialsAsync for use in non-async contexts
+    /// (e.g. token providers called from synchronous HTTP pipeline code).
+    /// Avoids sync-over-async deadlocks by using synchronous EF Core queries.
+    /// </summary>
+    BackendCredential? GetCurrentCredentialsSynchronous();
+
     Task<bool> HasValidCredentialsAsync(Guid backendInstanceId);
     Task DeleteCredentialsAsync(Guid backendInstanceId);
 }
@@ -95,6 +103,15 @@ public class CredentialManager : ICredentialManager
         }
 
         return await GetCredentialsAsync(backend.Id);
+    }
+
+    public BackendCredential? GetCurrentCredentialsSynchronous()
+    {
+        var backend = _db.BackendInstances.FirstOrDefault(b => b.IsCurrentBackend);
+        if (backend == null)
+            return null;
+
+        return _db.BackendCredentials.Find(backend.Id);
     }
 
     public async Task<bool> HasValidCredentialsAsync(Guid backendInstanceId)
