@@ -10,19 +10,27 @@
     <Border Background="Black"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="20">
-            <TextBlock Text="📺"
-                       FontSize="72"
-                       HorizontalAlignment="Center" />
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+            <!-- Mireya branding in idle state -->
+            <TextBlock Text="Mireya"
+                       FontSize="48"
+                       FontWeight="Bold"
+                       Foreground="#3D5AFE"
+                       HorizontalAlignment="Center"
+                       Opacity="0.8" />
             <TextBlock Text="{Binding StatusText}"
-                       FontSize="32"
-                       Foreground="White"
+                       FontSize="22"
+                       Foreground="#999"
                        HorizontalAlignment="Center" />
             <TextBlock Text="{Binding DisplayName}"
-                       FontSize="20"
-                       Foreground="#AAAAAA"
+                       FontSize="15"
+                       Foreground="#555"
                        HorizontalAlignment="Center"
-                       Margin="0,10,0,0" />
+                       Margin="0,8,0,0" />
+            <TextBlock Text="{Binding ConnectionStatus}"
+                       FontSize="12"
+                       Foreground="#444"
+                       HorizontalAlignment="Center" />
         </StackPanel>
     </Border>
 

@@ -4,7 +4,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using Microsoft.Web.WebView2.Core;
 
 namespace Mireya.Client.Avalonia.Views.Components;
@@ -22,6 +21,7 @@ public partial class WebsiteAssetDisplay : UserControl
     private Uri? _pendingUri;
     private IntPtr _cachedParentHwnd = IntPtr.Zero;
     private bool _windowOpened;
+    private Window? _parentWindow;
 
     public WebsiteAssetDisplay()
     {
@@ -44,10 +44,12 @@ public partial class WebsiteAssetDisplay : UserControl
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return;
 
-        // Try to get the HWND now — it might already be available if the window
-        // was opened before this control was attached.
-        if (e.Root is Window window)
+        // Use TopLevel.GetTopLevel (Avalonia 12+ recommended API) instead of
+        // the deprecated e.Root which no longer reliably returns a Window.
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is Window window)
         {
+            _parentWindow = window;
             var hwnd = TryGetHwnd(window);
             if (hwnd != IntPtr.Zero)
             {
@@ -97,6 +99,17 @@ public partial class WebsiteAssetDisplay : UserControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
+
+        // Unhook the window event if we subscribed
+        if (_parentWindow != null)
+        {
+            _parentWindow.Opened -= OnWindowOpened;
+            _parentWindow = null;
+        }
+
+        // Dispose the WebView2 controller to free the HWND child window and COM resources
+        DisposeWebView();
+
         _cachedParentHwnd = IntPtr.Zero;
         _windowOpened = false;
     }
@@ -126,6 +139,14 @@ public partial class WebsiteAssetDisplay : UserControl
                 // Already created — show and resize.
                 _webViewController.IsVisible = true;
                 Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
+
+                // If a navigation was queued while hidden, apply it now.
+                if (_pendingUri != null)
+                {
+                    var uri = _pendingUri;
+                    _pendingUri = null;
+                    NavigateInternal(uri);
+                }
             }
             // else: window not opened yet — OnWindowOpened will trigger creation later.
         }
@@ -148,14 +169,17 @@ public partial class WebsiteAssetDisplay : UserControl
         }
 
         // Final attempt to get the HWND if we still don't have it.
-        if (_cachedParentHwnd == IntPtr.Zero && this.VisualRoot is Window window)
-            _cachedParentHwnd = TryGetHwnd(window);
+        if (_cachedParentHwnd == IntPtr.Zero)
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel is Window window)
+                _cachedParentHwnd = TryGetHwnd(window);
+        }
 
         if (_cachedParentHwnd == IntPtr.Zero)
         {
             ShowError(
                 "Could not obtain the parent window handle (HWND).\n"
-                + $"VisualRoot type: {this.VisualRoot?.GetType().Name ?? "null"}\n"
                 + "The native window may not have been created yet."
             );
             return;
@@ -215,8 +239,9 @@ public partial class WebsiteAssetDisplay : UserControl
 
             if (_pendingUri != null)
             {
-                NavigateInternal(_pendingUri);
+                var uri = _pendingUri;
                 _pendingUri = null;
+                NavigateInternal(uri);
             }
 
             System.Diagnostics.Debug.WriteLine("WebView2 controller created successfully.");
@@ -285,7 +310,8 @@ public partial class WebsiteAssetDisplay : UserControl
 
         try
         {
-            if (this.VisualRoot is TopLevel topLevel)
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel != null)
             {
                 var transformedPoint = _browserContainer.TranslatePoint(new Point(0, 0), topLevel);
                 var containerBounds = _browserContainer.Bounds;
@@ -315,6 +341,7 @@ public partial class WebsiteAssetDisplay : UserControl
     {
         if (uri == null)
         {
+            _pendingUri = null;
             if (_webViewController != null)
                 _webViewController.IsVisible = false;
             return;
@@ -324,7 +351,7 @@ public partial class WebsiteAssetDisplay : UserControl
         {
             _pendingUri = uri;
             if (_loadingPanel != null) _loadingPanel.IsVisible = true;
-            if (_errorPanel != null)   _errorPanel.IsVisible = false;
+            if (_errorPanel != null) _errorPanel.IsVisible = false;
             return;
         }
 
@@ -342,11 +369,14 @@ public partial class WebsiteAssetDisplay : UserControl
             _browserContainer!.IsVisible = true;
             _errorPanel!.IsVisible = false;
 
-            _webViewController.IsVisible = true;
+            _webViewController.IsVisible = IsEffectivelyVisible;
             Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
 
-            _webViewController.CoreWebView2.Navigate(uri.AbsoluteUri);
+            // Remove any previous handler to prevent accumulation
+            _webViewController.CoreWebView2.NavigationCompleted -= OnNavigationCompleted;
             _webViewController.CoreWebView2.NavigationCompleted += OnNavigationCompleted;
+
+            _webViewController.CoreWebView2.Navigate(uri.AbsoluteUri);
         }
         catch (Exception ex)
         {
@@ -409,5 +439,33 @@ public partial class WebsiteAssetDisplay : UserControl
 
         if (_webViewController != null)
             _webViewController.IsVisible = false;
+    }
+
+    private void DisposeWebView()
+    {
+        try
+        {
+            if (_webViewController != null)
+            {
+                _webViewController.IsVisible = false;
+
+                if (_webViewController.CoreWebView2 != null)
+                    _webViewController.CoreWebView2.NavigationCompleted -= OnNavigationCompleted;
+
+                _webViewController.Close();
+                _webViewController = null;
+            }
+
+            _webViewEnvironment = null;
+            _isInitialized = false;
+            _isCreating = false;
+            _pendingUri = null;
+
+            System.Diagnostics.Debug.WriteLine("WebView2 resources disposed.");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"DisposeWebView failed: {ex}");
+        }
     }
 }

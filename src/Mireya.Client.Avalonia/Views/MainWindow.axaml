@@ -8,9 +8,10 @@
         x:Class="Mireya.Client.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Mireya Digital Signage Client"
+        Title="Mireya Digital Signage"
         Width="800" Height="650"
-        MinWidth="700" MinHeight="600">
+        MinWidth="700" MinHeight="550"
+        Background="#1A1A2E">
 
     <Design.DataContext>
         <vm:MainWindowViewModel />
@@ -18,12 +19,10 @@
 
     <ContentControl Content="{Binding CurrentView}">
         <ContentControl.DataTemplates>
-            <!-- BackendSelectionViewModel -> BackendSelectionView -->
             <DataTemplate DataType="vm:BackendSelectionViewModel">
                 <views:BackendSelectionView />
             </DataTemplate>
 
-            <!-- ContentDisplayViewModel -> ContentDisplayView -->
             <DataTemplate DataType="vm:ContentDisplayViewModel">
                 <views:ContentDisplayView />
             </DataTemplate>
