@@ -24,15 +24,33 @@ public class BrowserIFormFile(IBrowserFile file) : IFormFile
 
     public void CopyTo(Stream target)
     {
+        ValidateFileSize();
         using var stream = file.OpenReadStream(MaxFileSize);
         stream.CopyTo(target);
     }
 
     public async Task CopyToAsync(Stream target, CancellationToken cancellationToken = default)
     {
+        ValidateFileSize();
         await using var stream = file.OpenReadStream(MaxFileSize);
         await stream.CopyToAsync(target, cancellationToken);
     }
 
-    public Stream OpenReadStream() => file.OpenReadStream(MaxFileSize);
+    public Stream OpenReadStream()
+    {
+        ValidateFileSize();
+        return file.OpenReadStream(MaxFileSize);
+    }
+
+    /// <summary>
+    /// Validates that the reported file size does not exceed the maximum allowed limit
+    /// before attempting to open the stream. This provides an early rejection of oversized
+    /// files and satisfies security review for content length limits (S5693).
+    /// </summary>
+    private void ValidateFileSize()
+    {
+        if (file.Size > MaxFileSize)
+            throw new InvalidOperationException(
+                $"File '{file.Name}' size ({file.Size} bytes) exceeds the maximum allowed size ({MaxFileSize} bytes).");
+    }
 }
