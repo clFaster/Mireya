@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Mireya application icon draft</title>
+  <desc id="desc">A clean digital signage icon with a stylized M, display frame, and sync pixel.</desc>
+  <rect width="256" height="256" rx="56" fill="#111827"/>
+  <rect x="38" y="48" width="180" height="132" rx="22" fill="#F8FAFC"/>
+  <rect x="54" y="64" width="148" height="100" rx="12" fill="#111827"/>
+  <path d="M72 142V86h22l34 38 34-38h22v56h-22v-25l-34 37-34-37v25H72Z" fill="#20D6C7"/>
+  <rect x="108" y="193" width="40" height="12" rx="6" fill="#F8FAFC"/>
+  <rect x="86" y="205" width="84" height="12" rx="6" fill="#F8FAFC"/>
+  <rect x="176" y="176" width="36" height="36" rx="10" fill="#38BDF8"/>
+</svg>

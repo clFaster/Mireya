@@ -7,7 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
         x:Class="Mireya.Client.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/mireya-icon.ico"
         Title="Mireya Digital Signage"
         Width="800" Height="650"
         MinWidth="700" MinHeight="550"
