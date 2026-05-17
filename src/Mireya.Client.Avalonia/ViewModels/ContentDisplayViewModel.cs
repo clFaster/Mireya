@@ -451,9 +451,14 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         // Stop any playing video
         VideoStopRequested?.Invoke();
 
-        CurrentContentType = ContentType.Website;
+        // Flash fix A: set the URI *before* ContentType so Navigate() is called while
+        // WebsiteAssetDisplay is still invisible.  NavigateInternal sets _isNavigating=true
+        // immediately, which prevents OnEffectiveVisibilityChanged from revealing the
+        // controller before the new page has loaded.
         CurrentWebsiteUrl = item.Source;
         CurrentWebsiteUri = TryCreateUri(item.Source);
+
+        CurrentContentType = ContentType.Website;
         CurrentImage = null;
         CurrentVideoPath = null;
         CurrentVideoUri = null;
