@@ -69,8 +69,8 @@ public class App : Application
             var appSettings = serviceProvider.GetRequiredService<AppSettings>();
             appSettings.LoadAsync().GetAwaiter().GetResult();
             Log.Information(
-                "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}",
-                appSettings.Fullscreen, appSettings.AutoStart
+                "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}, HideScreenInfo={HideScreenInfo}",
+                appSettings.Fullscreen, appSettings.AutoStart, appSettings.HideScreenInfo
             );
 
             // Create main window with dependency-injected ViewModel
@@ -83,6 +83,14 @@ public class App : Application
             {
                 mainWindow.WindowState = WindowState.FullScreen;
             }
+
+            // Wire the immediate-apply callback so the settings UI can toggle
+            // fullscreen without a restart.  The callback is always invoked from the
+            // UI thread (RelayCommand preserves the Avalonia SynchronizationContext).
+            appSettings.ApplyFullscreen = fullscreen =>
+                mainWindow.WindowState = fullscreen
+                    ? WindowState.FullScreen
+                    : WindowState.Normal;
 
             // Gracefully shut down services when the application exits:
             // 1. Disconnect SignalR (stops auto-reconnect background threads)

@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Mireya.ApiClient.Data;
@@ -30,9 +31,27 @@ public sealed class AppSettings
 
     /// <summary>
     /// Skip the server-selection screen: wait 5 s, check the last-used server is
-    /// online, connect automatically, and hide the status overlay after 10 s.
+    /// online, and connect automatically.  Does NOT affect the status overlay.
+    /// Takes effect on next application launch.
     /// </summary>
     public bool AutoStart { get; set; }
+
+    /// <summary>
+    /// Automatically hide the status overlay 10 s after content starts playing.
+    /// Independent of AutoStart — can be used with manual or automatic connection.
+    /// Takes effect on next connection.
+    /// </summary>
+    public bool HideScreenInfo { get; set; }
+
+    // ──────────────────────────────────────────────────────────────
+    // Immediate-apply callbacks (wired by App.axaml.cs after window creation)
+    // ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Invoked by the settings UI after saving Fullscreen so the window state can
+    /// be toggled without a restart.  Wired in App.axaml.cs.
+    /// </summary>
+    public Action<bool>? ApplyFullscreen { get; set; }
 
     // ──────────────────────────────────────────────────────────────
 
@@ -50,8 +69,9 @@ public sealed class AppSettings
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-        Fullscreen = await GetBoolAsync(db, "Fullscreen", false);
-        AutoStart  = await GetBoolAsync(db, "AutoStart",  false);
+        Fullscreen     = await GetBoolAsync(db, "Fullscreen",     false);
+        AutoStart      = await GetBoolAsync(db, "AutoStart",      false);
+        HideScreenInfo = await GetBoolAsync(db, "HideScreenInfo", false);
     }
 
     /// <summary>Persists the current property values to the database.</summary>
@@ -60,8 +80,9 @@ public sealed class AppSettings
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-        await SetValueAsync(db, "Fullscreen", Fullscreen.ToString());
-        await SetValueAsync(db, "AutoStart",  AutoStart.ToString());
+        await SetValueAsync(db, "Fullscreen",     Fullscreen.ToString());
+        await SetValueAsync(db, "AutoStart",      AutoStart.ToString());
+        await SetValueAsync(db, "HideScreenInfo", HideScreenInfo.ToString());
     }
 
     // ──────────────────────────────────────────────────────────────
