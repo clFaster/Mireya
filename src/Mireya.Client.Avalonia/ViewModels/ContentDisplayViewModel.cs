@@ -96,8 +96,8 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             t => _logger.LogError(t.Exception, "Background initialization failed"),
             TaskContinuationOptions.OnlyOnFaulted);
 
-        // In AutoStart mode hide the overlay after 10 s without user interaction
-        if (appSettings.AutoStart)
+        // Auto-hide the status overlay once content starts playing (independent of AutoStart)
+        if (appSettings.HideScreenInfo)
         {
             _ = AutoHideOverlayAsync().ContinueWith(
                 t => _logger.LogError(t.Exception, "Auto-hide overlay faulted"),

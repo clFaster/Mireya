@@ -60,6 +60,9 @@ public partial class BackendSelectionViewModel : ViewModelBase
     [ObservableProperty]
     private bool _autoStart;
 
+    [ObservableProperty]
+    private bool _hideScreenInfo;
+
     public BackendSelectionViewModel(
         IBackendManager backendManager,
         IApiClientConfiguration apiClientConfiguration,
@@ -75,8 +78,9 @@ public partial class BackendSelectionViewModel : ViewModelBase
         _onBackendSelected = onBackendSelected;
 
         // Mirror current settings into the observable properties
-        _fullscreen = appSettings.Fullscreen;
-        _autoStart  = appSettings.AutoStart;
+        _fullscreen      = appSettings.Fullscreen;
+        _autoStart       = appSettings.AutoStart;
+        _hideScreenInfo  = appSettings.HideScreenInfo;
 
         _ = LoadBackendsAsync();
     }
@@ -185,13 +189,16 @@ public partial class BackendSelectionViewModel : ViewModelBase
     {
         try
         {
-            _appSettings.Fullscreen = Fullscreen;
-            _appSettings.AutoStart  = AutoStart;
+            _appSettings.Fullscreen      = Fullscreen;
+            _appSettings.AutoStart       = AutoStart;
+            _appSettings.HideScreenInfo  = HideScreenInfo;
             await _appSettings.SaveAsync();
             _logger.LogInformation(
-                "Settings saved — Fullscreen={Fullscreen}, AutoStart={AutoStart}",
-                Fullscreen, AutoStart
+                "Settings saved — Fullscreen={Fullscreen}, AutoStart={AutoStart}, HideScreenInfo={HideScreenInfo}",
+                Fullscreen, AutoStart, HideScreenInfo
             );
+            // Apply fullscreen immediately — no restart required
+            _appSettings.ApplyFullscreen?.Invoke(Fullscreen);
             SetStatus("Settings saved.", isError: false);
         }
         catch (Exception ex)

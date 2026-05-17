@@ -67,9 +67,12 @@
                         <ListBox.Styles>
                             <Style Selector="ListBoxItem">
                                 <Setter Property="Padding" Value="10,8" />
-                                <Setter Property="Margin" Value="0,1" />
+                                <Setter Property="Margin" Value="0,2" />
                                 <Setter Property="CornerRadius" Value="5" />
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="VerticalContentAlignment" Value="Center" />
+                                <Setter Property="BorderBrush" Value="#2A3A4A" />
+                                <Setter Property="BorderThickness" Value="1" />
                             </Style>
                         </ListBox.Styles>
 
@@ -248,6 +251,10 @@
                             <TextBlock Text="Launch the window maximised with no title bar"
                                        FontSize="11"
                                        Foreground="#546E7A" />
+                            <TextBlock Text="Applied immediately"
+                                       FontSize="10"
+                                       Foreground="#37474F"
+                                       FontStyle="Italic" />
                         </StackPanel>
                         <ToggleSwitch Grid.Column="1"
                                       IsChecked="{Binding Fullscreen}"
@@ -268,9 +275,37 @@
                             <TextBlock Text="Skip server selection and connect automatically on launch"
                                        FontSize="11"
                                        Foreground="#546E7A" />
+                            <TextBlock Text="Takes effect on next launch"
+                                       FontSize="10"
+                                       Foreground="#37474F"
+                                       FontStyle="Italic" />
                         </StackPanel>
                         <ToggleSwitch Grid.Column="1"
                                       IsChecked="{Binding AutoStart}"
+                                      VerticalAlignment="Center"
+                                      OffContent=""
+                                      OnContent="" />
+                    </Grid>
+
+                    <Border Height="1" Background="#2A2A44" />
+
+                    <!-- HideScreenInfo toggle -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Hide Screen Info"
+                                       FontSize="13"
+                                       FontWeight="Medium"
+                                       Foreground="#E0E0E0" />
+                            <TextBlock Text="Automatically hide the status overlay 10 s after content starts"
+                                       FontSize="11"
+                                       Foreground="#546E7A" />
+                            <TextBlock Text="Takes effect on next connection"
+                                       FontSize="10"
+                                       Foreground="#37474F"
+                                       FontStyle="Italic" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding HideScreenInfo}"
                                       VerticalAlignment="Center"
                                       OffContent=""
                                       OnContent="" />
