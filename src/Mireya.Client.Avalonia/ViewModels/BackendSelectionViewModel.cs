@@ -1,7 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -16,18 +21,29 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private readonly IBackendManager _backendManager;
     private readonly ILogger<BackendSelectionViewModel> _logger;
     private readonly Action<BackendInstance> _onBackendSelected;
+    private CancellationTokenSource? _statusCts;
 
     [ObservableProperty]
-    private ObservableCollection<BackendInstance> _backends = [];
+    private ObservableCollection<BackendItemViewModel> _backends = [];
 
     [ObservableProperty]
     private bool _isStatusError;
+
+    /// <summary>True while the add-server flow is running a Mireya server validation.</summary>
+    [ObservableProperty]
+    private bool _isVerifyingServer;
+
+    /// <summary>Label shown on the Add Server button; changes while verification is in progress.</summary>
+    public string AddButtonLabel => IsVerifyingServer ? "Checking…" : "Add Server";
+
+    partial void OnIsVerifyingServerChanged(bool value) =>
+        OnPropertyChanged(nameof(AddButtonLabel));
 
     [ObservableProperty]
     private string _newBackendUrl = string.Empty;
 
     [ObservableProperty]
-    private BackendInstance? _selectedBackend;
+    private BackendItemViewModel? _selectedBackend;
 
     [ObservableProperty]
     private string? _statusMessage;
@@ -47,6 +63,32 @@ public partial class BackendSelectionViewModel : ViewModelBase
         _ = LoadBackendsAsync();
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Selection change — subscribe to IsOnline so CanConnect updates
+    // ──────────────────────────────────────────────────────────────
+
+    partial void OnSelectedBackendChanged(BackendItemViewModel? oldValue, BackendItemViewModel? newValue)
+    {
+        if (oldValue != null)
+            oldValue.PropertyChanged -= OnSelectedItemPropertyChanged;
+
+        if (newValue != null)
+            newValue.PropertyChanged += OnSelectedItemPropertyChanged;
+
+        ConnectCommand.NotifyCanExecuteChanged();
+    }
+
+    private void OnSelectedItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(BackendItemViewModel.IsOnline)
+                           or nameof(BackendItemViewModel.IsCheckingOnline))
+            ConnectCommand.NotifyCanExecuteChanged();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Load
+    // ──────────────────────────────────────────────────────────────
+
     private async Task LoadBackendsAsync()
     {
         _logger.LogInformation("Loading backends...");
@@ -54,120 +96,202 @@ public partial class BackendSelectionViewModel : ViewModelBase
         try
         {
             var backends = await _backendManager.GetAllBackendsAsync();
-            Backends = new ObservableCollection<BackendInstance>(backends);
+            var items = backends
+                .Select(b => new BackendItemViewModel(b, DoDeleteItemAsync))
+                .ToList();
+            Backends = new ObservableCollection<BackendItemViewModel>(items);
 
-            // Select the most recently used backend
+            // Prefer the last-used backend; fall back to the first one
             SelectedBackend =
-                backends.FirstOrDefault(b => b.IsCurrentBackend) ?? backends.FirstOrDefault();
+                items.FirstOrDefault(b => b.Instance.IsCurrentBackend) ?? items.FirstOrDefault();
 
             _logger.LogInformation("Loaded {Count} backend(s)", backends.Count);
 
             if (backends.Count == 0)
-            {
-                StatusMessage = "No backends configured. Please add a new backend URL below.";
-                IsStatusError = false;
-            }
-            else
-            {
-                StatusMessage = $"Found {backends.Count} backend(s). Select one or add a new one.";
-                IsStatusError = false;
-            }
+                SetStatus(
+                    "No servers configured yet. Add a server URL below.",
+                    isError: false,
+                    autoHide: false
+                );
+
+            // Kick off background online checks for every known server
+            foreach (var item in items)
+                _ = CheckOnlineStatusAsync(item);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load backends");
-            StatusMessage = $"Failed to load backends: {ex.Message}";
-            IsStatusError = true;
+            SetStatus($"Failed to load backends: {ex.Message}", isError: true);
         }
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Online status (non-blocking background check per server)
+    // ──────────────────────────────────────────────────────────────
+
+    private static async Task CheckOnlineStatusAsync(BackendItemViewModel item)
+    {
+        item.IsCheckingOnline = true;
+        item.IsOnline = false;
+
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var response = await client.GetAsync(
+                $"{item.Instance.BaseUrl.TrimEnd('/')}/api/screenmanagement/bonjour"
+            );
+
+            // Any recognised HTTP response means the Mireya API is up
+            item.IsOnline =
+                response.StatusCode
+                    is HttpStatusCode.Unauthorized
+                        or HttpStatusCode.Forbidden
+                        or HttpStatusCode.OK;
+        }
+        catch
+        {
+            item.IsOnline = false;
+        }
+        finally
+        {
+            item.IsCheckingOnline = false;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Add server (with Mireya verification)
+    // ──────────────────────────────────────────────────────────────
 
     [RelayCommand]
     private async Task AddBackendAsync()
     {
         if (string.IsNullOrWhiteSpace(NewBackendUrl))
         {
-            StatusMessage = "Please enter a backend URL.";
-            IsStatusError = true;
+            SetStatus("Please enter a server URL.", isError: true);
             return;
         }
 
         if (!IsValidUrl(NewBackendUrl))
         {
-            StatusMessage = "Invalid URL format. Please enter a valid HTTP or HTTPS URL.";
-            IsStatusError = true;
+            SetStatus(
+                "Invalid URL format. Please enter a valid HTTP or HTTPS URL.",
+                isError: true
+            );
             return;
         }
 
+        IsVerifyingServer = true;
+        SetStatus("Verifying Mireya server…", isError: false, autoHide: false);
+
         try
         {
-            _logger.LogInformation("Adding new backend: {Url}", NewBackendUrl);
+            var isMireya = await VerifyMireyaServerAsync(NewBackendUrl);
+            if (!isMireya)
+            {
+                SetStatus(
+                    "No Mireya server found at this URL. Please check the address and try again.",
+                    isError: true
+                );
+                return;
+            }
 
+            _logger.LogInformation("Adding new backend: {Url}", NewBackendUrl);
             var backend = await _backendManager.GetOrCreateBackendAsync(NewBackendUrl);
 
-            // Reload the list
-            await LoadBackendsAsync();
-
-            // Select the newly added backend
-            SelectedBackend = Backends.FirstOrDefault(b => b.Id == backend.Id);
-
-            StatusMessage = $"✓ Backend added: {NewBackendUrl}";
-            IsStatusError = false;
+            var addedUrl = NewBackendUrl;
             NewBackendUrl = string.Empty;
+
+            await LoadBackendsAsync();
+            SelectedBackend = Backends.FirstOrDefault(b => b.Instance.Id == backend.Id);
+
+            SetStatus($"Server added: {addedUrl}", isError: false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to add backend");
-            StatusMessage = $"Failed to add backend: {ex.Message}";
-            IsStatusError = true;
+            SetStatus($"Failed to add server: {ex.Message}", isError: true);
+        }
+        finally
+        {
+            IsVerifyingServer = false;
         }
     }
 
-    [RelayCommand]
+    /// <summary>
+    /// Probes the given URL to confirm a Mireya API is running there.
+    /// A real Mireya server returns HTTP 401 with a Bearer challenge on
+    /// GET /api/screenmanagement/bonjour.
+    /// </summary>
+    private static async Task<bool> VerifyMireyaServerAsync(string baseUrl)
+    {
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
+            client.DefaultRequestHeaders.Add("User-Agent", "Mireya-Client/1.0");
+
+            var response = await client.GetAsync(
+                $"{baseUrl.TrimEnd('/')}/api/screenmanagement/bonjour"
+            );
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                // ASP.NET Core Identity issues a Bearer challenge — strong signal
+                var wwwAuth = response.Headers.WwwAuthenticate.ToString();
+                return wwwAuth.Contains("Bearer", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return response.StatusCode == HttpStatusCode.OK;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Connect — only allowed when the selected server is online
+    // ──────────────────────────────────────────────────────────────
+
+    private bool CanConnect() =>
+        SelectedBackend is { IsOnline: true };
+
+    [RelayCommand(CanExecute = nameof(CanConnect))]
     private async Task ConnectAsync()
     {
         if (SelectedBackend == null)
-        {
-            StatusMessage = "Please select a backend first.";
-            IsStatusError = true;
             return;
-        }
 
         try
         {
+            var instance = SelectedBackend.Instance;
             _logger.LogInformation(
                 "Connecting to backend: {BackendId} - {Url}",
-                SelectedBackend.Id,
-                SelectedBackend.BaseUrl
+                instance.Id,
+                instance.BaseUrl
             );
 
-            // Set as current backend
-            await _backendManager.SetCurrentBackendAsync(SelectedBackend.Id);
+            await _backendManager.SetCurrentBackendAsync(instance.Id);
+            await _apiClientConfiguration.UpdateBaseUrlAsync(instance.BaseUrl);
 
-            // Update API client configuration
-            await _apiClientConfiguration.UpdateBaseUrlAsync(SelectedBackend.BaseUrl);
+            SetStatus($"Connected to {instance.BaseUrl}", isError: false);
 
-            StatusMessage = $"✓ Connected to {SelectedBackend.BaseUrl}";
-            IsStatusError = false;
-
-            _logger.LogInformation("Backend connection successful, notifying parent...");
-
-            // Notify parent to switch view
-            _onBackendSelected(SelectedBackend);
+            _logger.LogInformation("Backend connection successful, notifying parent…");
+            _onBackendSelected(instance);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to connect to backend");
-            StatusMessage = $"Failed to connect: {ex.Message}";
-            IsStatusError = true;
+            SetStatus($"Failed to connect: {ex.Message}", isError: true);
         }
     }
 
-    [RelayCommand]
-    private async Task DeleteBackendAsync(BackendInstance? backend)
-    {
-        if (backend == null)
-            return;
+    // ──────────────────────────────────────────────────────────────
+    // Delete — called from per-item DeleteCommand in BackendItemViewModel
+    // ──────────────────────────────────────────────────────────────
 
+    private async Task DoDeleteItemAsync(BackendItemViewModel item)
+    {
+        var backend = item.Instance;
         _logger.LogInformation(
             "Deleting backend: {BackendId} - {Url}",
             backend.Id,
@@ -175,18 +299,60 @@ public partial class BackendSelectionViewModel : ViewModelBase
         );
 
         await _backendManager.DeleteBackendAsync(backend.Id);
-        Backends.Remove(backend);
+        Backends.Remove(item);
 
-        if (SelectedBackend?.Id == backend.Id)
+        if (SelectedBackend?.Instance.Id == backend.Id)
             SelectedBackend = null;
 
-        StatusMessage = "Backend deleted.";
-        IsStatusError = false;
+        if (Backends.Count == 0)
+            SetStatus(
+                "No servers configured yet. Add a server URL below.",
+                isError: false,
+                autoHide: false
+            );
+        else
+            SetStatus("Server removed.", isError: false);
     }
 
-    private static bool IsValidUrl(string url)
+    // ──────────────────────────────────────────────────────────────
+    // Status message with optional auto-hide
+    // ──────────────────────────────────────────────────────────────
+
+    private void SetStatus(string? message, bool isError, bool autoHide = true)
     {
-        return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
-            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+        _statusCts?.Cancel();
+        _statusCts = null;
+
+        StatusMessage = message;
+        IsStatusError = isError;
+
+        // Auto-hide success messages after 4 s
+        if (!isError && autoHide && message != null)
+        {
+            var cts = new CancellationTokenSource();
+            _statusCts = cts;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(4000, cts.Token);
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        if (!cts.IsCancellationRequested)
+                            StatusMessage = null;
+                    });
+                }
+                catch (OperationCanceledException) { }
+            });
+        }
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────
+
+    private static bool IsValidUrl(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
+        && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
 }
