@@ -15,7 +15,13 @@
     </UserControl.Resources>
 
     <ScrollViewer>
-        <StackPanel Margin="40,30" Spacing="24" MaxWidth="640"
+        <!--
+            Fixed Width keeps all sections the same size regardless of status-message length.
+            Margin provides breathing room within the 800 px window.
+        -->
+        <StackPanel Width="540"
+                    Margin="0,30"
+                    Spacing="20"
                     HorizontalAlignment="Center">
 
             <!-- Header -->
@@ -34,97 +40,151 @@
                         Width="60" HorizontalAlignment="Center" Margin="0,4,0,0" />
             </StackPanel>
 
-            <!-- Backend List Section -->
+            <!-- Available Servers Section -->
             <Border BorderBrush="#333"
                     BorderThickness="1"
                     CornerRadius="10"
-                    Padding="24"
+                    Padding="20"
                     Background="#1E1E30">
-                <StackPanel Spacing="14">
+                <StackPanel Spacing="12">
                     <TextBlock Text="Available Servers"
-                               FontSize="17"
+                               FontSize="16"
                                FontWeight="SemiBold"
-                               Foreground="#B0BEC5"
-                               Margin="0,0,0,4" />
+                               Foreground="#B0BEC5" />
 
-                    <!-- Backend ListBox -->
+                    <!-- Server list -->
                     <ListBox ItemsSource="{Binding Backends}"
                              SelectedItem="{Binding SelectedBackend}"
-                             MinHeight="120"
+                             MinHeight="60"
                              MaxHeight="260"
                              Background="#14142A"
                              BorderBrush="#2A2A44"
                              BorderThickness="1"
                              CornerRadius="6"
-                             Padding="4">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Border Padding="12,10"
-                                        Margin="2"
-                                        Background="#1E1E30"
-                                        CornerRadius="6"
-                                        BorderBrush="#2A2A44"
-                                        BorderThickness="1">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Grid.Column="0" Spacing="3">
-                                            <TextBlock Text="{Binding Name, FallbackValue='Unnamed Server'}"
-                                                       FontWeight="SemiBold"
-                                                       FontSize="14"
-                                                       Foreground="#E0E0E0" />
-                                            <TextBlock Text="{Binding BaseUrl}"
-                                                       FontSize="12"
-                                                       Foreground="#78909C"
-                                                       FontFamily="Consolas,monospace" />
-                                            <TextBlock FontSize="11" Foreground="#546E7A">
-                                                <Run Text="Last connected: " />
-                                                <Run Text="{Binding LastConnectedAt, StringFormat='{}{0:g}'}" />
-                                            </TextBlock>
-                                        </StackPanel>
+                             Padding="4"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
-                                        <Border Grid.Column="1"
-                                                Background="#1B5E20"
-                                                CornerRadius="4"
-                                                Padding="8,4"
-                                                VerticalAlignment="Center"
-                                                IsVisible="{Binding IsCurrentBackend}">
-                                            <TextBlock Text="ACTIVE"
-                                                       FontSize="10"
-                                                       FontWeight="Bold"
-                                                       Foreground="#A5D6A7" />
-                                        </Border>
-                                    </Grid>
-                                </Border>
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Padding" Value="10,8" />
+                                <Setter Property="Margin" Value="0,1" />
+                                <Setter Property="CornerRadius" Value="5" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListBox.Styles>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="vm:BackendItemViewModel">
+                                <!--
+                                    Columns:
+                                      [0] 14 px  – online status dot
+                                      [1] *      – server name + URL (takes remaining space)
+                                      [2] Auto   – CURRENT badge
+                                      [3] Auto   – delete button
+                                -->
+                                <Grid ColumnDefinitions="14,*,Auto,Auto"
+                                      ColumnSpacing="8"
+                                      VerticalAlignment="Center">
+
+                                    <!-- Online status dot -->
+                                    <Ellipse Grid.Column="0"
+                                             Width="8" Height="8"
+                                             VerticalAlignment="Center"
+                                             Fill="{Binding StatusDotBrush}" />
+
+                                    <!-- Server name + URL -->
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="2"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Instance.Name, FallbackValue='Unnamed Server'}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="13"
+                                                   Foreground="#E0E0E0" />
+                                        <TextBlock Text="{Binding Instance.BaseUrl}"
+                                                   FontSize="11"
+                                                   Foreground="#78909C"
+                                                   FontFamily="Consolas,monospace"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <!-- "CURRENT" badge -->
+                                    <Border Grid.Column="2"
+                                            Background="#1B5E20"
+                                            CornerRadius="4"
+                                            Padding="6,3"
+                                            VerticalAlignment="Center"
+                                            IsVisible="{Binding Instance.IsCurrentBackend}">
+                                        <TextBlock Text="CURRENT"
+                                                   FontSize="9"
+                                                   FontWeight="Bold"
+                                                   Foreground="#A5D6A7"
+                                                   LetterSpacing="0.5" />
+                                    </Border>
+
+                                    <!-- Delete button -->
+                                    <Button Grid.Column="3"
+                                            Command="{Binding DeleteCommand}"
+                                            Content="✕"
+                                            Width="26"
+                                            Height="26"
+                                            Padding="0"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            FontSize="11"
+                                            Background="Transparent"
+                                            Foreground="#546E7A"
+                                            CornerRadius="4"
+                                            VerticalAlignment="Center"
+                                            ToolTip.Tip="Remove server" />
+
+                                </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <!-- Connect Button -->
+                    <!-- Online indicator legend -->
+                    <StackPanel Orientation="Horizontal" Spacing="14" Margin="2,0,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Width="7" Height="7" Fill="#66BB6A" VerticalAlignment="Center" />
+                            <TextBlock Text="Online" FontSize="11" Foreground="#546E7A" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Width="7" Height="7" Fill="#546E7A" VerticalAlignment="Center" />
+                            <TextBlock Text="Offline" FontSize="11" Foreground="#546E7A" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Width="7" Height="7" Fill="#FFA726" VerticalAlignment="Center" />
+                            <TextBlock Text="Checking…" FontSize="11" Foreground="#546E7A" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Connect Button — only enabled when selected server is online -->
                     <Button Content="Connect"
                             Command="{Binding ConnectCommand}"
-                            IsEnabled="{Binding SelectedBackend, Converter={x:Static ObjectConverters.IsNotNull}}"
                             Height="44"
                             FontSize="15"
                             FontWeight="SemiBold"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
                             Background="#3D5AFE"
                             Foreground="White"
                             CornerRadius="6" />
                 </StackPanel>
             </Border>
 
-            <!-- Add New Backend Section -->
+            <!-- Add New Server Section -->
             <Border BorderBrush="#333"
                     BorderThickness="1"
                     CornerRadius="10"
-                    Padding="24"
+                    Padding="20"
                     Background="#1E1E30">
-                <StackPanel Spacing="12">
+                <StackPanel Spacing="10">
                     <TextBlock Text="Add New Server"
-                               FontSize="17"
+                               FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="#B0BEC5"
-                               Margin="0,0,0,4" />
+                               Margin="0,0,0,2" />
 
                     <TextBlock Text="Server URL"
                                FontWeight="Medium"
@@ -134,23 +194,28 @@
                              PlaceholderText="https://your-mireya-server.com"
                              FontSize="14"
                              Padding="12,10"
-                             CornerRadius="6" />
+                             CornerRadius="6"
+                             IsEnabled="{Binding IsVerifyingServer,
+                                         Converter={StaticResource InverseBoolConverter}}" />
 
-                    <Button Content="Add Server"
+                    <Button Content="{Binding AddButtonLabel}"
                             Command="{Binding AddBackendCommand}"
+                            IsEnabled="{Binding IsVerifyingServer,
+                                        Converter={StaticResource InverseBoolConverter}}"
                             Height="40"
                             FontSize="14"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
                             CornerRadius="6" />
                 </StackPanel>
             </Border>
 
-            <!-- Status Message Section -->
+            <!-- Status / notification banner (auto-hides for success messages) -->
             <Border BorderBrush="#37474F"
                     BorderThickness="1"
                     CornerRadius="10"
-                    Padding="18"
+                    Padding="16"
                     Background="#1A2332"
                     IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <TextBlock Text="{Binding StatusMessage}"
