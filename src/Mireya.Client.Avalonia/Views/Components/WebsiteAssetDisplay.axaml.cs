@@ -56,8 +56,16 @@ public partial class WebsiteAssetDisplay : UserControl
             {
                 _cachedParentHwnd = hwnd;
                 _windowOpened = true;
+
+                // Flash fix C: create the controller eagerly — even if the control
+                // is not yet visible — so the HWND white-flash happens before any
+                // signage content is shown rather than on the first website asset.
                 System.Diagnostics.Debug.WriteLine(
-                    $"WebsiteAssetDisplay attached — HWND ready: 0x{hwnd:X}"
+                    $"WebsiteAssetDisplay attached — HWND ready: 0x{hwnd:X}, creating controller eagerly"
+                );
+                Dispatcher.UIThread.Post(
+                    async () => await CreateWebViewControllerAsync(),
+                    DispatcherPriority.Render
                 );
             }
             else
@@ -85,9 +93,9 @@ public partial class WebsiteAssetDisplay : UserControl
                 $"Window.Opened — HWND = 0x{_cachedParentHwnd:X}"
             );
 
-            // If the control is already visible and waiting for the HWND,
-            // kick off WebView2 creation now.
-            if (IsEffectivelyVisible && !_isInitialized && !_isCreating)
+            // Flash fix C: create eagerly regardless of visibility so the HWND
+            // creation flash happens before any signage content is displayed.
+            if (!_isInitialized && !_isCreating)
             {
                 Dispatcher.UIThread.Post(
                     async () => await CreateWebViewControllerAsync(),
@@ -129,7 +137,8 @@ public partial class WebsiteAssetDisplay : UserControl
         {
             if (!_isInitialized && !_isCreating && _windowOpened)
             {
-                // Window is open, HWND should be available — create the WebView2 controller.
+                // Fallback path: window was opened before we attached, or eager creation
+                // failed — try again now that we are visible.
                 Dispatcher.UIThread.Post(
                     async () => await CreateWebViewControllerAsync(),
                     DispatcherPriority.Render
@@ -217,6 +226,10 @@ public partial class WebsiteAssetDisplay : UserControl
                 _cachedParentHwnd
             );
 
+            // Flash fix C: hide immediately after creation so the HWND never shows
+            // the default white background while we finish configuring it.
+            _webViewController.IsVisible = false;
+
             // Black background prevents the white flash while a new page loads
             _webViewController.DefaultBackgroundColor = System.Drawing.Color.Black;
 
@@ -245,7 +258,8 @@ public partial class WebsiteAssetDisplay : UserControl
             _errorPanel!.IsVisible = false;
 
             // If there is a URI waiting, navigate immediately (NavigateInternal manages
-            // loading/controller visibility).  Otherwise just show the loading indicator.
+            // loading/controller visibility).  Otherwise only show the loading indicator
+            // if the control is already visible (eager creation = control not yet shown).
             if (_pendingUri != null)
             {
                 var uri = _pendingUri;
@@ -253,13 +267,14 @@ public partial class WebsiteAssetDisplay : UserControl
                 _browserContainer.IsVisible = true;
                 NavigateInternal(uri);
             }
-            else
+            else if (IsEffectivelyVisible)
             {
                 _loadingPanel!.IsVisible = true;
                 _browserContainer.IsVisible = true;
-                if (IsEffectivelyVisible)
-                    Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
+                Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
             }
+            // else: created eagerly while invisible — nothing to display yet;
+            //       OnEffectiveVisibilityChanged will handle it when a URI arrives.
 
             System.Diagnostics.Debug.WriteLine("WebView2 controller created successfully.");
         }
@@ -435,6 +450,28 @@ public partial class WebsiteAssetDisplay : UserControl
                 })();
                 """;
             await _webViewController.CoreWebView2.ExecuteScriptAsync(noInteractScript);
+
+            // Hide all scrollbars — this is a non-interactive display, not a browser
+            const string noScrollScript = """
+                (function() {
+                    var s = document.createElement('style');
+                    s.textContent =
+                        'html, body { overflow: hidden !important; scrollbar-width: none !important; }' +
+                        '::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }';
+                    document.head.appendChild(s);
+                })();
+                """;
+            await _webViewController.CoreWebView2.ExecuteScriptAsync(noScrollScript);
+
+            // Flash fix B: wait for two animation frames to ensure the browser has
+            // completed at least one GPU-composited paint before we reveal the HWND.
+            // Without this, NavigationCompleted fires when the DOM is ready but the
+            // page may not have been visually drawn yet, causing a brief flash on
+            // slower machines.
+            const string rafScript = """
+                new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                """;
+            await _webViewController.CoreWebView2.ExecuteScriptAsync(rafScript);
         }
         catch (Exception ex)
         {

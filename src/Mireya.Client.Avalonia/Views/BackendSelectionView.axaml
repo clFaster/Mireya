@@ -95,18 +95,21 @@
                                              VerticalAlignment="Center"
                                              Fill="{Binding StatusDotBrush}" />
 
-                                    <!-- Server name + URL -->
+                                     <!-- Server name + URL -->
                                     <StackPanel Grid.Column="1"
                                                 Spacing="2"
                                                 VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Instance.Name, FallbackValue='Unnamed Server'}"
+                                        <TextBlock Text="{Binding Instance.Name}"
                                                    FontWeight="SemiBold"
                                                    FontSize="13"
-                                                   Foreground="#E0E0E0" />
+                                                   Foreground="#E0E0E0"
+                                                   IsVisible="{Binding Instance.Name,
+                                                       Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                         <TextBlock Text="{Binding Instance.BaseUrl}"
-                                                   FontSize="11"
+                                                   FontSize="12"
                                                    Foreground="#78909C"
                                                    FontFamily="Consolas,monospace"
+                                                   VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
 
