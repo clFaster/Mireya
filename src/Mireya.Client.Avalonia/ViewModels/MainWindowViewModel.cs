@@ -1,9 +1,15 @@
 using System;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Services;
+using Mireya.Client.Avalonia.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
@@ -11,6 +17,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly AppSettings _appSettings;
     private bool _disposed;
 
     [ObservableProperty]
@@ -18,16 +25,27 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public MainWindowViewModel(
         IServiceProvider serviceProvider,
-        ILogger<MainWindowViewModel> logger
+        ILogger<MainWindowViewModel> logger,
+        AppSettings appSettings
     )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _appSettings = appSettings;
 
         _logger.LogInformation("MainWindowViewModel initialized");
 
         // Start with backend selection
         ShowBackendSelection();
+
+        // Skip server selection and connect automatically if configured
+        if (_appSettings.AutoStart)
+        {
+            _ = TryAutoConnectAsync().ContinueWith(
+                t => _logger.LogError(t.Exception, "Auto-connect task faulted"),
+                TaskContinuationOptions.OnlyOnFaulted
+            );
+        }
     }
 
     private void ShowBackendSelection()
@@ -39,12 +57,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         var backendManager = _serviceProvider.GetRequiredService<IBackendManager>();
         var apiClientConfig = _serviceProvider.GetRequiredService<IApiClientConfiguration>();
-        var logger = _serviceProvider.GetRequiredService<ILogger<BackendSelectionViewModel>>();
+        var logger          = _serviceProvider.GetRequiredService<ILogger<BackendSelectionViewModel>>();
+        var appSettings     = _serviceProvider.GetRequiredService<AppSettings>();
 
         CurrentView = new BackendSelectionViewModel(
             backendManager,
             apiClientConfig,
             logger,
+            appSettings,
             OnBackendSelected
         );
     }
@@ -69,6 +89,62 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         CurrentView = _serviceProvider.GetRequiredService<ContentDisplayViewModel>();
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Auto-connect (used when AppSettings.AutoStart == true)
+    // ──────────────────────────────────────────────────────────────
+
+    private async Task TryAutoConnectAsync()
+    {
+        _logger.LogInformation("AutoStart: waiting 5 s before connecting...");
+        await Task.Delay(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            var backendManager = _serviceProvider.GetRequiredService<IBackendManager>();
+            var backends = await backendManager.GetAllBackendsAsync();
+
+            if (backends.Count == 0)
+            {
+                _logger.LogInformation("AutoStart: no backends configured — skipping");
+                return;
+            }
+
+            // Prefer the previously-used server; fall back to the first one
+            var target = backends.FirstOrDefault(b => b.IsCurrentBackend) ?? backends[0];
+            _logger.LogInformation("AutoStart: probing {Url}", target.BaseUrl);
+
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            var response = await http.GetAsync(
+                $"{target.BaseUrl.TrimEnd('/')}/api/screenmanagement/bonjour"
+            );
+
+            var isOnline = response.StatusCode is HttpStatusCode.Unauthorized
+                                                or HttpStatusCode.Forbidden
+                                                or HttpStatusCode.OK;
+
+            if (!isOnline)
+            {
+                _logger.LogInformation("AutoStart: {Url} is offline — skipping", target.BaseUrl);
+                return;
+            }
+
+            _logger.LogInformation("AutoStart: {Url} is online — connecting", target.BaseUrl);
+
+            var apiConfig = _serviceProvider.GetRequiredService<IApiClientConfiguration>();
+            await backendManager.SetCurrentBackendAsync(target.Id);
+            await apiConfig.UpdateBaseUrlAsync(target.BaseUrl);
+
+            // Switch to content display on the UI thread
+            Dispatcher.UIThread.Post(ShowContentDisplay);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "AutoStart: connection attempt failed");
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
 
     private void DisposeCurrentView()
     {

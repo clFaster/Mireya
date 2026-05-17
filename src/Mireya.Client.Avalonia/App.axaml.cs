@@ -43,12 +43,46 @@ public class App : Application
             // Ensure the application shuts down when the main window is closed
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
-            // Setup dependency injection
+            // Setup dependency injection (AppSettings singleton registered inside)
             var serviceProvider = ConfigureServices();
+
+            // Apply database migrations and load settings in the same startup scope
+            Log.Information("Initializing database and applying migrations...");
+            using (var startupScope = serviceProvider.CreateScope())
+            {
+                var db = startupScope.ServiceProvider.GetRequiredService<LocalDbContext>();
+                try
+                {
+                    db.Database.Migrate();
+                    Log.Information("Database migrations applied successfully");
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to apply database migrations. See inner exception for details.", ex);
+                }
+            }
+
+            // Load app settings from DB now that migrations have run.
+            // GetAwaiter().GetResult() is intentional: startup must be synchronous
+            // so that Fullscreen/AutoStart are available when the main window is created.
+            var appSettings = serviceProvider.GetRequiredService<AppSettings>();
+            appSettings.LoadAsync().GetAwaiter().GetResult();
+            Log.Information(
+                "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}",
+                appSettings.Fullscreen, appSettings.AutoStart
+            );
 
             // Create main window with dependency-injected ViewModel
             var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
-            desktop.MainWindow = new MainWindow { DataContext = mainViewModel };
+            var mainWindow = new MainWindow { DataContext = mainViewModel };
+            desktop.MainWindow = mainWindow;
+
+            // Apply fullscreen / kiosk mode if configured
+            if (appSettings.Fullscreen)
+            {
+                mainWindow.WindowState = WindowState.FullScreen;
+            }
 
             // Gracefully shut down services when the application exits:
             // 1. Disconnect SignalR (stops auto-reconnect background threads)
@@ -93,6 +127,9 @@ public class App : Application
     {
         var services = new ServiceCollection();
 
+        // Register app settings singleton — DI resolves IServiceScopeFactory automatically
+        services.AddSingleton<AppSettings>();
+
         // Add Serilog logging
         services.AddLogging(builder =>
         {
@@ -127,23 +164,6 @@ public class App : Application
         services.AddTransient<BackendSelectionViewModel>();
 
         var serviceProvider = services.BuildServiceProvider();
-
-        // Apply database migrations automatically at startup
-        Log.Information("Initializing database and applying migrations...");
-        using var scope = serviceProvider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
-
-        try
-        {
-            // Apply all pending migrations automatically
-            db.Database.Migrate();
-            Log.Information("Database migrations applied successfully");
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Failed to apply database migrations. See inner exception for details.",
-                ex);
-        }
 
         return serviceProvider;
     }

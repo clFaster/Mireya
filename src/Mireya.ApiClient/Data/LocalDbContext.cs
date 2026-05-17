@@ -30,6 +30,9 @@ public class LocalDbContext : DbContext
     // Download tracking
     public DbSet<DownloadedAsset> DownloadedAssets { get; set; } = null!;
 
+    // Client-wide key/value settings
+    public DbSet<ClientSetting> ClientSettings { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -142,6 +145,14 @@ public class LocalDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.BackendInstanceId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure ClientSetting - client-wide key/value store
+        modelBuilder.Entity<ClientSetting>(entity =>
+        {
+            entity.HasKey(e => e.Key);
+            entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Value).IsRequired();
         });
     }
 }
@@ -273,4 +284,14 @@ public class DownloadedAsset
     public DateTime? DownloadedAt { get; set; }
 
     public DateTime LastCheckedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+///     Client-wide application settings stored as key/value pairs in the local database.
+/// </summary>
+public class ClientSetting
+{
+    public string Key { get; set; } = "";
+
+    public string Value { get; set; } = "";
 }

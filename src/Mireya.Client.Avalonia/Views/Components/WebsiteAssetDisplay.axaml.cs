@@ -18,6 +18,7 @@ public partial class WebsiteAssetDisplay : UserControl
     private CoreWebView2Controller? _webViewController;
     private bool _isInitialized;
     private bool _isCreating;
+    private bool _isNavigating;
     private Uri? _pendingUri;
     private IntPtr _cachedParentHwnd = IntPtr.Zero;
     private bool _windowOpened;
@@ -136,9 +137,13 @@ public partial class WebsiteAssetDisplay : UserControl
             }
             else if (_isInitialized && _webViewController != null)
             {
-                // Already created — show and resize.
-                _webViewController.IsVisible = true;
-                Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
+                // Only reveal the controller if we are not mid-navigation.
+                // NavigateInternal hides the controller; OnNavigationCompleted reveals it.
+                if (!_isNavigating)
+                {
+                    _webViewController.IsVisible = true;
+                    Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
+                }
 
                 // If a navigation was queued while hidden, apply it now.
                 if (_pendingUri != null)
@@ -212,6 +217,12 @@ public partial class WebsiteAssetDisplay : UserControl
                 _cachedParentHwnd
             );
 
+            // Black background prevents the white flash while a new page loads
+            _webViewController.DefaultBackgroundColor = System.Drawing.Color.Black;
+
+            // Block all keyboard shortcuts so the display cannot be keyboard-controlled
+            _webViewController.AcceleratorKeyPressed += OnAcceleratorKeyPressed;
+
             // Configure
             var settings = _webViewController.CoreWebView2.Settings;
             settings.IsScriptEnabled = true;
@@ -231,17 +242,23 @@ public partial class WebsiteAssetDisplay : UserControl
 
             _isInitialized = true;
 
-            _loadingPanel!.IsVisible = false;
-            _browserContainer.IsVisible = true;
             _errorPanel!.IsVisible = false;
 
-            ApplyControllerVisibility();
-
+            // If there is a URI waiting, navigate immediately (NavigateInternal manages
+            // loading/controller visibility).  Otherwise just show the loading indicator.
             if (_pendingUri != null)
             {
                 var uri = _pendingUri;
                 _pendingUri = null;
+                _browserContainer.IsVisible = true;
                 NavigateInternal(uri);
+            }
+            else
+            {
+                _loadingPanel!.IsVisible = true;
+                _browserContainer.IsVisible = true;
+                if (IsEffectivelyVisible)
+                    Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
             }
 
             System.Diagnostics.Debug.WriteLine("WebView2 controller created successfully.");
@@ -259,6 +276,14 @@ public partial class WebsiteAssetDisplay : UserControl
         }
     }
 
+    private static void OnAcceleratorKeyPressed(
+        object? sender,
+        CoreWebView2AcceleratorKeyPressedEventArgs e)
+    {
+        // Prevent all keyboard shortcuts from reaching the browser
+        e.Handled = true;
+    }
+
     private static bool TryGetWebView2RuntimeVersion(out string errorMessage)
     {
         try
@@ -272,19 +297,6 @@ public partial class WebsiteAssetDisplay : UserControl
         {
             errorMessage = $"WebView2 runtime not found or not accessible.\n{ex.Message}";
             return false;
-        }
-    }
-
-    private void ApplyControllerVisibility()
-    {
-        if (IsEffectivelyVisible)
-        {
-            _webViewController!.IsVisible = true;
-            Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
-        }
-        else
-        {
-            _webViewController!.IsVisible = false;
         }
     }
 
@@ -365,11 +377,15 @@ public partial class WebsiteAssetDisplay : UserControl
 
         try
         {
-            _loadingPanel!.IsVisible = false;
+            _isNavigating = true;
+
+            // Hide the controller while loading to prevent a flash of the previous page
+            _webViewController.IsVisible = false;
+            _loadingPanel!.IsVisible = true;
             _browserContainer!.IsVisible = true;
             _errorPanel!.IsVisible = false;
 
-            _webViewController.IsVisible = IsEffectivelyVisible;
+            // Keep WebView2 bounds up-to-date even while hidden
             Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
 
             // Remove any previous handler to prevent accumulation
@@ -380,6 +396,7 @@ public partial class WebsiteAssetDisplay : UserControl
         }
         catch (Exception ex)
         {
+            _isNavigating = false;
             System.Diagnostics.Debug.WriteLine($"NavigateInternal failed: {ex}");
             ShowError($"Navigation failed:\n{ex.Message}");
         }
@@ -393,10 +410,12 @@ public partial class WebsiteAssetDisplay : UserControl
         if (_webViewController?.CoreWebView2 == null)
             return;
 
+        _isNavigating = false;
         _webViewController.CoreWebView2.NavigationCompleted -= OnNavigationCompleted;
 
         try
         {
+            // Mute all media on the page (websites in a signage loop should be silent)
             const string muteScript = """
                 (function() {
                     document.querySelectorAll('video, audio').forEach(el => {
@@ -406,10 +425,28 @@ public partial class WebsiteAssetDisplay : UserControl
                 })();
                 """;
             await _webViewController.CoreWebView2.ExecuteScriptAsync(muteScript);
+
+            // Make the page non-interactive: no pointer events, no text selection
+            const string noInteractScript = """
+                (function() {
+                    var s = document.createElement('style');
+                    s.textContent = '* { pointer-events: none !important; user-select: none !important; }';
+                    document.head.appendChild(s);
+                })();
+                """;
+            await _webViewController.CoreWebView2.ExecuteScriptAsync(noInteractScript);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Mute script failed: {ex}");
+            System.Diagnostics.Debug.WriteLine($"Post-navigation scripts failed: {ex}");
+        }
+
+        // Reveal the WebView now that the page is painted and scripts have run
+        if (IsEffectivelyVisible && _webViewController != null)
+        {
+            _webViewController.IsVisible = true;
+            if (_loadingPanel != null) _loadingPanel.IsVisible = false;
+            Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
         }
     }
 
@@ -448,6 +485,7 @@ public partial class WebsiteAssetDisplay : UserControl
             if (_webViewController != null)
             {
                 _webViewController.IsVisible = false;
+                _webViewController.AcceleratorKeyPressed -= OnAcceleratorKeyPressed;
 
                 if (_webViewController.CoreWebView2 != null)
                     _webViewController.CoreWebView2.NavigationCompleted -= OnNavigationCompleted;
@@ -459,6 +497,7 @@ public partial class WebsiteAssetDisplay : UserControl
             _webViewEnvironment = null;
             _isInitialized = false;
             _isCreating = false;
+            _isNavigating = false;
             _pendingUri = null;
 
             System.Diagnostics.Debug.WriteLine("WebView2 resources disposed.");
