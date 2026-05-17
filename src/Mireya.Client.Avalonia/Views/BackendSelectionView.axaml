@@ -225,6 +225,70 @@
                            Foreground="{Binding IsStatusError, Converter={StaticResource ErrorColorConverter}}" />
             </Border>
 
+            <!-- Display Settings Section -->
+            <Border BorderBrush="#333"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="20"
+                    Background="#1E1E30">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Display Settings"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="#B0BEC5"
+                               Margin="0,0,0,2" />
+
+                    <!-- Fullscreen toggle -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Fullscreen"
+                                       FontSize="13"
+                                       FontWeight="Medium"
+                                       Foreground="#E0E0E0" />
+                            <TextBlock Text="Launch the window maximised with no title bar"
+                                       FontSize="11"
+                                       Foreground="#546E7A" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding Fullscreen}"
+                                      VerticalAlignment="Center"
+                                      OffContent=""
+                                      OnContent="" />
+                    </Grid>
+
+                    <Border Height="1" Background="#2A2A44" />
+
+                    <!-- AutoStart toggle -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Auto Start"
+                                       FontSize="13"
+                                       FontWeight="Medium"
+                                       Foreground="#E0E0E0" />
+                            <TextBlock Text="Skip server selection and connect automatically on launch"
+                                       FontSize="11"
+                                       Foreground="#546E7A" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding AutoStart}"
+                                      VerticalAlignment="Center"
+                                      OffContent=""
+                                      OnContent="" />
+                    </Grid>
+
+                    <!-- Save button -->
+                    <Button Content="Save Settings"
+                            Command="{Binding SaveSettingsCommand}"
+                            Height="40"
+                            FontSize="14"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            CornerRadius="6"
+                            Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
         </StackPanel>
     </ScrollViewer>
 

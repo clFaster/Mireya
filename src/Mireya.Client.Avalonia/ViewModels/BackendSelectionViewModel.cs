@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Services;
+using Mireya.Client.Avalonia.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
@@ -21,6 +22,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private readonly IBackendManager _backendManager;
     private readonly ILogger<BackendSelectionViewModel> _logger;
     private readonly Action<BackendInstance> _onBackendSelected;
+    private readonly AppSettings _appSettings;
     private CancellationTokenSource? _statusCts;
 
     [ObservableProperty]
@@ -48,17 +50,33 @@ public partial class BackendSelectionViewModel : ViewModelBase
     [ObservableProperty]
     private string? _statusMessage;
 
+    // ──────────────────────────────────────────────────────────────
+    // Display settings (mirrored from AppSettings for two-way binding)
+    // ──────────────────────────────────────────────────────────────
+
+    [ObservableProperty]
+    private bool _fullscreen;
+
+    [ObservableProperty]
+    private bool _autoStart;
+
     public BackendSelectionViewModel(
         IBackendManager backendManager,
         IApiClientConfiguration apiClientConfiguration,
         ILogger<BackendSelectionViewModel> logger,
+        AppSettings appSettings,
         Action<BackendInstance> onBackendSelected
     )
     {
         _backendManager = backendManager;
         _apiClientConfiguration = apiClientConfiguration;
         _logger = logger;
+        _appSettings = appSettings;
         _onBackendSelected = onBackendSelected;
+
+        // Mirror current settings into the observable properties
+        _fullscreen = appSettings.Fullscreen;
+        _autoStart  = appSettings.AutoStart;
 
         _ = LoadBackendsAsync();
     }
@@ -155,6 +173,31 @@ public partial class BackendSelectionViewModel : ViewModelBase
         finally
         {
             item.IsCheckingOnline = false;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Save display settings
+    // ──────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task SaveSettingsAsync()
+    {
+        try
+        {
+            _appSettings.Fullscreen = Fullscreen;
+            _appSettings.AutoStart  = AutoStart;
+            await _appSettings.SaveAsync();
+            _logger.LogInformation(
+                "Settings saved — Fullscreen={Fullscreen}, AutoStart={AutoStart}",
+                Fullscreen, AutoStart
+            );
+            SetStatus("Settings saved.", isError: false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save settings");
+            SetStatus($"Failed to save settings: {ex.Message}", isError: true);
         }
     }
 

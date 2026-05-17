@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
 using Mireya.ApiClient.Services;
+using Mireya.Client.Avalonia.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
@@ -76,7 +77,8 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         IAuthenticationService authenticationService,
         IScreenHubService hubService,
         ILocalAssetSyncService assetSyncService,
-        ILogger<ContentDisplayViewModel> logger
+        ILogger<ContentDisplayViewModel> logger,
+        AppSettings appSettings
     )
     {
         _authenticationService = authenticationService;
@@ -93,6 +95,14 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         _ = InitializeAsync().ContinueWith(
             t => _logger.LogError(t.Exception, "Background initialization failed"),
             TaskContinuationOptions.OnlyOnFaulted);
+
+        // In AutoStart mode hide the overlay after 10 s without user interaction
+        if (appSettings.AutoStart)
+        {
+            _ = AutoHideOverlayAsync().ContinueWith(
+                t => _logger.LogError(t.Exception, "Auto-hide overlay faulted"),
+                TaskContinuationOptions.OnlyOnFaulted);
+        }
     }
 
     private async Task InitializeAsync()
@@ -532,6 +542,17 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         }
 
         ShowCurrentItem();
+    }
+
+    private async Task AutoHideOverlayAsync()
+    {
+        _logger.LogDebug("AutoStart: overlay will auto-hide in 10 s");
+        await Task.Delay(TimeSpan.FromSeconds(10));
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            IsOverlayVisible = false;
+            _logger.LogInformation("AutoStart: overlay hidden");
+        });
     }
 
     public void Cleanup()
