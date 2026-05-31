@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
@@ -269,8 +270,9 @@ public partial class BackendSelectionViewModel : ViewModelBase
 
     /// <summary>
     /// Probes the given URL to confirm a Mireya API is running there.
-    /// A real Mireya server returns HTTP 401 with a Bearer challenge on
-    /// GET /api/screenmanagement/bonjour.
+    /// Primary signal: GET /api/info returns an application identifier of "Mireya".
+    /// Fallback (older servers without /api/info): GET /api/screenmanagement/bonjour
+    /// returns HTTP 401 with a Bearer challenge.
     /// </summary>
     private static async Task<bool> VerifyMireyaServerAsync(string baseUrl)
     {
@@ -279,18 +281,37 @@ public partial class BackendSelectionViewModel : ViewModelBase
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
             client.DefaultRequestHeaders.Add("User-Agent", "Mireya-Client/1.0");
 
-            var response = await client.GetAsync(
-                $"{baseUrl.TrimEnd('/')}/api/screenmanagement/bonjour"
-            );
+            var root = baseUrl.TrimEnd('/');
 
+            // Primary: dedicated identity endpoint
+            try
+            {
+                var infoResponse = await client.GetAsync($"{root}/api/info");
+                if (infoResponse.StatusCode == HttpStatusCode.OK)
+                {
+                    await using var stream = await infoResponse.Content.ReadAsStreamAsync();
+                    using var doc = await JsonDocument.ParseAsync(stream);
+                    if (doc.RootElement.TryGetProperty("application", out var appName)
+                        && string.Equals(appName.GetString(), "Mireya", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Not a Mireya server (returned non-JSON); fall through to the legacy probe.
+            }
+
+            // Fallback: legacy Bearer-challenge probe for older backends
+            var response = await client.GetAsync($"{root}/api/screenmanagement/bonjour");
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                // ASP.NET Core Identity issues a Bearer challenge — strong signal
                 var wwwAuth = response.Headers.WwwAuthenticate.ToString();
                 return wwwAuth.Contains("Bearer", StringComparison.OrdinalIgnoreCase);
             }
 
-            return response.StatusCode == HttpStatusCode.OK;
+            return false;
         }
         catch
         {
