@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Mireya.Application.Services.Audit;
 using Mireya.Database;
 using Mireya.Database.Models;
 using Xabe.FFmpeg;
@@ -19,7 +20,7 @@ public interface IAssetService
     );
 }
 
-public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetService
+public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditService audit) : IAssetService
 {
     private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
     private const long MaxVideoSizeBytes = 100 * 1024 * 1024; // 100 MB
@@ -50,6 +51,9 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
 
         db.Assets.AddRange(assets);
         await db.SaveChangesAsync();
+
+        await audit.LogAsync("Uploaded", "Asset", null,
+            $"Uploaded {assets.Count} asset(s): {string.Join(", ", assets.Select(a => a.Name))}");
 
         return assets
             .Select(a => new AssetSummary { Id = a.Id, Name = a.Name, Source = a.Source })
@@ -252,6 +256,8 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
 
         db.Assets.Remove(asset);
         await db.SaveChangesAsync();
+
+        await audit.LogAsync("Deleted", "Asset", id.ToString(), $"Deleted asset '{asset.Name}'");
     }
 
     public async Task<Database.Models.Asset> UpdateAssetMetadataAsync(
@@ -284,6 +290,8 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
         asset.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
+
+        await audit.LogAsync("Updated", "Asset", id.ToString(), $"Updated metadata for asset '{asset.Name}'");
 
         return asset;
     }
@@ -340,6 +348,8 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
 
         db.Assets.Add(asset);
         await db.SaveChangesAsync();
+
+        await audit.LogAsync("Created", "Asset", asset.Id.ToString(), $"Created website asset '{asset.Name}'");
 
         return new AssetSummary
         {

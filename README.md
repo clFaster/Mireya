@@ -29,6 +29,8 @@ scheduled content.
   without an edit.
 - **Assets** — Images, videos and websites. Videos get an automatically generated poster-frame thumbnail, and assets
   can be organised with **tags** and filtered via search in the admin.
+- **Audit log** — Administrative actions (creating, updating, deleting campaigns and assets; approving, rejecting and
+  updating screens) are recorded with the acting user and a timestamp, viewable in the admin under **Audit Log**.
 
 ---
 

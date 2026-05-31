@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Mireya.Application.Services;
+using Mireya.Application.Services.Audit;
 using Mireya.Application.Services.Campaign;
 using Mireya.Database.Models;
 using NSubstitute;
@@ -36,7 +37,7 @@ public class CampaignServiceTests
         db.Context.Displays.Add(display);
         await db.Context.SaveChangesAsync();
 
-        var service = new CampaignService(db.Context, sync);
+        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
         var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
             "Campaign A", null,
             [new CampaignAssetDto(asset.Id, 1, 5)],
@@ -68,7 +69,7 @@ public class CampaignServiceTests
         db.Context.Displays.Add(display);
         await db.Context.SaveChangesAsync();
 
-        var service = new CampaignService(db.Context, sync);
+        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
         var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
             "Campaign B", null,
             [new CampaignAssetDto(asset.Id, 1, 5)],
@@ -99,7 +100,7 @@ public class CampaignServiceTests
         db.Context.Displays.AddRange(oldDisplay, newDisplay);
         await db.Context.SaveChangesAsync();
 
-        var service = new CampaignService(db.Context, sync);
+        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
         var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
             "Campaign C", null,
             [new CampaignAssetDto(asset.Id, 1, 5)],
@@ -128,7 +129,7 @@ public class CampaignServiceTests
         db.Context.Assets.Add(asset);
         await db.Context.SaveChangesAsync();
 
-        var service = new CampaignService(db.Context, sync);
+        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
 
         var first = await service.CreateCampaignAsync(new CreateCampaignRequest(
             "First Default", null, [new CampaignAssetDto(asset.Id, 1, 5)], [], IsDefault: true));

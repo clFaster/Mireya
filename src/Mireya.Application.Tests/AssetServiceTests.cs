@@ -1,7 +1,9 @@
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Mireya.Application.Services.Asset;
+using Mireya.Application.Services.Audit;
 using Mireya.Database.Models;
+using NSubstitute;
 
 namespace Mireya.Application.Tests;
 
@@ -16,7 +18,7 @@ public class AssetServiceTests
     }
 
     private static AssetService CreateService(TestDatabase db) =>
-        new(db.Context, new FakeHostEnvironment());
+        new(db.Context, new FakeHostEnvironment(), Substitute.For<IAuditService>());
 
     private static void Seed(TestDatabase db)
     {
