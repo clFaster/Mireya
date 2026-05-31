@@ -98,6 +98,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
         _hubService.OnConfigurationUpdateReceived += OnConfigurationUpdateReceived;
         _hubService.OnStartAssetSync += OnStartAssetSync;
+        _hubService.OnCommandReceived += OnCommandReceived;
         _hubService.OnReconnecting += OnHubReconnecting;
         _hubService.OnReconnected += OnHubReconnected;
         _hubService.OnClosed += OnHubClosed;
@@ -290,6 +291,28 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                 StatusText = $"Sync error: {ex.Message}";
             });
         }
+    }
+
+    private void OnCommandReceived(string command)
+    {
+        _logger.LogInformation("Handling remote command: {Command}", command);
+        Dispatcher.UIThread.Post(() =>
+        {
+            switch (command)
+            {
+                case "restart":
+                    if (_playlist.Count > 0)
+                        StartPlayback();
+                    break;
+                case "reload":
+                    if (_playlist.Count > 0)
+                        ShowCurrentItem();
+                    break;
+                default:
+                    _logger.LogWarning("Ignoring unknown remote command: {Command}", command);
+                    break;
+            }
+        });
     }
 
     private void BuildPlaylist(ScreenConfiguration config)
@@ -645,6 +668,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         }
         _hubService.OnConfigurationUpdateReceived -= OnConfigurationUpdateReceived;
         _hubService.OnStartAssetSync -= OnStartAssetSync;
+        _hubService.OnCommandReceived -= OnCommandReceived;
         _hubService.OnReconnecting -= OnHubReconnecting;
         _hubService.OnReconnected -= OnHubReconnected;
         _hubService.OnClosed -= OnHubClosed;

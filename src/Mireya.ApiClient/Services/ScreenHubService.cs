@@ -11,6 +11,7 @@ public interface IScreenHubService : IAsyncDisposable
     bool IsConnected { get; }
     event Action<ScreenConfiguration> OnConfigurationUpdateReceived;
     event Action<List<CampaignSyncInfo>> OnStartAssetSync;
+    event Action<string> OnCommandReceived;
     event Action OnReconnected;
     event Action OnReconnecting;
     event Action OnClosed;
@@ -82,6 +83,15 @@ public class ScreenHubService : IScreenHubService
             }
         );
 
+        _hubConnection.On<string>(
+            "ExecuteCommand",
+            command =>
+            {
+                _logger.LogInformation("Received remote command: {Command}", command);
+                OnCommandReceived?.Invoke(command);
+            }
+        );
+
         _hubConnection.Closed += error =>
         {
             _logger.LogWarning(error, "SignalR connection closed");
@@ -109,6 +119,7 @@ public class ScreenHubService : IScreenHubService
 
     public event Action<ScreenConfiguration>? OnConfigurationUpdateReceived;
     public event Action<List<CampaignSyncInfo>>? OnStartAssetSync;
+    public event Action<string>? OnCommandReceived;
     public event Action? OnReconnected;
     public event Action? OnReconnecting;
     public event Action? OnClosed;

@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject IScreenManagementService ScreenManagementService
 @inject NavigationManager Navigation
+@using Mireya.Application.Constants
 @using Mireya.Database.Models
 
 <PageTitle>Screen Details - Mireya Admin</PageTitle>
@@ -20,6 +21,17 @@ else
             {
                 <button class="btn btn-success" @onclick="ApproveAsync">Approve</button>
                 <button class="btn btn-danger" @onclick="RejectAsync">Reject</button>
+            }
+            else if (_screen.ApprovalStatus == nameof(ApprovalStatus.Approved))
+            {
+                <button class="btn btn-outline-primary" @onclick="RestartPlaybackAsync"
+                        disabled="@(!_screen.IsActive || _sendingCommand)" title="Restart the playlist from the first item">
+                    <i class="bi bi-skip-start" aria-hidden="true"></i> Restart
+                </button>
+                <button class="btn btn-outline-primary" @onclick="ReloadContentAsync"
+                        disabled="@(!_screen.IsActive || _sendingCommand)" title="Reload the current content">
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Reload
+                </button>
             }
         </div>
     </div>
@@ -69,6 +81,7 @@ else
     private ScreenWithCampaignsResponse? _screen;
     private string? _message;
     private bool _isError;
+    private bool _sendingCommand;
     private ConfirmDialog _confirmDialog = default!;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
@@ -76,6 +89,23 @@ else
     private async Task LoadAsync()
     {
         _screen = await ScreenManagementService.GetScreenWithCampaignsAsync(Id);
+    }
+
+    private Task RestartPlaybackAsync() => SendCommandAsync(ScreenCommands.RestartPlayback, "Restart command sent.");
+
+    private Task ReloadContentAsync() => SendCommandAsync(ScreenCommands.ReloadContent, "Reload command sent.");
+
+    private async Task SendCommandAsync(string command, string successMessage)
+    {
+        _sendingCommand = true;
+        try
+        {
+            var delivered = await ScreenManagementService.SendCommandAsync(Id, command);
+            _message = delivered ? successMessage : "Screen is offline; command was not delivered.";
+            _isError = !delivered;
+        }
+        catch (Exception ex) { _message = ex.Message; _isError = true; }
+        finally { _sendingCommand = false; }
     }
 
     private async Task ApproveAsync()

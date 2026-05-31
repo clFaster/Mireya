@@ -33,7 +33,10 @@ scheduled content.
   can be organised with **tags** and filtered via search in the admin. Images support a per-asset **fit mode**
   (contain, cover or fill) controlling how they scale to the screen, and transition with a smooth fade on the client.
 - **Audit log** — Administrative actions (creating, updating, deleting campaigns and assets; approving, rejecting and
-  updating screens) are recorded with the acting user and a timestamp, viewable in the admin under **Audit Log**.
+  updating screens; sending remote commands) are recorded with the acting user and a timestamp, viewable in the admin
+  under **Audit Log**.
+- **Remote screen actions** — From a screen's detail page an administrator can push live commands to a connected
+  screen over SignalR: **Restart** (replay the playlist from the start) and **Reload** (re-render the current content).
 
 ---
 

@@ -7,4 +7,5 @@ public interface IScreenHubContext
 {
     Task SendConfigurationUpdateAsync(string userId, ScreenConfiguration config);
     Task StartAssetSyncAsync(string userId, List<CampaignSyncInfo> campaigns);
+    Task SendCommandAsync(string userId, string command);
 }

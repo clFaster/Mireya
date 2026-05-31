@@ -14,6 +14,7 @@ public interface IScreenSynchronizationService
     Task SyncScreenAsync(Guid displayId);
     Task SyncScreensAsync(IEnumerable<Guid> displayIds);
     Task<Guid?> GetDisplayIdByUserIdAsync(string userId);
+    Task<bool> SendCommandAsync(Guid displayId, string command);
 }
 
 public class ScreenSynchronizationService(
@@ -73,6 +74,22 @@ public class ScreenSynchronizationService(
     {
         var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
         return display?.Id;
+    }
+
+    public async Task<bool> SendCommandAsync(Guid displayId, string command)
+    {
+        var display = await db.Displays.FirstOrDefaultAsync(d => d.Id == displayId);
+        if (display?.UserId == null)
+        {
+            logger.LogWarning(
+                "Cannot send command '{Command}' to screen {DisplayId}: screen not found or has no associated user",
+                command, displayId);
+            return false;
+        }
+
+        await hubContext.SendCommandAsync(display.UserId, command);
+        logger.LogInformation("Sent command '{Command}' to screen {DisplayId}", command, displayId);
+        return true;
     }
 
     private static List<CampaignDetail> BuildCampaignList(Display display)
