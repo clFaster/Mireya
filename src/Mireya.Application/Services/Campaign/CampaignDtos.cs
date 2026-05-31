@@ -14,7 +14,8 @@ public record UpdateCampaignRequest(
     string Name,
     string? Description,
     List<CampaignAssetDto> Assets,
-    List<Guid> DisplayIds
+    // null = leave screen assignments unchanged; a list (incl. empty) = set assignments to exactly this set
+    List<Guid>? DisplayIds
 );
 
 public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
