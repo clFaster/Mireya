@@ -38,6 +38,12 @@ public class Asset
     public string? ThumbnailSource { get; set; }
 
     /// <summary>
+    ///     Comma-separated tags used for organising and searching assets.
+    /// </summary>
+    [MaxLength(500)]
+    public string? Tags { get; set; }
+
+    /// <summary>
     ///     File size in bytes (for uploaded files)
     /// </summary>
     public long? FileSizeBytes { get; set; }

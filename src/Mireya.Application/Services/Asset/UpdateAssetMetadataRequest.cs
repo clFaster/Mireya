@@ -6,4 +6,5 @@ public class UpdateAssetMetadataRequest
     public string? Description { get; set; }
     public int? DurationSeconds { get; set; }
     public bool? IsMuted { get; set; }
+    public string? Tags { get; set; }
 }
