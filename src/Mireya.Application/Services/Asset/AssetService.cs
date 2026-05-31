@@ -5,7 +5,7 @@ using Xabe.FFmpeg;
 
 namespace Mireya.Application.Services.Asset;
 
-public record AssetFilter(int Page = 1, int PageSize = 10, AssetType? Type = null, string SortBy = "name");
+public record AssetFilter(int Page = 1, int PageSize = 10, AssetType? Type = null, string SortBy = "name", string? Search = null);
 
 public interface IAssetService
 {
@@ -194,6 +194,15 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
         if (filter.Type.HasValue)
             query = query.Where(a => a.Type == filter.Type.Value);
 
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.Trim();
+            query = query.Where(a =>
+                EF.Functions.Like(a.Name, $"%{term}%")
+                || (a.Description != null && EF.Functions.Like(a.Description, $"%{term}%"))
+                || (a.Tags != null && EF.Functions.Like(a.Tags, $"%{term}%")));
+        }
+
         query = ApplyAssetSorting(query, filter);
 
         var total = await query.CountAsync();
@@ -269,6 +278,9 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
         if (request.IsMuted.HasValue)
             asset.IsMuted = request.IsMuted.Value;
 
+        if (request.Tags != null)
+            asset.Tags = NormalizeTags(request.Tags);
+
         asset.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
@@ -278,6 +290,15 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
 
     private static bool IsUploadedFile(string source, string filePath) =>
         !string.IsNullOrEmpty(filePath) && source.StartsWith("/uploads/") && File.Exists(filePath);
+
+    private static string? NormalizeTags(string tags)
+    {
+        var cleaned = tags
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return cleaned.Count == 0 ? null : string.Join(", ", cleaned);
+    }
 
     public async Task<AssetSummary> CreateWebsiteAssetAsync(
         string url,

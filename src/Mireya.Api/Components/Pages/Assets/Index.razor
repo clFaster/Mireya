@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject ToastService Toast
 @using Mireya.Database.Models
+@implements IDisposable
 
 <PageTitle>Assets - Mireya Admin</PageTitle>
 
@@ -12,12 +13,20 @@
     <a href="/assets/upload" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Upload</a>
 </div>
 
-<div class="mb-3 d-flex gap-2">
+<div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
     @foreach (var filter in new[] { (null as string, "All"), ("Image", "Images"), ("Video", "Videos"), ("Website", "Websites") })
     {
         <button class="btn btn-sm @(_typeFilter == filter.Item1 ? "btn-primary" : "btn-outline-secondary")"
                 @onclick="() => SetFilter(filter.Item1)">@filter.Item2</button>
     }
+    <div class="ms-auto" style="max-width:280px;width:100%;">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input class="form-control" type="search" placeholder="Search name or tags"
+                   aria-label="Search assets" value="@_search"
+                   @oninput="OnSearchInput" />
+        </div>
+    </div>
 </div>
 
 @if (_loading)
@@ -70,6 +79,15 @@ else
                     <div class="card-body p-2">
                         <p class="card-title fw-semibold mb-1 text-truncate" title="@asset.Name">@asset.Name</p>
                         <small class="text-muted">@asset.Type</small>
+                        @if (!string.IsNullOrWhiteSpace(asset.Tags))
+                        {
+                            <div class="mt-1 d-flex flex-wrap gap-1">
+                                @foreach (var tag in asset.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                {
+                                    <span class="badge text-bg-light border">@tag</span>
+                                }
+                            </div>
+                        }
                     </div>
                     <div class="card-footer p-2 d-flex gap-1">
                         <button class="btn btn-sm btn-outline-secondary flex-grow-1"
@@ -113,6 +131,11 @@ else
                         <label class="form-label">Description</label>
                         <textarea class="form-control" @bind="_editDescription"></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tags</label>
+                        <input class="form-control" @bind="_editTags" placeholder="comma, separated, tags" />
+                        <div class="form-text">Separate tags with commas.</div>
+                    </div>
                     @if (_editAsset.Type != AssetType.Video)
                     {
                         <div class="mb-3">
@@ -137,9 +160,11 @@ else
     private int _page = 1, _totalPages = 1, _total;
     private const int PageSize = 12;
     private string? _typeFilter;
+    private string _search = "";
+    private System.Timers.Timer? _searchDebounce;
     private bool _loading = true;
     private Mireya.Database.Models.Asset? _editAsset;
-    private string _editName = "", _editDescription = "";
+    private string _editName = "", _editDescription = "", _editTags = "";
     private int? _editDuration;
     private ConfirmDialog _confirmDialog = default!;
 
@@ -149,12 +174,27 @@ else
     {
         _loading = true;
         AssetType? type = _typeFilter == null ? null : Enum.Parse<AssetType>(_typeFilter);
-        var result = await AssetService.GetAssetsAsync(new(_page, PageSize, type));
+        var result = await AssetService.GetAssetsAsync(new(_page, PageSize, type, Search: _search));
         _assets = result.Items;
         _total = result.Total;
         _totalPages = (int)Math.Ceiling(_total / (double)PageSize);
         if (_totalPages == 0) _totalPages = 1;
         _loading = false;
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? "";
+        _searchDebounce?.Stop();
+        _searchDebounce?.Dispose();
+        _searchDebounce = new System.Timers.Timer(300) { AutoReset = false };
+        _searchDebounce.Elapsed += async (_, _) => await InvokeAsync(async () =>
+        {
+            _page = 1;
+            await LoadAsync();
+            StateHasChanged();
+        });
+        _searchDebounce.Start();
     }
 
     private async Task SetFilter(string? filter)
@@ -189,6 +229,7 @@ else
         _editAsset = asset;
         _editName = asset.Name;
         _editDescription = asset.Description ?? "";
+        _editTags = asset.Tags ?? "";
         _editDuration = asset.DurationSeconds;
     }
 
@@ -203,6 +244,7 @@ else
             {
                 Name = _editName,
                 Description = _editDescription,
+                Tags = _editTags,
                 DurationSeconds = _editDuration,
             };
             await AssetService.UpdateAssetMetadataAsync(_editAsset.Id, req);
@@ -218,4 +260,10 @@ else
 
     private async Task PrevPage() { _page--; await LoadAsync(); }
     private async Task NextPage() { _page++; await LoadAsync(); }
+
+    public void Dispose()
+    {
+        _searchDebounce?.Stop();
+        _searchDebounce?.Dispose();
+    }
 }
