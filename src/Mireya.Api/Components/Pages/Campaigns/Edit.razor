@@ -1,6 +1,7 @@
 @page "/campaigns/create"
 @page "/campaigns/edit/{Id:guid}"
 @attribute [Authorize]
+@implements IDisposable
 @inject ICampaignService CampaignService
 @inject IAssetService AssetService
 @inject NavigationManager Navigation
@@ -129,6 +130,8 @@
     </div>
 </div>
 
+<ConfirmDialog @ref="_confirmDialog" />
+
 @code {
     [Parameter] public Guid? Id { get; set; }
 
@@ -142,6 +145,10 @@
     private int _assignedScreenCount;
     private string? _error;
     private bool _saving;
+    private ConfirmDialog _confirmDialog = default!;
+    private IDisposable? _navGuard;
+    private string _initialSnapshot = "";
+    private bool _allowNavigation;
 
     protected override async Task OnInitializedAsync()
     {
@@ -166,6 +173,27 @@
             }).ToList();
             _assignedScreenCount = campaign.Displays.Count;
         }
+
+        _initialSnapshot = CurrentSnapshot();
+        _navGuard = Navigation.RegisterLocationChangingHandler(OnLocationChangingAsync);
+    }
+
+    private string CurrentSnapshot() =>
+        string.Join("|",
+            _name, _description, _isEnabled, _startDate, _endDate, _priority,
+            string.Join(",", _selectedAssets.Select(a => $"{a.AssetId}:{a.DurationSeconds}")));
+
+    private bool IsDirty() => !_allowNavigation && CurrentSnapshot() != _initialSnapshot;
+
+    private async ValueTask OnLocationChangingAsync(LocationChangingContext context)
+    {
+        if (!IsDirty()) return;
+
+        var confirmed = await _confirmDialog.ShowAsync(
+            "Discard unsaved changes?",
+            "You have unsaved changes that will be lost. Do you want to leave this page?");
+        if (!confirmed)
+            context.PreventNavigation();
     }
 
     private void AddAsset(Mireya.Database.Models.Asset asset)
@@ -200,9 +228,10 @@
             else
                 await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_name, _description, assets, [], _isEnabled, startUtc, endUtc, _priority));
 
+            _allowNavigation = true;
             Navigation.NavigateTo("/campaigns");
         }
-        catch (Exception ex) { _error = ex.Message; }
+        catch (Exception ex) { _error = ex.Message; _allowNavigation = false; }
         finally { _saving = false; }
     }
 
@@ -213,4 +242,6 @@
         public AssetType Type { get; set; }
         public int? DurationSeconds { get; set; }
     }
+
+    public void Dispose() => _navGuard?.Dispose();
 }
