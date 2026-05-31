@@ -14,6 +14,7 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
     public DbSet<CampaignAssignment> CampaignAssignments { get; set; }
     public DbSet<AssetSyncStatus> AssetSyncStatuses { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<PlaybackEvent> PlaybackEvents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -108,6 +109,20 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.EntityType);
             entity.HasIndex(e => e.ActorUserId);
+        });
+
+        // Configure PlaybackEvent entity (proof of play)
+        builder.Entity<PlaybackEvent>(entity =>
+        {
+            entity.HasIndex(e => e.PlayedAtUtc);
+            entity.HasIndex(e => e.DisplayId);
+            entity.HasIndex(e => e.AssetId);
+
+            entity
+                .HasOne(pe => pe.Display)
+                .WithMany()
+                .HasForeignKey(pe => pe.DisplayId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

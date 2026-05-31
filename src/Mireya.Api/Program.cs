@@ -18,6 +18,7 @@ using Mireya.Application.Services.Asset;
 using Mireya.Application.Services.AssetSync;
 using Mireya.Application.Services.Audit;
 using Mireya.Application.Services.Campaign;
+using Mireya.Application.Services.Reporting;
 using Mireya.Application.Services.ScreenManagement;
 using Mireya.Database;
 using Mireya.Database.Models;
@@ -118,6 +119,7 @@ builder.Services.AddSingleton<IScreenConnectionTracker, ScreenConnectionTracker>
 builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
+builder.Services.AddScoped<IPlaybackReportingService, PlaybackReportingService>();
 builder.Services.AddHostedService<CampaignScheduleSyncService>();
 builder.Services.AddScoped<IScreenHubContext, ScreenHubContextAdapter>();
 

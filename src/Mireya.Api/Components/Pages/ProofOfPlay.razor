@@ -1,0 +1,167 @@
+@page "/reports/proof-of-play"
+@attribute [Authorize]
+@inject IPlaybackReportingService Reporting
+@using Mireya.Application.Services.Reporting
+
+<PageTitle>Proof of Play - Mireya Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <h1 class="mb-0">Proof of Play</h1>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="ReloadAsync" disabled="@_loading">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </button>
+</div>
+
+<p class="text-muted">Every time a screen starts showing an asset it is recorded here, so you can prove what played, where and when.</p>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-sm-4 col-md-3">
+                <label class="form-label" for="rangeSelect">Time range</label>
+                <select id="rangeSelect" class="form-select" @bind="_rangeDays" @bind:after="ReloadAsync">
+                    <option value="1">Last 24 hours</option>
+                    <option value="7">Last 7 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+            </div>
+            @if (_report is not null)
+            {
+                <div class="col-auto">
+                    <div class="text-muted small">Showing @_report.FromUtc.ToString("yyyy-MM-dd HH:mm") &ndash; @_report.ToUtc.ToString("yyyy-MM-dd HH:mm") UTC</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <LoadingSpinner Message="Loading proof-of-play report..." />
+}
+else if (_report is null || _report.TotalPlays == 0)
+{
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-graph-up-arrow fs-1 d-block mb-2"></i>
+        <p class="mb-0">No playback has been recorded in this period yet.</p>
+    </div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+            <div class="card text-bg-primary h-100">
+                <div class="card-body">
+                    <div class="text-uppercase small opacity-75">Total plays</div>
+                    <div class="display-6">@_report.TotalPlays</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card text-bg-info h-100">
+                <div class="card-body">
+                    <div class="text-uppercase small opacity-75">Distinct assets</div>
+                    <div class="display-6">@_report.DistinctAssets</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card text-bg-success h-100">
+                <div class="card-body">
+                    <div class="text-uppercase small opacity-75">Active screens</div>
+                    <div class="display-6">@_report.DistinctScreens</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Plays by asset</div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr><th>Asset</th><th class="text-end">Plays</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in _report.ByAsset)
+                            {
+                                <tr>
+                                    <td>@a.AssetName</td>
+                                    <td class="text-end"><span class="badge bg-secondary">@a.Plays</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Plays by screen</div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr><th>Screen</th><th class="text-end">Plays</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in _report.ByScreen)
+                            {
+                                <tr>
+                                    <td>@s.DisplayName</td>
+                                    <td class="text-end"><span class="badge bg-secondary">@s.Plays</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">Recent plays</div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>When (UTC)</th>
+                        <th>Screen</th>
+                        <th>Asset</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in _recent)
+                    {
+                        <tr>
+                            <td class="text-nowrap"><small>@e.PlayedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</small></td>
+                            <td>@e.DisplayName</td>
+                            <td>@(e.AssetName ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private PlaybackReport? _report;
+    private List<PlaybackEventEntry> _recent = [];
+    private bool _loading = true;
+    private int _rangeDays = 7;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _loading = true;
+        var toUtc = DateTime.UtcNow;
+        var fromUtc = toUtc.AddDays(-_rangeDays);
+        _report = await Reporting.GetReportAsync(fromUtc, toUtc);
+        _recent = await Reporting.GetRecentAsync(100);
+        _loading = false;
+    }
+}
