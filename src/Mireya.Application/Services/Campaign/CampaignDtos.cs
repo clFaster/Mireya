@@ -7,7 +7,10 @@ public record CreateCampaignRequest(
     string Name,
     string? Description,
     List<CampaignAssetDto> Assets,
-    List<Guid> DisplayIds
+    List<Guid> DisplayIds,
+    bool IsEnabled = true,
+    DateTime? StartDateUtc = null,
+    DateTime? EndDateUtc = null
 );
 
 public record UpdateCampaignRequest(
@@ -15,7 +18,10 @@ public record UpdateCampaignRequest(
     string? Description,
     List<CampaignAssetDto> Assets,
     // null = leave screen assignments unchanged; a list (incl. empty) = set assignments to exactly this set
-    List<Guid>? DisplayIds
+    List<Guid>? DisplayIds,
+    bool IsEnabled = true,
+    DateTime? StartDateUtc = null,
+    DateTime? EndDateUtc = null
 );
 
 public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
@@ -28,7 +34,11 @@ public record CampaignSummary(
     int AssetCount,
     int DisplayCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    bool IsEnabled,
+    DateTime? StartDateUtc,
+    DateTime? EndDateUtc,
+    bool IsActive
 );
 
 public record CampaignDetail(
@@ -38,7 +48,10 @@ public record CampaignDetail(
     List<CampaignAssetDetail> Assets,
     List<DisplayInfo> Displays,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    bool IsEnabled = true,
+    DateTime? StartDateUtc = null,
+    DateTime? EndDateUtc = null
 );
 
 public record CampaignAssetDetail(

@@ -245,9 +245,18 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("EndDateUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("StartDateUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
