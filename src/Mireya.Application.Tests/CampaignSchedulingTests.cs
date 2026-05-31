@@ -93,4 +93,24 @@ public class CampaignSchedulingTests
         Assert.Equal(Now, created.StartDateUtc);
         Assert.Equal(Now.AddDays(7), created.EndDateUtc);
     }
+
+    [Fact]
+    public async Task CreateCampaign_PersistsPriority()
+    {
+        using var db = new TestDatabase();
+        var sync = Substitute.For<Application.Services.IScreenSynchronizationService>();
+
+        var asset = new Asset { Name = "A", Type = AssetType.Image, Source = "/uploads/a.png" };
+        db.Context.Assets.Add(asset);
+        await db.Context.SaveChangesAsync();
+
+        var service = new CampaignService(db.Context, sync);
+        var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
+            "Prioritised", null,
+            [new CampaignAssetDto(asset.Id, 1, 5)],
+            [],
+            Priority: 42));
+
+        Assert.Equal(42, created.Priority);
+    }
 }

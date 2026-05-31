@@ -45,7 +45,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 c.IsEnabled,
                 c.StartDateUtc,
                 c.EndDateUtc,
-                c.IsActiveAt(DateTime.UtcNow)
+                c.IsActiveAt(DateTime.UtcNow),
+                c.Priority
             ))
             .ToList();
     }
@@ -95,7 +96,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             campaign.UpdatedAt,
             campaign.IsEnabled,
             campaign.StartDateUtc,
-            campaign.EndDateUtc
+            campaign.EndDateUtc,
+            campaign.Priority
         );
     }
 
@@ -118,6 +120,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             IsEnabled = request.IsEnabled,
             StartDateUtc = request.StartDateUtc,
             EndDateUtc = request.EndDateUtc,
+            Priority = request.Priority,
         };
 
         db.Campaigns.Add(campaign);
@@ -158,6 +161,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         campaign.IsEnabled = request.IsEnabled;
         campaign.StartDateUtc = request.StartDateUtc;
         campaign.EndDateUtc = request.EndDateUtc;
+        campaign.Priority = request.Priority;
 
         db.CampaignAssets.RemoveRange(campaign.CampaignAssets);
         AddCampaignAssets(campaign.Id, request.Assets);

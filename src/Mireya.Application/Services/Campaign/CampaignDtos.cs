@@ -10,7 +10,8 @@ public record CreateCampaignRequest(
     List<Guid> DisplayIds,
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
-    DateTime? EndDateUtc = null
+    DateTime? EndDateUtc = null,
+    int Priority = 0
 );
 
 public record UpdateCampaignRequest(
@@ -21,7 +22,8 @@ public record UpdateCampaignRequest(
     List<Guid>? DisplayIds,
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
-    DateTime? EndDateUtc = null
+    DateTime? EndDateUtc = null,
+    int Priority = 0
 );
 
 public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
@@ -38,7 +40,8 @@ public record CampaignSummary(
     bool IsEnabled,
     DateTime? StartDateUtc,
     DateTime? EndDateUtc,
-    bool IsActive
+    bool IsActive,
+    int Priority = 0
 );
 
 public record CampaignDetail(
@@ -51,7 +54,8 @@ public record CampaignDetail(
     DateTime UpdatedAt,
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
-    DateTime? EndDateUtc = null
+    DateTime? EndDateUtc = null,
+    int Priority = 0
 );
 
 public record CampaignAssetDetail(

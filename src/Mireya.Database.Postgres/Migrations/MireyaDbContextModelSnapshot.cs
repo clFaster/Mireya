@@ -265,6 +265,9 @@ namespace Mireya.Database.Postgres.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("StartDateUtc")
                         .HasColumnType("timestamp with time zone");
 
