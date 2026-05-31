@@ -12,7 +12,11 @@ public record CreateCampaignRequest(
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
     int Priority = 0,
-    bool IsDefault = false
+    bool IsDefault = false,
+    int? RecurrenceDaysMask = null,
+    TimeOnly? DailyStartTime = null,
+    TimeOnly? DailyEndTime = null,
+    string? RecurrenceTimeZoneId = null
 );
 
 public record UpdateCampaignRequest(
@@ -25,7 +29,11 @@ public record UpdateCampaignRequest(
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
     int Priority = 0,
-    bool IsDefault = false
+    bool IsDefault = false,
+    int? RecurrenceDaysMask = null,
+    TimeOnly? DailyStartTime = null,
+    TimeOnly? DailyEndTime = null,
+    string? RecurrenceTimeZoneId = null
 );
 
 public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
@@ -59,7 +67,11 @@ public record CampaignDetail(
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
     int Priority = 0,
-    bool IsDefault = false
+    bool IsDefault = false,
+    int? RecurrenceDaysMask = null,
+    TimeOnly? DailyStartTime = null,
+    TimeOnly? DailyEndTime = null,
+    string? RecurrenceTimeZoneId = null
 );
 
 public record CampaignAssetDetail(

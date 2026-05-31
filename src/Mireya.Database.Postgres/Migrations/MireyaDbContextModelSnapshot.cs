@@ -258,6 +258,12 @@ namespace Mireya.Database.Postgres.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<TimeOnly?>("DailyEndTime")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<TimeOnly?>("DailyStartTime")
+                        .HasColumnType("time without time zone");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -278,6 +284,13 @@ namespace Mireya.Database.Postgres.Migrations
 
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
+
+                    b.Property<int?>("RecurrenceDaysMask")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecurrenceTimeZoneId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("StartDateUtc")
                         .HasColumnType("timestamp with time zone");
