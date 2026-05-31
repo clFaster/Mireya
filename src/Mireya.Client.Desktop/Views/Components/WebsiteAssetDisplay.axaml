@@ -13,17 +13,12 @@
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch" />
 
-        <!-- Loading indicator shown while WebView2 initializes -->
-        <StackPanel x:Name="LoadingPanel"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="12"
-                    IsVisible="True">
-            <TextBlock Text="Loading website..."
-                       FontSize="18"
-                       Foreground="#888"
-                       HorizontalAlignment="Center" />
-        </StackPanel>
+        <!-- Loading state: a plain black screen (the Grid background) shown while the
+             WebView2 initializes / navigates. Kept text-free and as brief as possible so
+             the transition to the page is unobtrusive (UA11). -->
+        <Panel x:Name="LoadingPanel"
+               Background="Black"
+               IsVisible="True" />
 
         <!-- Fallback message if WebView2 is not available -->
         <StackPanel x:Name="ErrorPanel"

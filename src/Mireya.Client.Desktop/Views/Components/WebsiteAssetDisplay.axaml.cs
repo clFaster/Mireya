@@ -12,7 +12,7 @@ namespace Mireya.Client.Avalonia.Views.Components;
 public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
 {
     private Grid? _browserContainer;
-    private StackPanel? _loadingPanel;
+    private Panel? _loadingPanel;
     private StackPanel? _errorPanel;
     private TextBlock? _errorMessage;
     private CoreWebView2Environment? _webViewEnvironment;
@@ -34,7 +34,7 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
     {
         AvaloniaXamlLoader.Load(this);
         _browserContainer = this.FindControl<Grid>("BrowserContainer");
-        _loadingPanel = this.FindControl<StackPanel>("LoadingPanel");
+        _loadingPanel = this.FindControl<Panel>("LoadingPanel");
         _errorPanel = this.FindControl<StackPanel>("ErrorPanel");
         _errorMessage = this.FindControl<TextBlock>("ErrorMessage");
     }
