@@ -7,11 +7,18 @@ namespace Mireya.Application.Services.AssetSync;
 public interface IAssetSyncService
 {
     Task InitializeSyncStatusForDisplayAsync(Guid displayId, List<Guid> assetIds);
-    Task UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request);
+    Task<AssetSyncUpdateResult> UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request);
     Task<List<AssetSyncStatusDto>> GetSyncStatusForDisplayAsync(Guid displayId);
     Task<List<CampaignSyncInfo>> GetCampaignsToSyncAsync(Guid displayId);
     Task CleanupSyncStatusAsync(Guid displayId, List<Guid> currentAssetIds);
     Task<Guid?> GetDisplayIdByUserIdAsync(string userId);
+}
+
+public enum AssetSyncUpdateResult
+{
+    Updated,
+    NotFound,
+    InvalidState,
 }
 
 public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logger)
@@ -54,7 +61,7 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
         }
     }
 
-    public async Task UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request)
+    public async Task<AssetSyncUpdateResult> UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request)
     {
         logger.LogDebug(
             "Updating sync status for display {DisplayId}, asset {AssetId}: {State} ({Progress}%)",
@@ -75,7 +82,7 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
                 displayId,
                 request.AssetId
             );
-            return;
+            return AssetSyncUpdateResult.NotFound;
         }
 
         if (Enum.TryParse<SyncState>(request.SyncState, true, out var state))
@@ -85,7 +92,7 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
         else
         {
             logger.LogWarning("Invalid sync state: {State}", request.SyncState);
-            return;
+            return AssetSyncUpdateResult.InvalidState;
         }
 
         syncStatus.Progress = Math.Clamp(request.Progress, 0, 100);
@@ -101,6 +108,8 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
             syncStatus.SyncState,
             syncStatus.Progress
         );
+
+        return AssetSyncUpdateResult.Updated;
     }
 
     public async Task<List<AssetSyncStatusDto>> GetSyncStatusForDisplayAsync(Guid displayId)
