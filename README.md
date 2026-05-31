@@ -43,6 +43,9 @@ scheduled content.
 - **Proof of play** — Every time a screen starts showing an asset it is recorded, and the admin **Proof of Play**
   report aggregates plays by asset and by screen over a selectable time window (24 hours to 90 days) with a recent-plays
   log, so you can demonstrate exactly what played, where and when.
+- **Offline alerting** — An optional background monitor raises a **webhook** alert when an approved screen has been
+  offline beyond a configurable threshold, and a recovery alert when it reconnects. Each outage notifies once. Configure
+  it under the `Alerting` section (see below); compatible with Slack/Teams/Discord/n8n/Zapier and custom endpoints.
 
 ---
 
@@ -88,6 +91,23 @@ docker compose up --build   # API on http://localhost:8080
 
 See the [technical documentation](https://mireya.moritzreis.dev/#/development) for database
 configuration, migrations, tests, and operational endpoints (`/api/info`, `/alive`, `/health`).
+
+**Offline screen alerting (optional):**
+
+Set the `Alerting` section in `appsettings.json` (or the matching `Alerting__*` environment variables) to be
+notified when a screen drops offline:
+
+```json
+"Alerting": {
+  "Enabled": true,
+  "OfflineWebhookUrl": "https://hooks.example.com/your-endpoint",
+  "OfflineThresholdMinutes": 5,
+  "PollIntervalSeconds": 60
+}
+```
+
+When enabled, a JSON payload (`{ "event": "screen.offline" | "screen.online", "screenId", "screenName",
+"location", "screenIdentifier", "lastSeenAtUtc", "timestampUtc", "message" }`) is POSTed to the webhook URL.
 
 ---
 

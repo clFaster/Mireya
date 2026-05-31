@@ -60,6 +60,12 @@ public class Display
     public DateTime? LastSeenAt { get; set; }
 
     /// <summary>
+    ///     Set to the UTC instant an offline alert was sent for the current outage, and cleared
+    ///     when the screen comes back online. Prevents repeated alerts while a screen stays offline.
+    /// </summary>
+    public DateTime? OfflineAlertedAt { get; set; }
+
+    /// <summary>
     ///     When enabled, the client plays this screen's assets in a randomised order instead of
     ///     their configured campaign/position order.
     /// </summary>

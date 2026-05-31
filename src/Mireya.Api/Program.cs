@@ -14,6 +14,7 @@ using Mireya.Api.Startup;
 using Mireya.Application.Constants;
 using Mireya.Application.Hubs;
 using Mireya.Application.Services;
+using Mireya.Application.Services.Alerting;
 using Mireya.Application.Services.Asset;
 using Mireya.Application.Services.AssetSync;
 using Mireya.Application.Services.Audit;
@@ -120,6 +121,10 @@ builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
 builder.Services.AddScoped<IPlaybackReportingService, PlaybackReportingService>();
+builder.Services.Configure<AlertingOptions>(builder.Configuration.GetSection(AlertingOptions.SectionName));
+builder.Services.AddHttpClient(nameof(ScreenAlertService));
+builder.Services.AddScoped<IScreenAlertService, ScreenAlertService>();
+builder.Services.AddHostedService<ScreenOfflineMonitorService>();
 builder.Services.AddHostedService<CampaignScheduleSyncService>();
 builder.Services.AddScoped<IScreenHubContext, ScreenHubContextAdapter>();
 
