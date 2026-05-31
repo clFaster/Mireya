@@ -530,6 +530,72 @@ nav.bg-dark .btn-outline-light:hover {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* ---- Upload dropzone ----------------------------------------------------- */
+.dropzone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    text-align: center;
+    padding: 2.4rem 1.5rem;
+    border: 2px dashed var(--line-strong);
+    border-radius: var(--r);
+    background:
+        radial-gradient(120% 100% at 50% 0%, var(--surface-2), var(--surface) 70%);
+    color: var(--text-soft);
+    transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.dropzone:hover, .dropzone.is-dragover {
+    border-color: var(--brand-2);
+    background: radial-gradient(120% 100% at 50% 0%, var(--warn-soft), var(--surface) 75%);
+}
+.dropzone .dropzone-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+.dropzone .dropzone-glyph {
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--brand-2);
+}
+.dropzone .dropzone-title { font-weight: 600; color: var(--text); }
+.dropzone .dropzone-hint { font-size: .82rem; color: var(--text-faint); }
+
+.file-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem .75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    box-shadow: var(--shadow-xs);
+}
+.file-row + .file-row { margin-top: .5rem; }
+.file-row .file-thumb {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border-radius: var(--r-xs);
+    object-fit: cover;
+    background: var(--surface-2);
+    display: grid;
+    place-items: center;
+    color: var(--text-faint);
+    font-size: 1.2rem;
+    overflow: hidden;
+}
+.file-row .file-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.file-row .file-meta { min-width: 0; flex: 1 1 auto; }
+.file-row .file-name { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-row .file-size { font-family: var(--font-mono); font-size: .76rem; color: var(--text-faint); }
+
 /* ---- Error boundary ------------------------------------------------------ */
 .blazor-error-boundary {
     background: var(--bad);
