@@ -1,0 +1,63 @@
+@* Reusable confirmation modal. Call ShowAsync(...) and await the user's choice. *@
+
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
+         style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@_title</h5>
+                    <button type="button" class="btn-close" aria-label="Close"
+                            @onclick="() => Close(false)"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">@_message</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => Close(false)">
+                        @_cancelText
+                    </button>
+                    <button type="button" class="btn @_confirmCssClass" @onclick="() => Close(true)">
+                        @_confirmText
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _visible;
+    private string _title = "";
+    private string _message = "";
+    private string _confirmText = "Confirm";
+    private string _cancelText = "Cancel";
+    private string _confirmCssClass = "btn-danger";
+    private TaskCompletionSource<bool>? _tcs;
+
+    /// <summary>
+    ///     Shows the dialog and resolves to true if the user confirms, false otherwise.
+    /// </summary>
+    public Task<bool> ShowAsync(string title, string message,
+        string confirmText = "Delete", string cancelText = "Cancel",
+        string confirmCssClass = "btn-danger")
+    {
+        _title = title;
+        _message = message;
+        _confirmText = confirmText;
+        _cancelText = cancelText;
+        _confirmCssClass = confirmCssClass;
+        _visible = true;
+        _tcs = new TaskCompletionSource<bool>();
+        StateHasChanged();
+        return _tcs.Task;
+    }
+
+    private void Close(bool result)
+    {
+        _visible = false;
+        _tcs?.TrySetResult(result);
+        StateHasChanged();
+    }
+}
