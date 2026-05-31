@@ -1,39 +1,49 @@
 @inject NavigationManager Navigation
 
 
-<nav class="d-flex flex-column bg-dark text-white p-3" style="width: 240px; min-height: 100vh;">
-    <div class="mb-4">
-        <h5 class="text-white fw-bold"><i class="bi bi-display me-2"></i>Mireya Admin</h5>
+<nav class="bg-dark text-white">
+    <div class="d-flex d-md-none align-items-center justify-content-between p-3">
+        <h5 class="text-white fw-bold mb-0"><i class="bi bi-display me-2"></i>Mireya Admin</h5>
+        <button class="btn btn-outline-light btn-sm" type="button"
+                data-bs-toggle="collapse" data-bs-target="#sidebarNav"
+                aria-controls="sidebarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-list"></i>
+        </button>
     </div>
-    <ul class="nav flex-column gap-1 flex-grow-1">
-        <li class="nav-item">
-            <NavLink class="nav-link text-white" href="/" Match="NavLinkMatch.All">
-                <i class="bi bi-speedometer2 me-2"></i>Dashboard
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link text-white" href="/assets">
-                <i class="bi bi-images me-2"></i>Assets
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link text-white" href="/campaigns">
-                <i class="bi bi-collection-play me-2"></i>Campaigns
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link text-white" href="/screens">
-                <i class="bi bi-tv me-2"></i>Screens
-            </NavLink>
-        </li>
-    </ul>
-    <div class="mt-auto">
-        <form method="post" action="/auth/logout">
-            <AntiforgeryToken />
-            <button type="submit" class="btn btn-outline-light btn-sm w-100">
-                <i class="bi bi-box-arrow-right me-1"></i>Logout
-            </button>
-        </form>
+    <div id="sidebarNav" class="collapse d-md-flex flex-column p-3 sidebar-nav">
+        <div class="mb-4 d-none d-md-block">
+            <h5 class="text-white fw-bold"><i class="bi bi-display me-2"></i>Mireya Admin</h5>
+        </div>
+        <ul class="nav flex-column gap-1 flex-grow-1">
+            <li class="nav-item">
+                <NavLink class="nav-link text-white" href="/" Match="NavLinkMatch.All">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link text-white" href="/assets">
+                    <i class="bi bi-images me-2"></i>Assets
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link text-white" href="/campaigns">
+                    <i class="bi bi-collection-play me-2"></i>Campaigns
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link text-white" href="/screens">
+                    <i class="bi bi-tv me-2"></i>Screens
+                </NavLink>
+            </li>
+        </ul>
+        <div class="mt-auto pt-3">
+            <form method="post" action="/auth/logout">
+                <AntiforgeryToken />
+                <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </button>
+            </form>
+        </div>
     </div>
 </nav>
 
