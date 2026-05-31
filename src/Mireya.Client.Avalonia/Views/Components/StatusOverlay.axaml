@@ -18,6 +18,15 @@
                        FontSize="18"
                        FontWeight="Bold"
                        Foreground="White" />
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Ellipse Width="10" Height="10"
+                         VerticalAlignment="Center"
+                         Fill="{Binding ConnectionIndicatorColor}" />
+                <TextBlock Text="{Binding ConnectionStatus}"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           Foreground="#CCC" />
+            </StackPanel>
             <TextBlock Text="{Binding StatusText}"
                        FontSize="12"
                        Foreground="#999" />

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -52,6 +53,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private string _statusText = "Waiting for content...";
 
     [ObservableProperty]
+    private IBrush _connectionIndicatorColor = Brushes.Gray;
+
+    [ObservableProperty]
     private ContentType _currentContentType = ContentType.None;
 
     [ObservableProperty]
@@ -88,6 +92,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
         _hubService.OnConfigurationUpdateReceived += OnConfigurationUpdateReceived;
         _hubService.OnStartAssetSync += OnStartAssetSync;
+        _hubService.OnReconnecting += OnHubReconnecting;
+        _hubService.OnReconnected += OnHubReconnected;
+        _hubService.OnClosed += OnHubClosed;
 
         _logger.LogInformation("ContentDisplayViewModel initialized");
 
@@ -195,8 +202,34 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private void UpdateConnectionStatus()
     {
         ConnectionStatus = _hubService.IsConnected ? "Connected ✓" : "Disconnected ✗";
+        ConnectionIndicatorColor = _hubService.IsConnected ? Brushes.LimeGreen : Brushes.OrangeRed;
         StatusText = _hubService.IsConnected ? "Waiting for content..." : "Not connected to server";
         _logger.LogInformation("Authentication completed, SignalR connected: {IsConnected}", _hubService.IsConnected);
+    }
+
+    private void OnHubReconnecting()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            ConnectionStatus = "Reconnecting...";
+            ConnectionIndicatorColor = Brushes.Gold;
+            StatusText = "Connection lost, reconnecting...";
+        });
+    }
+
+    private void OnHubReconnected()
+    {
+        Dispatcher.UIThread.Post(UpdateConnectionStatus);
+    }
+
+    private void OnHubClosed()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            ConnectionStatus = "Disconnected ✗";
+            ConnectionIndicatorColor = Brushes.OrangeRed;
+            StatusText = "Disconnected from server";
+        });
     }
 
     private void OnConfigurationUpdateReceived(ScreenConfiguration config)
@@ -570,6 +603,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         }
         _hubService.OnConfigurationUpdateReceived -= OnConfigurationUpdateReceived;
         _hubService.OnStartAssetSync -= OnStartAssetSync;
+        _hubService.OnReconnecting -= OnHubReconnecting;
+        _hubService.OnReconnected -= OnHubReconnected;
+        _hubService.OnClosed -= OnHubClosed;
         CurrentImage?.Dispose();
         CurrentImage = null;
     }

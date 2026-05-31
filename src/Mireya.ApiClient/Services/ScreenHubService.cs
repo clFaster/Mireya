@@ -12,6 +12,8 @@ public interface IScreenHubService : IAsyncDisposable
     event Action<ScreenConfiguration> OnConfigurationUpdateReceived;
     event Action<List<CampaignSyncInfo>> OnStartAssetSync;
     event Action OnReconnected;
+    event Action OnReconnecting;
+    event Action OnClosed;
 
     Task ConnectAsync();
     Task DisconnectAsync();
@@ -83,12 +85,14 @@ public class ScreenHubService : IScreenHubService
         _hubConnection.Closed += error =>
         {
             _logger.LogWarning(error, "SignalR connection closed");
+            OnClosed?.Invoke();
             return Task.CompletedTask;
         };
 
         _hubConnection.Reconnecting += error =>
         {
             _logger.LogWarning(error, "SignalR reconnecting");
+            OnReconnecting?.Invoke();
             return Task.CompletedTask;
         };
 
@@ -106,6 +110,8 @@ public class ScreenHubService : IScreenHubService
     public event Action<ScreenConfiguration>? OnConfigurationUpdateReceived;
     public event Action<List<CampaignSyncInfo>>? OnStartAssetSync;
     public event Action? OnReconnected;
+    public event Action? OnReconnecting;
+    public event Action? OnClosed;
 
     public bool IsConnected => _hubConnection.State == HubConnectionState.Connected;
 
