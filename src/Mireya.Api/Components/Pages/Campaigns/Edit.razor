@@ -90,7 +90,11 @@
             </div>
         </div>
 
-        <button class="btn btn-primary me-2" @onclick="SaveAsync">
+        <button class="btn btn-primary me-2" @onclick="SaveAsync" disabled="@_saving">
+            @if (_saving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            }
             @(Id == null ? "Create" : "Save Changes")
         </button>
         <a href="/campaigns" class="btn btn-secondary">Cancel</a>
@@ -137,6 +141,7 @@
     private List<Mireya.Database.Models.Asset> _availableAssets = [];
     private int _assignedScreenCount;
     private string? _error;
+    private bool _saving;
 
     protected override async Task OnInitializedAsync()
     {
@@ -179,9 +184,11 @@
 
     private async Task SaveAsync()
     {
+        _error = null;
         if (string.IsNullOrWhiteSpace(_name)) { _error = "Name is required."; return; }
         if (_selectedAssets.Count == 0) { _error = "Add at least one asset."; return; }
 
+        _saving = true;
         try
         {
             var assets = _selectedAssets.Select((a, i) => new CampaignAssetDto(a.AssetId, i + 1, a.DurationSeconds)).ToList();
@@ -196,6 +203,7 @@
             Navigation.NavigateTo("/campaigns");
         }
         catch (Exception ex) { _error = ex.Message; }
+        finally { _saving = false; }
     }
 
     private sealed class SelectedCampaignAsset
