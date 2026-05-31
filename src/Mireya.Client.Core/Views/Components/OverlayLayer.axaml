@@ -1,0 +1,65 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:components="using:Mireya.Client.Avalonia.Views.Components"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
+             x:Class="Mireya.Client.Avalonia.Views.Components.OverlayLayer"
+             x:DataType="vm:ContentDisplayViewModel"
+             Background="Transparent"
+             IsHitTestVisible="False">
+
+    <Grid>
+        <!-- Screen info (bottom-right corner) -->
+        <components:StatusOverlay DataContext="{Binding}"
+                                  Margin="0,0,20,20"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Bottom" />
+
+        <!-- Remote identify flash (UA7): pulses a bright overlay with the pairing code -->
+        <Border Name="IdentifyFlash"
+                IsVisible="{Binding IsIdentifying}"
+                Background="#3D5AFE"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+            <Border.Styles>
+                <Style Selector="Border#IdentifyFlash">
+                    <Style.Animations>
+                        <Animation Duration="0:0:1" IterationCount="INFINITE">
+                            <KeyFrame Cue="0%">
+                                <Setter Property="Opacity" Value="0.2" />
+                            </KeyFrame>
+                            <KeyFrame Cue="50%">
+                                <Setter Property="Opacity" Value="0.92" />
+                            </KeyFrame>
+                            <KeyFrame Cue="100%">
+                                <Setter Property="Opacity" Value="0.2" />
+                            </KeyFrame>
+                        </Animation>
+                    </Style.Animations>
+                </Style>
+            </Border.Styles>
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+                <TextBlock Text="IDENTIFY"
+                           FontSize="64"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           LetterSpacing="8"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding DisplayName}"
+                           FontSize="30"
+                           Foreground="White"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding PairingCode}"
+                           FontSize="34"
+                           FontWeight="Bold"
+                           FontFamily="Consolas, monospace"
+                           Foreground="White"
+                           LetterSpacing="4"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+
+</UserControl>

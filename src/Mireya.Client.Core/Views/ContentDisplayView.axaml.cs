@@ -126,14 +126,15 @@ public partial class ContentDisplayView : UserControl
 
         _parentWindow = parentWindow;
 
-        // Create a borderless, transparent, always-on-top window containing
-        // the same StatusOverlay control.  This is required because WebView2
-        // renders into a Win32 HWND child window that always paints over
-        // ordinary Avalonia visuals (the "airspace" problem).
+        // Create a borderless, transparent, always-on-top window that mirrors the
+        // overlay layer.  This is required because both WebView2 (websites) and the
+        // LibVLC VideoView (videos) render into native child windows that always paint
+        // over ordinary Avalonia visuals (the "airspace" problem). The window covers the
+        // whole client area so both the status panel and the identify flash are visible
+        // over native content (UA9 / UA10).
         _overlayWindow = new Window
         {
             Title               = string.Empty,
-            SizeToContent       = SizeToContent.WidthAndHeight,
             // Remove all window chrome (title bar + border) using Avalonia 12 API
             WindowDecorations   = WindowDecorations.None,
             Topmost             = true,
@@ -145,11 +146,8 @@ public partial class ContentDisplayView : UserControl
                 WindowTransparencyLevel.Transparent,
                 WindowTransparencyLevel.AcrylicBlur,
             },
-            Content = new StatusOverlay { DataContext = _viewModel },
+            Content = new OverlayLayer { DataContext = _viewModel },
         };
-
-        // Reposition whenever the overlay content changes size
-        _overlayWindow.SizeChanged += (_, _) => UpdateOverlayPosition();
 
         // Track parent window movement / resize
         parentWindow.PositionChanged += (_, _) => UpdateOverlayPosition();
@@ -173,7 +171,8 @@ public partial class ContentDisplayView : UserControl
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(ContentDisplayViewModel.CurrentContentType)
-                           or nameof(ContentDisplayViewModel.IsOverlayVisible))
+                           or nameof(ContentDisplayViewModel.IsOverlayVisible)
+                           or nameof(ContentDisplayViewModel.IsIdentifying))
         {
             UpdateOverlayVisibility();
         }
@@ -184,12 +183,17 @@ public partial class ContentDisplayView : UserControl
         if (_overlayWindow == null || _viewModel == null)
             return;
 
-        // Only show the floating window when a website is being displayed
-        // AND the overlay itself is visible.  For image/video/none content the
-        // AXAML StatusOverlay (in ContentDisplayView.axaml) is above the content
-        // and does not need the separate top-level window.
-        var shouldShow = _viewModel.CurrentContentType == ContentType.Website
-                         && _viewModel.IsOverlayVisible;
+        // The floating window is only needed over native surfaces (video / website),
+        // which paint over the inline AXAML overlays. For image / idle content the inline
+        // OverlayLayer in ContentDisplayView.axaml already sits above the content.
+        var isNativeContent = _viewModel.CurrentContentType is ContentType.Website
+                                                             or ContentType.Video;
+
+        // Keep it hidden unless something actually needs to be shown, so the transparent
+        // top-level window does not needlessly sit over the content.
+        var hasOverlayContent = _viewModel.IsOverlayVisible || _viewModel.IsIdentifying;
+
+        var shouldShow = isNativeContent && hasOverlayContent;
 
         _overlayWindow.IsVisible = shouldShow;
 
@@ -204,22 +208,16 @@ public partial class ContentDisplayView : UserControl
 
         try
         {
-            var overlayW = _overlayWindow.ClientSize.Width;
-            var overlayH = _overlayWindow.ClientSize.Height;
-            if (overlayW <= 0 || overlayH <= 0)
+            var clientW = _parentWindow.ClientSize.Width;
+            var clientH = _parentWindow.ClientSize.Height;
+            if (clientW <= 0 || clientH <= 0)
                 return;
 
-            // Match the AXAML StatusOverlay margin of 20 px (logical)
-            const double margin = 20.0;
-
-            // Compute the logical point in the parent window that corresponds to
-            // the desired bottom-right placement of the overlay.
-            var logicalX = _parentWindow.ClientSize.Width  - margin - overlayW;
-            var logicalY = _parentWindow.ClientSize.Height - margin - overlayH;
-
-            // Convert to screen pixels using the parent window's coordinate system
-            var screenPos = _parentWindow.PointToScreen(new Point(logicalX, logicalY));
-            _overlayWindow.Position = screenPos;
+            // Cover the full client area of the parent window so both the bottom-right
+            // status panel and the full-screen identify flash render correctly.
+            _overlayWindow.Width = clientW;
+            _overlayWindow.Height = clientH;
+            _overlayWindow.Position = _parentWindow.PointToScreen(new Point(0, 0));
         }
         catch (Exception ex)
         {
