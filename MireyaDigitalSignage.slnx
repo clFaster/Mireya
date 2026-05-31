@@ -4,9 +4,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/src/">
-    <Project Path="src/Mireya.Application.Tests/Mireya.Application.Tests.csproj" />
-  </Folder>
   <Project Path="src/MireyaDigitalSignage.AppHost/MireyaDigitalSignage.AppHost.csproj" />
   <Project Path="src/MireyaDigitalSignage.ServiceDefaults/MireyaDigitalSignage.ServiceDefaults.csproj" />
   <Folder Name="/Client/">
@@ -16,6 +13,7 @@
   </Folder>
   <Folder Name="/Server/">
     <Project Path="src/Mireya.Api/Mireya.Api.csproj" />
+    <Project Path="src/Mireya.Application.Tests/Mireya.Application.Tests.csproj" />
     <Project Path="src/Mireya.Application/Mireya.Application.csproj" />
     <Project Path="src/Mireya.Database.Postgres/Mireya.Database.Postgres.csproj" />
     <Project Path="src/Mireya.Database.Sqlite/Mireya.Database.Sqlite.csproj" />
