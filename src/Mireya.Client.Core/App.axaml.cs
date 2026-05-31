@@ -1,16 +1,11 @@
 using System;
-using System.IO;
-using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Mireya.ApiClient;
 using Mireya.ApiClient.Data;
-using Mireya.ApiClient.Options;
 using Mireya.ApiClient.Services;
 using Mireya.Client.Avalonia.Services;
 using Mireya.Client.Avalonia.ViewModels;
@@ -21,7 +16,25 @@ namespace Mireya.Client.Avalonia;
 
 public class App : Application
 {
-    private const string DefaultBackendUrl = "http://localhost:5000";
+    /// <summary>
+    ///     Default backend URL used for unattended/kiosk deployments when neither the
+    ///     <c>MIREYA_BACKEND_URL</c> environment variable nor a stored URL is present.
+    /// </summary>
+    public const string DefaultBackendUrl = "http://localhost:5000";
+
+    /// <summary>
+    ///     The composition root, supplied by the active platform head (Desktop, Android, …).
+    ///     It must be assigned before the Avalonia application starts so that
+    ///     <see cref="OnFrameworkInitializationCompleted" /> can build the service provider
+    ///     with the correct platform-specific implementations.
+    /// </summary>
+    public static Func<IServiceProvider>? ServiceProviderFactory { get; set; }
+
+    /// <summary>
+    ///     The application-wide service provider, available to views that cannot receive
+    ///     their dependencies through the constructor (e.g. controls created by XAML).
+    /// </summary>
+    public static IServiceProvider? Services { get; private set; }
 
     public override void Initialize()
     {
@@ -45,8 +58,13 @@ public class App : Application
             // Ensure the application shuts down when the main window is closed
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
-            // Setup dependency injection (AppSettings singleton registered inside)
-            var serviceProvider = ConfigureServices();
+            // Setup dependency injection (AppSettings singleton registered inside).
+            // The platform head provides the composition root so that platform-only
+            // implementations (credential storage, asset renderers, …) are wired in.
+            var serviceProvider = ServiceProviderFactory?.Invoke()
+                ?? throw new InvalidOperationException(
+                    "App.ServiceProviderFactory must be set by the platform head before startup.");
+            Services = serviceProvider;
 
             // Apply database migrations and load settings in the same startup scope
             Log.Information("Initializing database and applying migrations...");
@@ -117,8 +135,15 @@ public class App : Application
                 try
                 {
                     // Dispose the service provider with a timeout to prevent hanging
-                    serviceProvider.DisposeAsync().AsTask()
-                        .Wait(TimeSpan.FromSeconds(3));
+                    if (serviceProvider is IAsyncDisposable asyncDisposable)
+                    {
+                        asyncDisposable.DisposeAsync().AsTask()
+                            .Wait(TimeSpan.FromSeconds(3));
+                    }
+                    else if (serviceProvider is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -131,54 +156,5 @@ public class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
-    }
-
-    private static ServiceProvider ConfigureServices()
-    {
-        var services = new ServiceCollection();
-
-        // Register app settings singleton — DI resolves IServiceScopeFactory automatically
-        services.AddSingleton<AppSettings>();
-
-        // Add Serilog logging
-        services.AddLogging(builder =>
-        {
-            builder.ClearProviders();
-            builder.AddSerilog(Log.Logger, true);
-        });
-
-        // Configure API client options. The default backend URL can be preconfigured for
-        // unattended/kiosk deployments via the MIREYA_BACKEND_URL environment variable;
-        // it is otherwise overridden by the URL the user enters on first start.
-        services.Configure<MireyaApiClientOptions>(options =>
-        {
-            options.BaseUrl =
-                Environment.GetEnvironmentVariable("MIREYA_BACKEND_URL")
-                ?? DefaultBackendUrl;
-        });
-
-        // Configure local SQLite database
-        var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var dbPath = Path.Combine(appDataPath, "Mireya", "mireya_client.db");
-        Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
-
-        services.AddDbContext<LocalDbContext>(options => { options.UseSqlite($"Data Source={dbPath}"); });
-
-        // Register platform-specific implementations (these must be registered
-        // before AddMireyaApiClient which depends on them)
-        services.AddSingleton<ICredentialStorage, AvaloniaCredentialStorage>();
-        services.AddSingleton<ISettingsService, SettingsService>();
-
-        // Register all API client services (token management, auth, SignalR, sync, etc.)
-        services.AddMireyaApiClient();
-
-        // Register ViewModels
-        services.AddTransient<MainWindowViewModel>();
-        services.AddTransient<ContentDisplayViewModel>();
-        services.AddTransient<BackendSelectionViewModel>();
-
-        var serviceProvider = services.BuildServiceProvider();
-
-        return serviceProvider;
     }
 }

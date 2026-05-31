@@ -18,15 +18,13 @@
         <components:ImageAssetDisplay DataContext="{Binding}"
                                       IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Image}}" />
 
-        <!-- Video display -->
-        <components:VideoAssetDisplay x:Name="VideoDisplay"
-                                      DataContext="{Binding}"
-                                      IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Video}}" />
+        <!-- Video display (platform renderer injected via IAssetViewFactory) -->
+        <ContentControl x:Name="VideoHost"
+                        IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Video}}" />
 
-        <!-- Website display -->
-        <components:WebsiteAssetDisplay x:Name="WebsiteDisplay"
-                                        DataContext="{Binding}"
-                                        IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Website}}" />
+        <!-- Website display (platform renderer injected via IAssetViewFactory) -->
+        <ContentControl x:Name="WebsiteHost"
+                        IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Website}}" />
 
         <!-- No content message -->
         <components:NoContentDisplay DataContext="{Binding}"

@@ -5,10 +5,11 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Microsoft.Web.WebView2.Core;
+using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia.Views.Components;
 
-public partial class WebsiteAssetDisplay : UserControl
+public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
 {
     private Grid? _browserContainer;
     private StackPanel? _loadingPanel;

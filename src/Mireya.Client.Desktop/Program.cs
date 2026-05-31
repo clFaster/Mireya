@@ -1,5 +1,6 @@
 ﻿using System;
 using Avalonia;
+using Mireya.Client.Avalonia.Desktop;
 
 namespace Mireya.Client.Avalonia;
 
@@ -11,6 +12,10 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Supply the desktop composition root before the Avalonia application starts so
+        // App can build the service provider with the desktop-specific implementations.
+        App.ServiceProviderFactory = DesktopServices.Build;
+
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

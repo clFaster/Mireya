@@ -32,7 +32,7 @@ jobs:
       - name: Restore dependencies
         run: |
           dotnet restore ./src/Mireya.Api/Mireya.Api.csproj
-          dotnet restore ./src/Mireya.Client.Avalonia/Mireya.Client.Avalonia.csproj
+          dotnet restore ./src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
           dotnet restore ./src/Mireya.ApiClient/Mireya.ApiClient.csproj
           dotnet restore ./src/Mireya.Application.Tests/Mireya.Application.Tests.csproj
 
@@ -43,7 +43,7 @@ jobs:
         run: dotnet build ./src/Mireya.ApiClient/Mireya.ApiClient.csproj --configuration Release --no-restore
 
       - name: Build Avalonia client
-        run: dotnet build ./src/Mireya.Client.Avalonia/Mireya.Client.Avalonia.csproj --configuration Release --no-restore
+        run: dotnet build ./src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj --configuration Release --no-restore
 
       - name: Run tests
         run: dotnet test ./src/Mireya.Application.Tests/Mireya.Application.Tests.csproj --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults

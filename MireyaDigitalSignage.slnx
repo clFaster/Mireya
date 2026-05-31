@@ -9,7 +9,8 @@
   <Folder Name="/Client/">
     <Project Path="src/Mireya.ApiClient.TestConsole/Mireya.ApiClient.TestConsole.csproj" />
     <Project Path="src/Mireya.ApiClient/Mireya.ApiClient.csproj" />
-    <Project Path="src/Mireya.Client.Avalonia/Mireya.Client.Avalonia.csproj" />
+    <Project Path="src/Mireya.Client.Core/Mireya.Client.Core.csproj" />
+    <Project Path="src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj" />
   </Folder>
   <Folder Name="/Server/">
     <Project Path="src/Mireya.Api/Mireya.Api.csproj" />
