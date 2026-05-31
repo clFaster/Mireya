@@ -228,7 +228,7 @@ dotnet publish -c Release -r linux-x64 -o ./publish
 ```
 
 > Packaging for the Windows Store (MSIX), Linux, and Android TV is on the roadmap; see
-> the project analysis / roadmap for the planned phased rollout.
+> [docs/packaging.md](packaging.md) for the client topology and the planned phased rollout.
 
 ## Troubleshooting
 
