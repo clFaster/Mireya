@@ -14,6 +14,7 @@ namespace Mireya.Client.Avalonia.Views;
 public partial class ContentDisplayView : UserControl
 {
     private Window? _overlayWindow;
+    private Window? _curtainWindow;
     private Window? _parentWindow;
     private ContentDisplayViewModel? _viewModel;
     private IWebsiteRenderer? _websiteRenderer;
@@ -79,7 +80,12 @@ public partial class ContentDisplayView : UserControl
         {
             vm.VideoPlaybackRequested += _videoRenderer.Play;
             vm.VideoStopRequested += _videoRenderer.Stop;
+            _videoRenderer.FirstFrameReady += vm.NotifyVideoFirstFrame;
         }
+
+        // Forward website "page painted" notifications so the transition curtain can lift.
+        if (_websiteRenderer != null)
+            _websiteRenderer.ContentReady += vm.NotifyWebsiteContentReady;
 
         // Drive the platform website renderer on URI changes (kept as anonymous lambda
         // for symmetry with the original design; unsubscription not required in practice
@@ -150,18 +156,42 @@ public partial class ContentDisplayView : UserControl
         };
 
         // Track parent window movement / resize
-        parentWindow.PositionChanged += (_, _) => UpdateOverlayPosition();
-        parentWindow.SizeChanged     += (_, _) => UpdateOverlayPosition();
+        parentWindow.PositionChanged += (_, _) => UpdateFloatingWindowPositions();
+        parentWindow.SizeChanged     += (_, _) => UpdateFloatingWindowPositions();
+
+        // The transition curtain lives in its own top-most transparent window for the same
+        // "airspace" reason as the overlay: it must cover the native WebView2 / LibVLC
+        // surfaces while an asset is swapped underneath it. It is created above the overlay
+        // window so the dip-to-black masks everything during a transition.
+        _curtainWindow = new Window
+        {
+            Title               = string.Empty,
+            WindowDecorations   = WindowDecorations.None,
+            Topmost             = true,
+            ShowInTaskbar       = false,
+            CanResize           = false,
+            Background          = Brushes.Transparent,
+            TransparencyLevelHint = new[]
+            {
+                WindowTransparencyLevel.Transparent,
+                WindowTransparencyLevel.AcrylicBlur,
+            },
+            Content = new TransitionCurtain { DataContext = _viewModel },
+        };
 
         // Open (but initially hidden) owned by the main window so it moves with it
         _overlayWindow.Show(parentWindow);
         _overlayWindow.IsVisible = false;
 
+        _curtainWindow.Show(parentWindow);
+        _curtainWindow.IsVisible = false;
+
         UpdateOverlayVisibility();
+        UpdateCurtainVisibility();
 
         // Measure the overlay content after the first layout pass so the
         // initial position calculation has valid size information.
-        Dispatcher.UIThread.Post(UpdateOverlayPosition, DispatcherPriority.Loaded);
+        Dispatcher.UIThread.Post(UpdateFloatingWindowPositions, DispatcherPriority.Loaded);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -176,6 +206,23 @@ public partial class ContentDisplayView : UserControl
         {
             UpdateOverlayVisibility();
         }
+        else if (e.PropertyName is nameof(ContentDisplayViewModel.IsTransitionActive))
+        {
+            UpdateCurtainVisibility();
+        }
+    }
+
+    private void UpdateCurtainVisibility()
+    {
+        if (_curtainWindow == null || _viewModel == null)
+            return;
+
+        var shouldShow = _viewModel.IsTransitionActive;
+
+        if (shouldShow)
+            UpdateCurtainPosition();
+
+        _curtainWindow.IsVisible = shouldShow;
     }
 
     private void UpdateOverlayVisibility()
@@ -201,9 +248,25 @@ public partial class ContentDisplayView : UserControl
             UpdateOverlayPosition();
     }
 
+    private void UpdateFloatingWindowPositions()
+    {
+        UpdateOverlayPosition();
+        UpdateCurtainPosition();
+    }
+
     private void UpdateOverlayPosition()
     {
-        if (_overlayWindow == null || _parentWindow == null)
+        PositionWindowOverParent(_overlayWindow);
+    }
+
+    private void UpdateCurtainPosition()
+    {
+        PositionWindowOverParent(_curtainWindow);
+    }
+
+    private void PositionWindowOverParent(Window? window)
+    {
+        if (window == null || _parentWindow == null)
             return;
 
         try
@@ -213,15 +276,15 @@ public partial class ContentDisplayView : UserControl
             if (clientW <= 0 || clientH <= 0)
                 return;
 
-            // Cover the full client area of the parent window so both the bottom-right
-            // status panel and the full-screen identify flash render correctly.
-            _overlayWindow.Width = clientW;
-            _overlayWindow.Height = clientH;
-            _overlayWindow.Position = _parentWindow.PointToScreen(new Point(0, 0));
+            // Cover the full client area of the parent window so the status panel, the
+            // identify flash and the transition curtain all render over native content.
+            window.Width = clientW;
+            window.Height = clientH;
+            window.Position = _parentWindow.PointToScreen(new Point(0, 0));
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"UpdateOverlayPosition failed: {ex}");
+            System.Diagnostics.Debug.WriteLine($"PositionWindowOverParent failed: {ex}");
         }
     }
 
@@ -251,6 +314,12 @@ public partial class ContentDisplayView : UserControl
         {
             _overlayWindow.Close();
             _overlayWindow = null;
+        }
+
+        if (_curtainWindow != null)
+        {
+            _curtainWindow.Close();
+            _curtainWindow = null;
         }
 
         _parentWindow = null;

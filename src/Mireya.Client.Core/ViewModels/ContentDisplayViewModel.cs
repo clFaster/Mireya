@@ -28,6 +28,25 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private ScreenConfiguration? _pendingConfiguration;
     private bool _disposed;
 
+    // ── Transition state ──────────────────────────────────────────────────────
+    // Fade durations must match the DoubleTransition declared on the curtain control.
+    private const int CurtainFadeMs = 250;
+    private const int ContentReadyTimeoutMs = 8000;
+
+    // Incremented on every swap so an in-flight transition can detect it was superseded
+    // (e.g. by a remote "next"/"previous" command) and abort cleanly.
+    private int _transitionGeneration;
+
+    // Completed when the active native asset signals it has painted its first frame /
+    // finished loading. Recreated per transition; null for instantly-ready content.
+    private TaskCompletionSource<bool>? _contentReadyTcs;
+
+    // Tracks the currently displayed asset so re-showing an already-loaded website (e.g. a
+    // single-website playlist looping) skips the crossfade instead of waiting for a reveal
+    // signal that will never come (the URI did not change, so no re-navigation occurs).
+    private Guid _displayedAssetId;
+    private bool _hasDisplayed;
+
     [ObservableProperty]
     private string _displayName = "(not received yet)";
 
@@ -96,6 +115,22 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     /// <summary>True for a few seconds after an admin sends the "identify" command, flashing the screen.</summary>
     [ObservableProperty]
     private bool _isIdentifying;
+
+    // ── Asset transition crossfade (dip-to-black) ─────────────────────────────
+
+    /// <summary>
+    ///     Opacity (0–1) of the full-screen black transition curtain used to mask the flash
+    ///     while one asset is swapped for the next. Animated 0→1→0 around each swap.
+    /// </summary>
+    [ObservableProperty]
+    private double _transitionCurtainOpacity;
+
+    /// <summary>
+    ///     True while a transition is in progress; controls whether the floating curtain
+    ///     window (which covers the native video / website surfaces) is shown.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isTransitionActive;
 
     // Event to notify video component to start playback
     public event Action<string, bool>? VideoPlaybackRequested; // path, isMuted
@@ -529,7 +564,59 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         if (_playlist.Count == 0)
             return;
 
+        // Orchestrate the dip-to-black crossfade. Fire-and-forget: the async flow marshals
+        // back to the UI thread via Avalonia's synchronization context.
+        _ = RunTransitionAsync().ContinueWith(
+            t => _logger.LogError(t.Exception, "Asset transition faulted"),
+            TaskContinuationOptions.OnlyOnFaulted);
+    }
+
+    /// <summary>
+    ///     Plays the dip-to-black crossfade around a single asset swap: raise the curtain,
+    ///     swap the content underneath while it is hidden, wait until the new content has
+    ///     actually painted (or a timeout elapses), then lower the curtain to reveal it.
+    ///     This masks the type-switch flash, the website loading screen and the video
+    ///     first-frame flash with one mechanism.
+    /// </summary>
+    private async Task RunTransitionAsync()
+    {
+        var generation = ++_transitionGeneration;
         var item = _playlist[_currentIndex];
+
+        // Re-showing the exact same website that is already loaded neither reloads nor
+        // repaints it, so there is nothing to mask and no reveal signal will ever fire.
+        // Just refresh the timer / now-playing without a pointless black dip.
+        if (_hasDisplayed && item.AssetId == _displayedAssetId && item.AssetType == AssetType.Website)
+        {
+            ApplyCurrentItem(item);
+            return;
+        }
+
+        // 1. Raise the curtain to hide the swap.
+        await RaiseCurtainAsync();
+        if (generation != _transitionGeneration)
+            return; // a newer transition took over while we were fading
+
+        // 2. Arm the readiness signal *before* triggering load/playback so we never miss it.
+        ArmContentReadiness(item.AssetType);
+
+        // 3. Swap the visible content (loads/navigates/plays the new asset).
+        ApplyCurrentItem(item);
+        _displayedAssetId = item.AssetId;
+        _hasDisplayed = true;
+
+        // 4. Wait until the new content has painted, so revealing it shows no flash.
+        await WaitForContentReadyAsync(item.AssetType);
+        if (generation != _transitionGeneration)
+            return;
+
+        // 5. Lower the curtain to reveal the ready content.
+        await LowerCurtainAsync();
+    }
+
+    /// <summary>Applies a playlist item to the view (status text, now-playing report, renderer swap).</summary>
+    private void ApplyCurrentItem(PlaylistItem item)
+    {
         _logger.LogInformation(
             "Showing item {Index}/{Total}: {AssetName} ({AssetType})",
             _currentIndex + 1,
@@ -573,6 +660,62 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             _logger.LogError(ex, "Error showing item {AssetName}", item.AssetName);
             AdvanceToNext();
         }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Transition curtain helpers
+    // ──────────────────────────────────────────────────────────────
+
+    private async Task RaiseCurtainAsync()
+    {
+        IsTransitionActive = true; // show the floating curtain window
+        // Let the window become visible / lay out before animating so the opacity
+        // transition actually runs instead of snapping.
+        await Task.Delay(16);
+        TransitionCurtainOpacity = 1;
+        await Task.Delay(CurtainFadeMs);
+    }
+
+    private async Task LowerCurtainAsync()
+    {
+        TransitionCurtainOpacity = 0;
+        await Task.Delay(CurtainFadeMs);
+        IsTransitionActive = false; // hide the window once fully transparent
+    }
+
+    /// <summary>Creates the readiness task for content types that load/decode asynchronously.</summary>
+    private void ArmContentReadiness(AssetType type)
+    {
+        _contentReadyTcs = type is AssetType.Website or AssetType.Video
+            ? new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)
+            : null;
+    }
+
+    /// <summary>
+    ///     Waits until the active native renderer reports it has painted, bounded by a
+    ///     timeout so a slow or broken asset can never stall the playlist.
+    /// </summary>
+    private async Task WaitForContentReadyAsync(AssetType type)
+    {
+        var ready = _contentReadyTcs;
+        if (ready == null)
+            return; // images / unknown content are ready immediately
+
+        var completed = await Task.WhenAny(ready.Task, Task.Delay(ContentReadyTimeoutMs));
+        if (completed != ready.Task)
+            _logger.LogWarning("Timed out waiting for {Type} content to become ready", type);
+    }
+
+    /// <summary>Called by the view when the website renderer reports its page has painted.</summary>
+    public void NotifyWebsiteContentReady()
+    {
+        Dispatcher.UIThread.Post(() => _contentReadyTcs?.TrySetResult(true));
+    }
+
+    /// <summary>Called by the view when the video renderer reports its first frame has rendered.</summary>
+    public void NotifyVideoFirstFrame()
+    {
+        Dispatcher.UIThread.Post(() => _contentReadyTcs?.TrySetResult(true));
     }
 
     private void ShowImage(PlaylistItem item)
