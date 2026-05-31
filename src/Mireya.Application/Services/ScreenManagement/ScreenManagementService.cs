@@ -393,6 +393,16 @@ public class ScreenManagementService(
 
         display.UpdatedAt = DateTime.UtcNow;
 
+        // Validate that all requested campaigns exist before changing assignments
+        var distinctCampaignIds = campaignIds.Distinct().ToList();
+        if (distinctCampaignIds.Count > 0)
+        {
+            var existingCount = await db.Campaigns
+                .CountAsync(c => distinctCampaignIds.Contains(c.Id));
+            if (existingCount != distinctCampaignIds.Count)
+                throw new ArgumentException("One or more campaigns do not exist");
+        }
+
         // Update campaign assignments
         var currentAssignments = await db.CampaignAssignments
             .Where(ca => ca.DisplayId == id)
