@@ -436,6 +436,9 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("OfflineAlertedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("ResolutionHeight")
                         .HasColumnType("INTEGER");
 
