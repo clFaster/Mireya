@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: mireya
+      POSTGRES_USER: mireya
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mireya}
+    volumes:
+      - mireya-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mireya -d mireya"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      provider: Postgres
+      ConnectionStrings__Postgres: "Host=db;Database=mireya;Username=mireya;Password=${POSTGRES_PASSWORD:-mireya}"
+      # Set an initial admin password to create the default admin user on first run.
+      DefaultAdminUser__Password: ${MIREYA_ADMIN_PASSWORD:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      - mireya-uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  mireya-db:
+  mireya-uploads:
