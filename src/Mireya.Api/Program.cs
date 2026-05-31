@@ -113,6 +113,7 @@ builder.Services.AddSingleton<IScreenConnectionTracker, ScreenConnectionTracker>
 builder.Services.AddScoped<IScreenManagementService, ScreenManagementService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
+builder.Services.AddHostedService<CampaignScheduleSyncService>();
 builder.Services.AddScoped<IScreenHubContext, ScreenHubContextAdapter>();
 
 // ─── CORS (dev only) ──────────────────────────────────────────────────────────

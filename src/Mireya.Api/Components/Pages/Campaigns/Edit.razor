@@ -73,6 +73,53 @@
             </div>
 
             <div class="card mb-3">
+                <div class="card-header">Weekly recurrence (optional)</div>
+                <div class="card-body">
+                    <div class="form-text mb-3">
+                        Restrict this campaign to specific weekdays and/or a daily time window.
+                        Leave everything empty to run on every day at all times (within the start/end dates above).
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label d-block">Days of week</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var (label, index) in _weekdayLabels.Select((l, i) => (l, i)))
+                            {
+                                var dayIndex = index;
+                                <input type="checkbox" class="btn-check" id="day-@dayIndex" autocomplete="off"
+                                       checked="@_model.Days[dayIndex]"
+                                       @onchange="e => _model.Days[dayIndex] = (bool)e.Value!" />
+                                <label class="btn btn-outline-primary btn-sm" for="day-@dayIndex">@label</label>
+                            }
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4 mb-3">
+                            <label class="form-label" for="dailyStart">Daily start</label>
+                            <InputDate id="dailyStart" Type="InputDateType.Time" class="form-control" @bind-Value="_model.DailyStartTime" />
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label class="form-label" for="dailyEnd">Daily end</label>
+                            <InputDate id="dailyEnd" Type="InputDateType.Time" class="form-control" @bind-Value="_model.DailyEndTime" />
+                        </div>
+                        <div class="col-sm-4 mb-3">
+                            <label class="form-label" for="recurrenceTz">Time zone</label>
+                            <InputSelect id="recurrenceTz" class="form-select" @bind-Value="_model.RecurrenceTimeZoneId">
+                                <option value="">UTC</option>
+                                @foreach (var tz in _timeZones)
+                                {
+                                    <option value="@tz.Id">@tz.DisplayName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+                    <div class="form-text">
+                        Both daily start and end must be set together. An end time earlier than the start spans midnight
+                        (e.g. 22:00&ndash;06:00).
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
                 <div class="card-header">Assets in Campaign</div>
                 <div class="card-body">
                     @if (Id.HasValue)
@@ -162,6 +209,10 @@
     private string _initialSnapshot = "";
     private bool _allowNavigation;
 
+    private static readonly string[] _weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    private static readonly List<TimeZoneInfo> _timeZones =
+        TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.DisplayName).ToList();
+
     protected override async Task OnInitializedAsync()
     {
         _editContext = new EditContext(_model);
@@ -180,6 +231,10 @@
             _model.EndDate = campaign.EndDateUtc;
             _model.Priority = campaign.Priority;
             _model.IsDefault = campaign.IsDefault;
+            ApplyDaysMask(campaign.RecurrenceDaysMask);
+            _model.DailyStartTime = campaign.DailyStartTime;
+            _model.DailyEndTime = campaign.DailyEndTime;
+            _model.RecurrenceTimeZoneId = campaign.RecurrenceTimeZoneId ?? "";
             _selectedAssets = campaign.Assets.Select(a => new SelectedCampaignAsset
             {
                 AssetId = a.AssetId,
@@ -197,7 +252,23 @@
     private string CurrentSnapshot() =>
         string.Join("|",
             _model.Name, _model.Description, _model.IsEnabled, _model.StartDate, _model.EndDate, _model.Priority, _model.IsDefault,
+            _model.DailyStartTime, _model.DailyEndTime, _model.RecurrenceTimeZoneId, BuildDaysMask(),
             string.Join(",", _selectedAssets.Select(a => $"{a.AssetId}:{a.DurationSeconds}")));
+
+    private void ApplyDaysMask(int? mask)
+    {
+        for (var i = 0; i < 7; i++)
+            _model.Days[i] = mask is > 0 && (mask.Value & (1 << i)) != 0;
+    }
+
+    private int? BuildDaysMask()
+    {
+        var mask = 0;
+        for (var i = 0; i < 7; i++)
+            if (_model.Days[i])
+                mask |= 1 << i;
+        return mask;
+    }
 
     private bool IsDirty() => !_allowNavigation && CurrentSnapshot() != _initialSnapshot;
 
@@ -246,11 +317,13 @@
             var assets = _selectedAssets.Select((a, i) => new CampaignAssetDto(a.AssetId, i + 1, a.DurationSeconds)).ToList();
             var startUtc = _model.StartDate.HasValue ? DateTime.SpecifyKind(_model.StartDate.Value, DateTimeKind.Utc) : (DateTime?)null;
             var endUtc = _model.EndDate.HasValue ? DateTime.SpecifyKind(_model.EndDate.Value, DateTimeKind.Utc) : (DateTime?)null;
+            var daysMask = BuildDaysMask();
+            var tz = string.IsNullOrWhiteSpace(_model.RecurrenceTimeZoneId) ? null : _model.RecurrenceTimeZoneId;
             if (Id.HasValue)
                 // DisplayIds = null: screen assignments are managed on the Screen edit page and must not be touched here.
-                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_model.Name, _model.Description, assets, null, _model.IsEnabled, startUtc, endUtc, _model.Priority, _model.IsDefault));
+                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_model.Name, _model.Description, assets, null, _model.IsEnabled, startUtc, endUtc, _model.Priority, _model.IsDefault, daysMask, _model.DailyStartTime, _model.DailyEndTime, tz));
             else
-                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_model.Name, _model.Description, assets, [], _model.IsEnabled, startUtc, endUtc, _model.Priority, _model.IsDefault));
+                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_model.Name, _model.Description, assets, [], _model.IsEnabled, startUtc, endUtc, _model.Priority, _model.IsDefault, daysMask, _model.DailyStartTime, _model.DailyEndTime, tz));
 
             _allowNavigation = true;
             Navigation.NavigateTo("/campaigns");
@@ -277,6 +350,14 @@
         public int Priority { get; set; }
 
         public bool IsDefault { get; set; }
+
+        public bool[] Days { get; set; } = new bool[7];
+
+        public TimeOnly? DailyStartTime { get; set; }
+
+        public TimeOnly? DailyEndTime { get; set; }
+
+        public string RecurrenceTimeZoneId { get; set; } = "";
     }
 
     private sealed class SelectedCampaignAsset

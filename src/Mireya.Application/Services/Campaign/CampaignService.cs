@@ -99,7 +99,11 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             campaign.StartDateUtc,
             campaign.EndDateUtc,
             campaign.Priority,
-            campaign.IsDefault
+            campaign.IsDefault,
+            campaign.RecurrenceDaysMask,
+            campaign.DailyStartTime,
+            campaign.DailyEndTime,
+            campaign.RecurrenceTimeZoneId
         );
     }
 
@@ -107,6 +111,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
     {
         ValidateCampaignRequest(request.Name, request.Assets);
         ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
+        ValidateRecurrence(request.DailyStartTime, request.DailyEndTime, request.RecurrenceTimeZoneId);
 
         await VerifyAssetsExistAsync(request.Assets.Select(a => a.AssetId).Distinct().ToList(), request.Assets.Count);
 
@@ -124,6 +129,10 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             EndDateUtc = request.EndDateUtc,
             Priority = request.Priority,
             IsDefault = request.IsDefault,
+            RecurrenceDaysMask = NormalizeDaysMask(request.RecurrenceDaysMask),
+            DailyStartTime = request.DailyStartTime,
+            DailyEndTime = request.DailyEndTime,
+            RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId) ? null : request.RecurrenceTimeZoneId,
         };
 
         db.Campaigns.Add(campaign);
@@ -150,6 +159,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
     {
         ValidateCampaignRequest(request.Name, request.Assets);
         ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
+        ValidateRecurrence(request.DailyStartTime, request.DailyEndTime, request.RecurrenceTimeZoneId);
 
         var campaign = await db
             .Campaigns.Include(c => c.CampaignAssets)
@@ -175,6 +185,10 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         campaign.EndDateUtc = request.EndDateUtc;
         campaign.Priority = request.Priority;
         campaign.IsDefault = request.IsDefault;
+        campaign.RecurrenceDaysMask = NormalizeDaysMask(request.RecurrenceDaysMask);
+        campaign.DailyStartTime = request.DailyStartTime;
+        campaign.DailyEndTime = request.DailyEndTime;
+        campaign.RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId) ? null : request.RecurrenceTimeZoneId;
 
         if (request.IsDefault)
             await ClearOtherDefaultsAsync(campaign.Id);
@@ -253,6 +267,30 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         if (startDateUtc.HasValue && endDateUtc.HasValue && endDateUtc.Value < startDateUtc.Value)
             throw new ArgumentException("Campaign end date must not be earlier than its start date");
     }
+
+    private static void ValidateRecurrence(TimeOnly? start, TimeOnly? end, string? timeZoneId)
+    {
+        if (start.HasValue != end.HasValue)
+            throw new ArgumentException("Daily start and end time must both be set or both be empty");
+
+        if (!string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            try
+            {
+                TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+            catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+            {
+                throw new ArgumentException($"Unknown time zone '{timeZoneId}'");
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Normalises a weekday bitmask: 0 (no days) or 127 (all days) both mean "every day" (null).
+    /// </summary>
+    private static int? NormalizeDaysMask(int? mask) =>
+        mask is null or 0 or 0b111_1111 ? null : mask & 0b111_1111;
 
     private async Task VerifyAssetsExistAsync(List<Guid> assetIds, int totalRequestedCount)
     {
