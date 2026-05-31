@@ -11,5 +11,6 @@ public class ScreenConfiguration
     public required string ApprovalStatus { get; set; }
     public int? ResolutionWidth { get; set; }
     public int? ResolutionHeight { get; set; }
+    public bool ShufflePlayback { get; set; }
     public List<CampaignDetail> Campaigns { get; set; } = [];
 }

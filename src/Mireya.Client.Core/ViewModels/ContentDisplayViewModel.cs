@@ -313,10 +313,26 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         TotalAssets = _playlist.Count;
         _logger.LogInformation("Playlist built with {Count} items", _playlist.Count);
 
+        if (config.ShufflePlayback && _playlist.Count > 1)
+        {
+            ShufflePlaylist();
+            _logger.LogInformation("Playlist shuffled (per-screen shuffle enabled)");
+        }
+
         if (_playlist.Count == 0)
         {
             StatusText = "No content available";
             CurrentContentType = ContentType.None;
+        }
+    }
+
+    private void ShufflePlaylist()
+    {
+        // Fisher-Yates shuffle for an unbiased in-place random order.
+        for (var i = _playlist.Count - 1; i > 0; i--)
+        {
+            var j = Random.Shared.Next(i + 1);
+            (_playlist[i], _playlist[j]) = (_playlist[j], _playlist[i]);
         }
     }
 

@@ -59,6 +59,12 @@ public class Display
     /// </summary>
     public DateTime? LastSeenAt { get; set; }
 
+    /// <summary>
+    ///     When enabled, the client plays this screen's assets in a randomised order instead of
+    ///     their configured campaign/position order.
+    /// </summary>
+    public bool ShufflePlayback { get; set; }
+
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

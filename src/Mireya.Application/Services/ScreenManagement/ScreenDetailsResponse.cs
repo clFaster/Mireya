@@ -18,6 +18,7 @@ public class ScreenDetailsResponse
     public int? ResolutionHeight { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastSeenAt { get; set; }
+    public bool ShufflePlayback { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

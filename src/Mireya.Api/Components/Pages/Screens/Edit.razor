@@ -25,6 +25,14 @@ else
                 <label class="form-label">Description</label>
                 <textarea class="form-control" @bind="_description"></textarea>
             </div>
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" role="switch" id="shuffle"
+                       @bind="_shufflePlayback" />
+                <label class="form-check-label" for="shuffle">Shuffle playback order</label>
+            </div>
+            <small class="text-muted d-block mb-2">
+                When on, this screen plays its assets in a random order instead of the configured campaign order.
+            </small>
 
             <div class="d-flex justify-content-between align-items-center mt-4">
                 <h6 class="mb-0">Campaign Assignments</h6>
@@ -80,6 +88,7 @@ else
     private string _name = string.Empty;
     private string _location = string.Empty;
     private string? _description;
+    private bool _shufflePlayback;
     private string _campaignSearch = string.Empty;
     private bool _saving;
 
@@ -89,6 +98,7 @@ else
         _name = _screen.Name;
         _location = _screen.Location;
         _description = _screen.Description;
+        _shufflePlayback = _screen.ShufflePlayback;
         _selectedCampaignIds = _screen.AssignedCampaigns.Select(c => c.Id).ToHashSet();
     }
 
@@ -109,6 +119,7 @@ else
                 Name = _name,
                 Description = _description,
                 Location = _location,
+                ShufflePlayback = _shufflePlayback,
             };
             await ScreenManagementService.UpdateScreenWithCampaignsAsync(Id, request, _selectedCampaignIds.ToList());
             Toast.ShowSuccess("Screen saved.");
