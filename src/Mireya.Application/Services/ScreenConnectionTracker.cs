@@ -64,7 +64,7 @@ public interface IScreenConnectionTracker
     event Action<ScreenStateChangedEvent>? OnScreenStateChanged;
 }
 
-public class ScreenConnectionTracker : IScreenConnectionTracker
+public class ScreenConnectionTracker(ILogger<ScreenConnectionTracker> logger) : IScreenConnectionTracker
 {
     // Maps ConnectionId -> UserId
     private readonly Dictionary<string, string> _connectionToUser = new();
@@ -204,8 +204,8 @@ public class ScreenConnectionTracker : IScreenConnectionTracker
         catch (Exception ex)
         {
             // Swallow subscriber exceptions to prevent hub disruption, but log them
-            System.Diagnostics.Debug.WriteLine(
-                $"[ScreenConnectionTracker] Subscriber exception for user {userId}: {ex.Message}");
+            logger.LogError(ex,
+                "Subscriber threw while handling screen state change for user {UserId}", userId);
         }
     }
 }
