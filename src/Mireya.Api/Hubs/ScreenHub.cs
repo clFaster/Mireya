@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Mireya.Application.Constants;
 using Mireya.Application.Hubs;
 using Mireya.Application.Services;
+using Mireya.Application.Services.Reporting;
 using Mireya.Application.Services.ScreenManagement;
 
 namespace Mireya.Api.Hubs;
@@ -12,7 +13,8 @@ public class ScreenHub(
     ILogger<ScreenHub> logger,
     IScreenConnectionTracker connectionTracker,
     IScreenSynchronizationService screenSyncService,
-    IScreenManagementService screenManagementService
+    IScreenManagementService screenManagementService,
+    IPlaybackReportingService playbackReporting
 ) : Hub<IScreenClient>
 {
     public override async Task OnConnectedAsync()
@@ -97,6 +99,9 @@ public class ScreenHub(
         );
 
         connectionTracker.UpdateNowPlaying(userId, assetId, assetName);
-        return Task.CompletedTask;
+
+        // Persist a proof-of-play record (no-ops when no asset is supplied). Fire-and-forget
+        // is avoided so EF's scoped DbContext stays valid for the duration of the write.
+        return playbackReporting.RecordAsync(userId, assetId, assetName);
     }
 }

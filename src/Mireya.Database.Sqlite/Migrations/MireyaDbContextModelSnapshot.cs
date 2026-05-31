@@ -471,6 +471,41 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.ToTable("Displays");
                 });
 
+            modelBuilder.Entity("Mireya.Database.Models.PlaybackEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AssetName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DisplayId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PlayedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("DisplayId");
+
+                    b.HasIndex("PlayedAtUtc");
+
+                    b.ToTable("PlaybackEvents");
+                });
+
             modelBuilder.Entity("Mireya.Database.Models.User", b =>
                 {
                     b.Property<string>("Id")
@@ -645,6 +680,17 @@ namespace Mireya.Database.Sqlite.Migrations
                         .IsRequired();
 
                     b.Navigation("Campaign");
+
+                    b.Navigation("Display");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.PlaybackEvent", b =>
+                {
+                    b.HasOne("Mireya.Database.Models.Display", "Display")
+                        .WithMany()
+                        .HasForeignKey("DisplayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Display");
                 });

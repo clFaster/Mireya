@@ -40,6 +40,9 @@ scheduled content.
   under **Audit Log**.
 - **Remote screen actions** — From a screen's detail page an administrator can push live commands to a connected
   screen over SignalR: **Restart** (replay the playlist from the start) and **Reload** (re-render the current content).
+- **Proof of play** — Every time a screen starts showing an asset it is recorded, and the admin **Proof of Play**
+  report aggregates plays by asset and by screen over a selectable time window (24 hours to 90 days) with a recent-plays
+  log, so you can demonstrate exactly what played, where and when.
 
 ---
 
