@@ -186,6 +186,10 @@ namespace Mireya.Database.Postgres.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<string>("ThumbnailSource")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 

@@ -47,8 +47,18 @@ else
                     }
                     else if (asset.Type == AssetType.Video)
                     {
-                        <div class="bg-dark d-flex align-items-center justify-content-center" style="height:160px;">
-                            <i class="bi bi-play-circle text-white fs-1"></i>
+                        <div class="position-relative" style="height:160px;">
+                            @if (!string.IsNullOrEmpty(asset.ThumbnailSource))
+                            {
+                                <img src="@asset.ThumbnailSource" class="card-img-top" style="height:160px;object-fit:cover;" alt="@asset.Name" />
+                            }
+                            else
+                            {
+                                <div class="bg-dark w-100 h-100"></div>
+                            }
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <i class="bi bi-play-circle-fill text-white fs-1" style="text-shadow:0 0 8px rgba(0,0,0,.6);"></i>
+                            </div>
                         </div>
                     }
                     else

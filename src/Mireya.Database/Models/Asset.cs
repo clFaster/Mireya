@@ -31,6 +31,13 @@ public class Asset
     public string Source { get; set; } = string.Empty;
 
     /// <summary>
+    ///     URL or file path to a preview thumbnail (poster frame for videos).
+    ///     For images this equals <see cref="Source" />; null when no preview is available.
+    /// </summary>
+    [MaxLength(2000)]
+    public string? ThumbnailSource { get; set; }
+
+    /// <summary>
     ///     File size in bytes (for uploaded files)
     /// </summary>
     public long? FileSizeBytes { get; set; }

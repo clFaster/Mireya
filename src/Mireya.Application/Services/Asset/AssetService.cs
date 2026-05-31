@@ -115,20 +115,45 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
 
         int? videoDurationSeconds = null;
         string? durationError = null;
+        string? thumbnailSource = isImage ? $"/uploads/{fileName}" : null;
 
         if (!isImage)
+        {
             (videoDurationSeconds, durationError) = await ExtractVideoDurationAsync(filePath, file.FileName);
+            thumbnailSource = await GenerateVideoThumbnailAsync(filePath, fileName, file.FileName);
+        }
 
         var asset = new Database.Models.Asset
         {
             Name = Path.GetFileNameWithoutExtension(file.FileName),
             Type = isImage ? AssetType.Image : AssetType.Video,
             Source = $"/uploads/{fileName}",
+            ThumbnailSource = thumbnailSource,
             FileSizeBytes = file.Length,
             DurationSeconds = videoDurationSeconds,
         };
 
         return (asset, durationError);
+    }
+
+    private async Task<string?> GenerateVideoThumbnailAsync(string filePath, string fileName, string originalName)
+    {
+        var thumbnailName = $"{Path.GetFileNameWithoutExtension(fileName)}_thumb.jpg";
+        var thumbnailPath = Path.Combine(_uploadsFolder, thumbnailName);
+
+        try
+        {
+            var conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(
+                filePath, thumbnailPath, TimeSpan.FromSeconds(1));
+            await conversion.Start();
+            return File.Exists(thumbnailPath) ? $"/uploads/{thumbnailName}" : null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[AssetService] Failed to generate thumbnail for '{originalName}': {ex.Message}");
+            return null;
+        }
     }
 
     private static async Task<(int? duration, string? error)> ExtractVideoDurationAsync(string filePath, string fileName)
@@ -208,6 +233,13 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env) : IAssetServ
         var filePath = Path.Combine(_uploadsFolder, asset.Source["/uploads/".Length..]);
         if (IsUploadedFile(asset.Source, filePath))
             File.Delete(filePath);
+
+        if (!string.IsNullOrEmpty(asset.ThumbnailSource) && asset.ThumbnailSource != asset.Source)
+        {
+            var thumbnailPath = Path.Combine(_uploadsFolder, asset.ThumbnailSource["/uploads/".Length..]);
+            if (IsUploadedFile(asset.ThumbnailSource, thumbnailPath))
+                File.Delete(thumbnailPath);
+        }
 
         db.Assets.Remove(asset);
         await db.SaveChangesAsync();
