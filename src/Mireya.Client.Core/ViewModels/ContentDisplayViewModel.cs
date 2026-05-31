@@ -775,7 +775,11 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private void FadeInImage()
     {
         CurrentImageOpacity = 0;
-        Dispatcher.UIThread.Post(() => CurrentImageOpacity = 1, DispatcherPriority.Background);
+        // Use Default (lowest foreground) priority rather than Background: Background work
+        // is starved on Android under the continuous render loop, which would leave the
+        // image stuck at opacity 0 (invisible). Default still defers to the next dispatcher
+        // cycle so the Opacity transition animates the fade-in.
+        Dispatcher.UIThread.Post(() => CurrentImageOpacity = 1, DispatcherPriority.Default);
     }
 
     private void ShowVideo(PlaylistItem item)
