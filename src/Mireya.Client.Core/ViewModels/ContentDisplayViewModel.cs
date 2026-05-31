@@ -847,8 +847,14 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         }
         else
         {
-            // Create the timer only once and reuse it to avoid event handler leaks
-            _advanceTimer = new DispatcherTimer();
+            // Create the timer only once and reuse it to avoid event handler leaks.
+            // Bind explicitly to the UI thread dispatcher and tick at Default priority:
+            // the parameterless DispatcherTimer ctor uses DispatcherPriority.Background,
+            // which sits below Input and gets starved on Android by the continuous
+            // compositor/video render loop, so the playlist never advances automatically
+            // there. Default ("lowest foreground") matches the priority used by the
+            // remote-command path (Dispatcher.UIThread.Post) that already advances reliably.
+            _advanceTimer = new DispatcherTimer(DispatcherPriority.Default, Dispatcher.UIThread);
             _advanceTimer.Tick += OnAdvanceTimerTick;
         }
 

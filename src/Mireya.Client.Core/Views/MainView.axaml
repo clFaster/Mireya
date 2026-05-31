@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:views="using:Mireya.Client.Avalonia.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
+             x:Class="Mireya.Client.Avalonia.Views.MainView"
+             x:DataType="vm:MainWindowViewModel"
+             Background="#1A1A2E">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <ContentControl Content="{Binding CurrentView}">
+        <ContentControl.DataTemplates>
+            <DataTemplate DataType="vm:BackendSelectionViewModel">
+                <views:BackendSelectionView />
+            </DataTemplate>
+
+            <DataTemplate DataType="vm:ContentDisplayViewModel">
+                <views:ContentDisplayView />
+            </DataTemplate>
+        </ContentControl.DataTemplates>
+    </ContentControl>
+
+</UserControl>

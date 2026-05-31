@@ -11,6 +11,7 @@
     <Project Path="src/Mireya.ApiClient/Mireya.ApiClient.csproj" />
     <Project Path="src/Mireya.Client.Core/Mireya.Client.Core.csproj" />
     <Project Path="src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj" />
+    <Project Path="src/Mireya.Client.Android/Mireya.Client.Android.csproj" />
   </Folder>
   <Folder Name="/Server/">
     <Project Path="src/Mireya.Api/Mireya.Api.csproj" />

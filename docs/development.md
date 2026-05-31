@@ -21,6 +21,7 @@ Mireya consists of several components:
 - **Mireya.ApiClient** - API wrapper to be used in clients
 - **Mireya.Client.Core** - Shared Avalonia UI, view-models and platform-abstraction interfaces for the client
 - **Mireya.Client.Desktop** - Windows/Linux desktop head (WebView2, LibVLC, DPAPI) that hosts the shared core
+- **Mireya.Client.Android** - Android TV head (native System WebView, LibVLC) that hosts the shared core
 - **Mireya.Application.Tests** - xUnit unit tests for the application services
 - **MireyaDigitalSignage.AppHost** / **MireyaDigitalSignage.ServiceDefaults** - .NET Aspire orchestration and shared service defaults (telemetry, health checks)
 
@@ -165,6 +166,12 @@ shipped to Windows (Store/MSIX), Linux (incl. Raspberry Pi) and Android (Android
   composition root (`Platform/DesktopServices`) and the platform implementations
   (WebView2 website renderer, LibVLC video renderer, DPAPI credential storage).
   This is the project you build/run for the desktop app.
+- `src/Mireya.Client.Android/` - Android TV head (`net10.0-android`, application id
+  `com.mireya.signage.tv`). Provides the Android composition root
+  (`Platform/AndroidServices`) and the platform implementations (native `Android.Webkit`
+  WebView website renderer and a `LibVLCSharp` video renderer, both hosted in a
+  `NativeControlHost`). Registers in the Leanback (TV) launcher and runs as an immersive
+  full-screen kiosk.
 
 Both projects intentionally keep the historical `Mireya.Client.Avalonia` root namespace
 (only the assembly names differ) to avoid churn across the moved XAML and code.
@@ -172,6 +179,78 @@ Both projects intentionally keep the historical `Mireya.Client.Avalonia` root na
 ```bash
 dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
 ```
+
+##### Android TV
+
+The Android TV head reuses the shared core and adds Android-specific renderers. Use the
+Android TV emulator (or a real Android TV device) to build, deploy and smoke-test it.
+
+**Prerequisites**
+
+- The .NET Android workload:
+
+  ```bash
+  dotnet workload install android
+  # If a restore fails with a workload-band mismatch (NETSDK1147), realign the bands:
+  dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
+  ```
+
+- A **64-bit** Android TV emulator or device. The app ships **64-bit native libraries
+  only** (SkiaSharp and LibVLC), so a 32-bit `x86` system image fails to install with
+  `INSTALL_FAILED_NO_MATCHING_ABIS`. Create an AVD from a `x86_64` Android TV
+  (`google-atv`/`android-tv`) system image. `adb`, `emulator` and `sdkmanager` live under
+  `$ANDROID_HOME` (`%LOCALAPPDATA%\Android\Sdk` on Windows).
+
+**Build**
+
+```bash
+dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj
+```
+
+**Run on the emulator**
+
+1. Start the API server (see "Run the API Server" above) and the TV emulator. Make sure
+   the backend is reachable from the emulator. From the emulator, the host machine is
+   `http://10.0.2.2:5000` (not `localhost`, which points at the emulator itself). The
+   manifest enables cleartext HTTP so plain `http://` LAN backends work.
+2. Build a **standalone APK with the assemblies embedded** and install it with `adb`.
+   This is the most reliable path — a plain Debug APK installed by hand crashes on launch
+   with *"No assemblies found … Assuming this is part of Fast Deployment"* because Fast
+   Deployment expects the assemblies to be pushed separately by the IDE.
+
+   ```bash
+   dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj \
+     -p:EmbedAssembliesIntoApk=true -p:AndroidFastDeploymentType=None
+
+   adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/com.mireya.signage.tv-Signed.apk
+   adb shell monkey -p com.mireya.signage.tv -c android.intent.category.LAUNCHER 1
+   ```
+
+   Alternatively, deploy via the MSBuild target (handles Fast Deployment for you):
+
+   ```bash
+   dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -t:Run
+   ```
+
+3. On first launch the app shows the backend-selection screen. Enter the backend URL
+   (`http://10.0.2.2:5000` for the local API) and connect. The app then establishes a
+   SignalR connection and starts displaying the assigned campaign.
+
+**Useful diagnostics**
+
+```bash
+# Follow the app's own log output (Serilog is routed to logcat under the DOTNET tag)
+adb logcat --pid=$(adb shell pidof com.mireya.signage.tv)
+
+# Capture a screenshot of the current screen
+adb exec-out screencap -p > screen.png
+```
+
+> **Known limitation:** on Android TV, assets in a campaign do **not** transition
+> automatically yet. Manual transitions triggered from the website renderer's "next"
+> action work, so content can still be advanced, but the automatic timed playlist
+> rotation that the desktop head performs is not yet wired up on Android. Automatic
+> asset transition on Android is a follow-up item.
 
 ## Running Tests
 

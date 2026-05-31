@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Leanback launcher banner (recommended 320x180). The application icon is centred on a
+     dark Mireya-themed background so the channel tile is legible on the TV home screen. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item>
+    <color android:color="#1A1A2E" />
+  </item>
+  <item
+    android:drawable="@drawable/icon"
+    android:width="120dp"
+    android:height="120dp"
+    android:gravity="center" />
+</layer-list>
