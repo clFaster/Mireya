@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject ICampaignService CampaignService
 @inject NavigationManager Navigation
+@inject ToastService Toast
 
 <PageTitle>Campaigns - Mireya Admin</PageTitle>
 
@@ -9,13 +10,6 @@
     <h1>Campaigns</h1>
     <a href="/campaigns/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Campaign</a>
 </div>
-
-@if (!string.IsNullOrEmpty(_message))
-{
-    <div class="alert @(_isError ? "alert-danger" : "alert-success") alert-dismissible">
-        @_message <button type="button" class="btn-close" @onclick="() => _message = null"></button>
-    </div>
-}
 
 @if (_loading)
 {
@@ -83,8 +77,6 @@ else
 @code {
     private List<CampaignSummary> _campaigns = [];
     private bool _loading = true;
-    private string? _message;
-    private bool _isError;
     private ConfirmDialog _confirmDialog = default!;
 
     protected override async Task OnInitializedAsync()
@@ -104,10 +96,9 @@ else
         try
         {
             await CampaignService.DeleteCampaignAsync(id);
-            _message = "Campaign deleted.";
-            _isError = false;
+            Toast.ShowSuccess($"Campaign \"{campaign?.Name}\" deleted.");
             _campaigns = await CampaignService.GetCampaignsAsync();
         }
-        catch (Exception ex) { _message = ex.Message; _isError = true; }
+        catch (Exception ex) { Toast.ShowError(ex.Message); }
     }
 }
