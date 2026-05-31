@@ -28,6 +28,14 @@ else
                         disabled="@(!_screen.IsActive || _sendingCommand)" title="Restart the playlist from the first item">
                     <i class="bi bi-skip-start" aria-hidden="true"></i> Restart
                 </button>
+                <button class="btn btn-outline-primary" @onclick="PreviousAssetAsync"
+                        disabled="@(!_screen.IsActive || _sendingCommand)" title="Go to the previous asset in the queue">
+                    <i class="bi bi-skip-backward" aria-hidden="true"></i> Previous
+                </button>
+                <button class="btn btn-outline-primary" @onclick="NextAssetAsync"
+                        disabled="@(!_screen.IsActive || _sendingCommand)" title="Skip to the next asset in the queue">
+                    <i class="bi bi-skip-end" aria-hidden="true"></i> Next
+                </button>
                 <button class="btn btn-outline-primary" @onclick="ReloadContentAsync"
                         disabled="@(!_screen.IsActive || _sendingCommand)" title="Reload the current content">
                     <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Reload
@@ -107,6 +115,10 @@ else
     }
 
     private Task RestartPlaybackAsync() => SendCommandAsync(ScreenCommands.RestartPlayback, "Restart command sent.");
+
+    private Task NextAssetAsync() => SendCommandAsync(ScreenCommands.NextAsset, "Next command sent.");
+
+    private Task PreviousAssetAsync() => SendCommandAsync(ScreenCommands.PreviousAsset, "Previous command sent.");
 
     private Task ReloadContentAsync() => SendCommandAsync(ScreenCommands.ReloadContent, "Reload command sent.");
 

@@ -8,6 +8,8 @@ public class ScreenCommandsTests
     [InlineData(ScreenCommands.RestartPlayback)]
     [InlineData(ScreenCommands.ReloadContent)]
     [InlineData(ScreenCommands.Identify)]
+    [InlineData(ScreenCommands.NextAsset)]
+    [InlineData(ScreenCommands.PreviousAsset)]
     public void IsValid_KnownCommands_ReturnsTrue(string command)
     {
         Assert.True(ScreenCommands.IsValid(command));
