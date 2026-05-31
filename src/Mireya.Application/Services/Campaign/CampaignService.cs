@@ -137,7 +137,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
         await VerifyAssetsExistAsync(request.Assets.Select(a => a.AssetId).Distinct().ToList(), request.Assets.Count);
 
-        if (request.DisplayIds.Any())
+        if (request.DisplayIds is { Count: > 0 })
             await VerifyDisplaysExistAsync(request.DisplayIds);
 
         campaign.Name = request.Name;
@@ -147,15 +147,21 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         db.CampaignAssets.RemoveRange(campaign.CampaignAssets);
         AddCampaignAssets(campaign.Id, request.Assets);
 
-        // Always process display assignments (empty list = unassign all)
-        db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
-        AddCampaignAssignments(campaign.Id, request.DisplayIds);
+        // Only modify display assignments when explicitly provided.
+        // null => leave assignments untouched (e.g. campaign content edits).
+        // non-null list (incl. empty) => set assignments to exactly this set.
+        var affectedDisplayIds = oldDisplayIds;
+        if (request.DisplayIds is not null)
+        {
+            db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
+            AddCampaignAssignments(campaign.Id, request.DisplayIds);
+            affectedDisplayIds = oldDisplayIds.Union(request.DisplayIds).ToList();
+        }
 
         await db.SaveChangesAsync();
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
-        var allAffectedDisplayIds = oldDisplayIds.Union(request.DisplayIds).ToList();
-        await syncService.SyncScreensAsync(allAffectedDisplayIds);
+        await syncService.SyncScreensAsync(affectedDisplayIds);
 
         return campaignDetail;
     }
