@@ -7,4 +7,5 @@ public interface IScreenClient
 {
     Task ReceiveConfigurationUpdate(ScreenConfiguration configuration);
     Task StartAssetSync(List<CampaignSyncInfo> campaigns);
+    Task ExecuteCommand(string command);
 }

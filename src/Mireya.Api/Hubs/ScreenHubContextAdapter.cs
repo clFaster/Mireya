@@ -13,4 +13,7 @@ public class ScreenHubContextAdapter(IHubContext<ScreenHub, IScreenClient> hubCo
 
     public async Task StartAssetSyncAsync(string userId, List<CampaignSyncInfo> campaigns)
         => await hubContext.Clients.User(userId).StartAssetSync(campaigns);
+
+    public async Task SendCommandAsync(string userId, string command)
+        => await hubContext.Clients.User(userId).ExecuteCommand(command);
 }

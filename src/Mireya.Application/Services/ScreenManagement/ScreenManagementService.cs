@@ -75,6 +75,12 @@ public interface IScreenManagementService
     ///     Gets all approved screens, optionally filtering by active status
     /// </summary>
     Task<List<ScreenDetailsResponse>> GetApprovedScreensAsync(bool includeOffline);
+
+    /// <summary>
+    ///     Sends a remote command (e.g. restart playback, reload content) to a connected screen.
+    ///     Returns false if the screen is unknown or not currently reachable.
+    /// </summary>
+    Task<bool> SendCommandAsync(Guid id, string command);
 }
 
 public class ScreenManagementService(
@@ -452,6 +458,21 @@ public class ScreenManagementService(
 
         var displays = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
         return displays.Select(MapToDetailsResponse).ToList();
+    }
+
+    public async Task<bool> SendCommandAsync(Guid id, string command)
+    {
+        if (!ScreenCommands.IsValid(command))
+            throw new ArgumentException($"Unknown screen command '{command}'.", nameof(command));
+
+        var display = await db.Displays.FirstOrDefaultAsync(d => d.Id == id);
+        if (display == null)
+            throw new KeyNotFoundException($"Screen with ID {id} not found");
+
+        var delivered = await syncService.SendCommandAsync(id, command);
+        await audit.LogAsync("Command", "Screen", id.ToString(),
+            $"Sent command '{command}' to screen '{display.Name}'{(delivered ? "" : " (screen offline)")}");
+        return delivered;
     }
 
     private static ScreenDetailsResponse MapToDetailsResponse(Display display)

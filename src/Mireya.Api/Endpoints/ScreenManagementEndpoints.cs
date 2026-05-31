@@ -27,6 +27,7 @@ public class ScreenManagementEndpoints : ICarterModule
         adminGroup.MapPut("/{id:guid}", HandleUpdateScreenAsync);
         adminGroup.MapPost("/{id:guid}/approve", HandleApproveScreenAsync);
         adminGroup.MapPost("/{id:guid}/reject", HandleRejectScreenAsync);
+        adminGroup.MapPost("/{id:guid}/command", HandleSendCommandAsync);
         adminGroup.MapGet("/online/count", HandleGetOnlineCountAsync);
     }
 
@@ -142,5 +143,33 @@ public class ScreenManagementEndpoints : ICarterModule
     {
         var count = connectionTracker.GetOnlineScreenCount();
         return Results.Ok(count);
+    }
+
+    private sealed record SendCommandRequest(string Command);
+
+    private static async Task<IResult> HandleSendCommandAsync(
+        Guid id,
+        [FromBody] SendCommandRequest request,
+        IScreenManagementService screenManagementService,
+        ILogger<ScreenManagementEndpoints> logger)
+    {
+        try
+        {
+            var delivered = await screenManagementService.SendCommandAsync(id, request.Command);
+            return Results.Ok(new { delivered });
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound(new { error = $"Screen with ID {id} not found" });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error sending command to screen {ScreenId}", id);
+            return Results.BadRequest(new { error = "An error occurred while sending the command." });
+        }
     }
 }

@@ -21,6 +21,12 @@ public class ScreenSynchronizationServiceTests
 
     private static (ScreenSynchronizationService service, Func<ScreenConfiguration?> captured) CreateService(TestDatabase db)
     {
+        var (service, captured, _) = CreateServiceWithHub(db);
+        return (service, captured);
+    }
+
+    private static (ScreenSynchronizationService service, Func<ScreenConfiguration?> captured, IScreenHubContext hub) CreateServiceWithHub(TestDatabase db)
+    {
         ScreenConfiguration? config = null;
         var hub = Substitute.For<IScreenHubContext>();
         hub.SendConfigurationUpdateAsync(Arg.Any<string>(), Arg.Do<ScreenConfiguration>(c => config = c))
@@ -31,7 +37,7 @@ public class ScreenSynchronizationServiceTests
 
         var service = new ScreenSynchronizationService(
             db.Context, hub, assetSync, NullLogger<ScreenSynchronizationService>.Instance);
-        return (service, () => config);
+        return (service, () => config, hub);
     }
 
     [Fact]
@@ -94,5 +100,42 @@ public class ScreenSynchronizationServiceTests
         var config = captured();
         Assert.NotNull(config);
         Assert.Empty(config!.Campaigns);
+    }
+
+    [Fact]
+    public async Task SendCommand_ToConnectedScreen_DeliversToScreenUser()
+    {
+        using var db = new TestDatabase();
+        var display = NewDisplay();
+        db.Context.Displays.Add(display);
+        await db.Context.SaveChangesAsync();
+
+        var (service, _, hub) = CreateServiceWithHub(db);
+        var delivered = await service.SendCommandAsync(display.Id, "restart");
+
+        Assert.True(delivered);
+        await hub.Received(1).SendCommandAsync(display.UserId!, "restart");
+    }
+
+    [Fact]
+    public async Task SendCommand_ToScreenWithoutUser_ReturnsFalse()
+    {
+        using var db = new TestDatabase();
+        var display = new Display
+        {
+            Name = "Screen",
+            Location = "Lobby",
+            ScreenIdentifier = Guid.NewGuid().ToString("N")[..10],
+            UserId = null,
+            ApprovalStatus = ApprovalStatus.Approved,
+        };
+        db.Context.Displays.Add(display);
+        await db.Context.SaveChangesAsync();
+
+        var (service, _, hub) = CreateServiceWithHub(db);
+        var delivered = await service.SendCommandAsync(display.Id, "restart");
+
+        Assert.False(delivered);
+        await hub.DidNotReceive().SendCommandAsync(Arg.Any<string>(), Arg.Any<string>());
     }
 }
