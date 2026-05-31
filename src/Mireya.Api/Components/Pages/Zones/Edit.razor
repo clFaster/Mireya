@@ -1,0 +1,199 @@
+@page "/zones/create"
+@page "/zones/edit/{Id:guid}"
+@attribute [Authorize]
+@inject IZoneService ZoneService
+@inject ICampaignService CampaignService
+@inject NavigationManager Navigation
+@inject ToastService Toast
+
+<PageTitle>@(IsEdit ? "Edit Zone" : "New Zone") - Mireya Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">@(IsEdit ? "Edit Zone" : "New Zone")</h1>
+    <a href="/zones" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+
+@if (_loading)
+{
+    <LoadingSpinner Message="Loading..." />
+}
+else
+{
+    <EditForm Model="_model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Details</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <InputText class="form-control" @bind-Value="_model.Name" placeholder="e.g. Lobby screens" />
+                            <ValidationMessage For="() => _model.Name" />
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Description <span class="text-muted">(optional)</span></label>
+                            <InputTextArea class="form-control" rows="2" @bind-Value="_model.Description" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">Zone campaigns</h5>
+                        <p class="text-muted small mb-3">Selected campaigns play on every screen in this zone, in addition to each screen's directly assigned campaigns.</p>
+                        @if (_campaigns.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No campaigns available yet.</p>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var c in _campaigns)
+                                {
+                                    <label class="zone-campaign-row d-flex align-items-center gap-2">
+                                        <input type="checkbox" class="form-check-input mt-0"
+                                               checked="@_selectedCampaignIds.Contains(c.Id)"
+                                               @onchange="e => ToggleCampaign(c.Id, (bool)e.Value!)" />
+                                        <span class="flex-grow-1">@c.Name</span>
+                                        @if (!c.IsEnabled)
+                                        {
+                                            <span class="badge bg-secondary">Disabled</span>
+                                        }
+                                        else if (c.IsActive)
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Scheduled</span>
+                                        }
+                                    </label>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">Member screens</h5>
+                        <p class="text-muted small mb-3">A screen joins a zone from its own edit page.</p>
+                        @if (!IsEdit)
+                        {
+                            <p class="text-muted mb-0">Save the zone first, then assign screens to it.</p>
+                        }
+                        else if (_members.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No screens are in this zone yet.</p>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var s in _members)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        <span><i class="bi bi-tv me-2 text-muted"></i>@s.Name</span>
+                                        <small class="text-muted">@s.Location</small>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary" disabled="@_saving">
+                <i class="bi bi-check-lg me-1"></i>@(_saving ? "Saving..." : "Save Zone")
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool IsEdit => Id.HasValue;
+
+    private readonly ZoneFormModel _model = new();
+    private List<CampaignSummary> _campaigns = [];
+    private List<ZoneScreenInfo> _members = [];
+    private readonly HashSet<Guid> _selectedCampaignIds = [];
+    private bool _loading = true;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _campaigns = await CampaignService.GetCampaignsAsync();
+
+        if (IsEdit)
+        {
+            try
+            {
+                var zone = await ZoneService.GetZoneAsync(Id!.Value);
+                _model.Name = zone.Name;
+                _model.Description = zone.Description;
+                _members = zone.Screens;
+                foreach (var c in zone.Campaigns)
+                    _selectedCampaignIds.Add(c.Id);
+            }
+            catch (KeyNotFoundException)
+            {
+                Toast.ShowError("Zone not found.");
+                Navigation.NavigateTo("/zones");
+            }
+        }
+
+        _loading = false;
+    }
+
+    private void ToggleCampaign(Guid id, bool selected)
+    {
+        if (selected) _selectedCampaignIds.Add(id);
+        else _selectedCampaignIds.Remove(id);
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        try
+        {
+            var campaignIds = _selectedCampaignIds.ToList();
+            if (IsEdit)
+            {
+                await ZoneService.UpdateZoneAsync(Id!.Value,
+                    new UpdateZoneRequest(_model.Name, _model.Description, campaignIds));
+                Toast.ShowSuccess($"Zone \"{_model.Name}\" updated.");
+            }
+            else
+            {
+                await ZoneService.CreateZoneAsync(
+                    new CreateZoneRequest(_model.Name, _model.Description, campaignIds));
+                Toast.ShowSuccess($"Zone \"{_model.Name}\" created.");
+            }
+            Navigation.NavigateTo("/zones");
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError(ex.Message);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private sealed class ZoneFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Name is required")]
+        [System.ComponentModel.DataAnnotations.MaxLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.MaxLength(500)]
+        public string? Description { get; set; }
+    }
+}

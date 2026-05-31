@@ -71,12 +71,20 @@ public class CampaignScheduleSyncService(
             .Where(d => d.UserId != null)
             .Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
+            .Include(d => d.Zone)
+                .ThenInclude(z => z!.ZoneCampaigns)
+                    .ThenInclude(zc => zc.Campaign)
             .ToListAsync(cancellationToken);
 
         foreach (var display in displays)
         {
-            var activeIds = display.CampaignAssignments
-                .Select(ca => ca.Campaign)
+            var directCampaigns = display.CampaignAssignments.Select(ca => ca.Campaign);
+            var zoneCampaigns = display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign)
+                ?? Enumerable.Empty<Database.Models.Campaign>();
+
+            var activeIds = directCampaigns.Concat(zoneCampaigns)
+                .GroupBy(c => c.Id)
+                .Select(g => g.First())
                 .Where(c => c.IsActiveAt(utcNow))
                 .OrderByDescending(c => c.Priority)
                 .ThenBy(c => c.Name)

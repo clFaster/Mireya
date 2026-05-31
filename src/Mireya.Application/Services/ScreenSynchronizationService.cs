@@ -39,6 +39,11 @@ public class ScreenSynchronizationService(
                 .ThenInclude(ca => ca.Campaign)
                     .ThenInclude(c => c.CampaignAssets)
                         .ThenInclude(ca => ca.Asset)
+            .Include(d => d.Zone)
+                .ThenInclude(z => z!.ZoneCampaigns)
+                    .ThenInclude(zc => zc.Campaign)
+                        .ThenInclude(c => c.CampaignAssets)
+                            .ThenInclude(ca => ca.Asset)
             .FirstOrDefaultAsync(d => d.Id == displayId);
 
         if (display == null)
@@ -95,13 +100,25 @@ public class ScreenSynchronizationService(
     private static List<CampaignDetail> BuildCampaignList(Display display)
     {
         var utcNow = DateTime.UtcNow;
-        return display.CampaignAssignments
-            .Select(ca => ca.Campaign)
+        return EffectiveCampaigns(display)
             .Where(c => c.IsActiveAt(utcNow))
             .OrderByDescending(c => c.Priority)
             .ThenBy(c => c.Name)
             .Select(MapCampaign)
             .ToList();
+    }
+
+    /// <summary>
+    ///     A screen's effective campaigns are those assigned directly plus those assigned to its
+    ///     zone (if any), de-duplicated by campaign id.
+    /// </summary>
+    private static IEnumerable<Database.Models.Campaign> EffectiveCampaigns(Display display)
+    {
+        var direct = display.CampaignAssignments.Select(ca => ca.Campaign);
+        var zone = display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign) ?? [];
+        return direct.Concat(zone)
+            .GroupBy(c => c.Id)
+            .Select(g => g.First());
     }
 
     /// <summary>

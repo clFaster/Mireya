@@ -460,6 +460,9 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ZoneId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovalStatus");
@@ -470,6 +473,8 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("ScreenIdentifier")
                         .IsUnique();
+
+                    b.HasIndex("ZoneId");
 
                     b.ToTable("Displays");
                 });
@@ -577,6 +582,61 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.Zone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Zones");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.ZoneCampaign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CampaignId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ZoneId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId");
+
+                    b.HasIndex("ZoneId");
+
+                    b.HasIndex("ZoneId", "CampaignId")
+                        .IsUnique();
+
+                    b.ToTable("ZoneCampaigns");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -687,6 +747,16 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Navigation("Display");
                 });
 
+            modelBuilder.Entity("Mireya.Database.Models.Display", b =>
+                {
+                    b.HasOne("Mireya.Database.Models.Zone", "Zone")
+                        .WithMany("Displays")
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Zone");
+                });
+
             modelBuilder.Entity("Mireya.Database.Models.PlaybackEvent", b =>
                 {
                     b.HasOne("Mireya.Database.Models.Display", "Display")
@@ -696,6 +766,25 @@ namespace Mireya.Database.Sqlite.Migrations
                         .IsRequired();
 
                     b.Navigation("Display");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.ZoneCampaign", b =>
+                {
+                    b.HasOne("Mireya.Database.Models.Campaign", "Campaign")
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Mireya.Database.Models.Zone", "Zone")
+                        .WithMany("ZoneCampaigns")
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Campaign");
+
+                    b.Navigation("Zone");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.Campaign", b =>
@@ -708,6 +797,13 @@ namespace Mireya.Database.Sqlite.Migrations
             modelBuilder.Entity("Mireya.Database.Models.Display", b =>
                 {
                     b.Navigation("CampaignAssignments");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.Zone", b =>
+                {
+                    b.Navigation("Displays");
+
+                    b.Navigation("ZoneCampaigns");
                 });
 #pragma warning restore 612, 618
         }

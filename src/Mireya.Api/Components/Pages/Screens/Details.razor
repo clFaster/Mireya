@@ -50,6 +50,17 @@ else
                 <dd class="col-sm-8">@_screen.ApprovalStatus</dd>
                 <dt class="col-sm-4">Location</dt>
                 <dd class="col-sm-8">@_screen.Location</dd>
+                <dt class="col-sm-4">Zone</dt>
+                <dd class="col-sm-8">
+                    @if (_screen.ZoneId.HasValue)
+                    {
+                        <a href="/zones/edit/@_screen.ZoneId"><i class="bi bi-diagram-3 me-1"></i>@_screen.ZoneName</a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
+                </dd>
                 <dt class="col-sm-4">Resolution</dt>
                 <dd class="col-sm-8">@_screen.ResolutionWidth x @_screen.ResolutionHeight</dd>
                 <dt class="col-sm-4">Last Seen</dt>

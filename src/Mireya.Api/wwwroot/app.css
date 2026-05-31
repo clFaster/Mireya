@@ -379,6 +379,14 @@ nav.bg-dark .btn-outline-light:hover {
 }
 
 /* ---- Forms --------------------------------------------------------------- */
+.zone-campaign-row {
+    padding: .5rem .75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: border-color .12s ease, background-color .12s ease;
+}
+.zone-campaign-row:hover { border-color: var(--line-strong); background: var(--surface-2, rgba(0,0,0,.02)); }
 .form-label { font-weight: 600; font-size: .86rem; color: var(--text-soft); margin-bottom: .35rem; }
 .form-control, .form-select {
     border: 1px solid var(--line-strong);

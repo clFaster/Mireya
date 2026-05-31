@@ -103,6 +103,70 @@ public class ScreenSynchronizationServiceTests
     }
 
     [Fact]
+    public async Task SyncScreen_WithZoneCampaign_IncludesZoneCampaignAlongsideDirect()
+    {
+        using var db = new TestDatabase();
+        var display = NewDisplay();
+
+        var directAsset = new Asset { Name = "Direct", Type = AssetType.Image, Source = "/uploads/direct.png" };
+        var direct = new Campaign { Name = "Direct", IsEnabled = true };
+        direct.CampaignAssets.Add(new CampaignAsset { Asset = directAsset, Position = 1 });
+        direct.CampaignAssignments.Add(new CampaignAssignment { Display = display });
+
+        var zoneAsset = new Asset { Name = "Zone", Type = AssetType.Image, Source = "/uploads/zone.png" };
+        var zoneCampaign = new Campaign { Name = "Zone", IsEnabled = true };
+        zoneCampaign.CampaignAssets.Add(new CampaignAsset { Asset = zoneAsset, Position = 1 });
+
+        var zone = new Zone { Name = "Lobby Zone" };
+        zone.ZoneCampaigns.Add(new ZoneCampaign { Campaign = zoneCampaign });
+        display.Zone = zone;
+
+        db.Context.Displays.Add(display);
+        db.Context.Campaigns.AddRange(direct, zoneCampaign);
+        db.Context.Zones.Add(zone);
+        await db.Context.SaveChangesAsync();
+
+        var (service, captured) = CreateService(db);
+        await service.SyncScreenAsync(display.Id);
+
+        var config = captured();
+        Assert.NotNull(config);
+        Assert.Equal(2, config!.Campaigns.Count);
+        Assert.Contains(config.Campaigns, c => c.Id == direct.Id);
+        Assert.Contains(config.Campaigns, c => c.Id == zoneCampaign.Id);
+    }
+
+    [Fact]
+    public async Task SyncScreen_WithOnlyZoneCampaign_DoesNotFallBackToDefault()
+    {
+        using var db = new TestDatabase();
+        var display = NewDisplay();
+
+        var zoneAsset = new Asset { Name = "Zone", Type = AssetType.Image, Source = "/uploads/zone.png" };
+        var zoneCampaign = new Campaign { Name = "Zone", IsEnabled = true };
+        zoneCampaign.CampaignAssets.Add(new CampaignAsset { Asset = zoneAsset, Position = 1 });
+
+        var zone = new Zone { Name = "Lobby Zone" };
+        zone.ZoneCampaigns.Add(new ZoneCampaign { Campaign = zoneCampaign });
+        display.Zone = zone;
+
+        var defaultCampaign = new Campaign { Name = "House Ads", IsDefault = true, IsEnabled = true };
+
+        db.Context.Displays.Add(display);
+        db.Context.Campaigns.AddRange(zoneCampaign, defaultCampaign);
+        db.Context.Zones.Add(zone);
+        await db.Context.SaveChangesAsync();
+
+        var (service, captured) = CreateService(db);
+        await service.SyncScreenAsync(display.Id);
+
+        var config = captured();
+        Assert.NotNull(config);
+        Assert.Single(config!.Campaigns);
+        Assert.Equal(zoneCampaign.Id, config.Campaigns[0].Id);
+    }
+
+    [Fact]
     public async Task SendCommand_ToConnectedScreen_DeliversToScreenUser()
     {
         using var db = new TestDatabase();
