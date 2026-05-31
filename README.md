@@ -15,7 +15,8 @@ scheduled content.
 ## 🧠 Key Concepts
 
 - **Backend (Mireya.Api)** — Admin UI + ASP.NET Core Web API: register/manage screens, upload assets, create/assign
-  campaigns, monitor playback.
+  campaigns, monitor playback. The admin interface uses a modern, responsive "Control Room" design system (custom
+  Bootstrap theme with dedicated display, body and monospace typefaces) that adapts from desktop to mobile.
 - **Client (Mireya.Client.Core + Mireya.Client.Desktop)** — Display apps that register to the backend, receive campaigns, cache assets,
   and loop playback. Minimal setup: only the backend URL is required on first start (it can also be preconfigured for
   unattended/kiosk deployments via the `MIREYA_BACKEND_URL` environment variable). The client reconnects automatically

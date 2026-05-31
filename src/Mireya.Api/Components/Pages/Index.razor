@@ -57,10 +57,10 @@ else
             @foreach (var state in _onlineScreenStates)
             {
                 <div class="col-md-4 col-lg-3">
-                    <div class="card border-success">
+                    <div class="card card-hover border-success h-100">
                         <div class="card-body">
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.6rem;"></i>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="live-dot"></span>
                                 <strong>@(GetScreenName(state.UserId) ?? state.UserId)</strong>
                             </div>
                             @if (state.CurrentAssetName != null)
