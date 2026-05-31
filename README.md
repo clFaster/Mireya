@@ -16,7 +16,7 @@ scheduled content.
 
 - **Backend (Mireya.Api)** — Admin UI + ASP.NET Core Web API: register/manage screens, upload assets, create/assign
   campaigns, monitor playback.
-- **Client (Mireya.Client.Avalonia)** — Display apps that register to the backend, receive campaigns, cache assets,
+- **Client (Mireya.Client.Core + Mireya.Client.Desktop)** — Display apps that register to the backend, receive campaigns, cache assets,
   and loop playback. Minimal setup: only the backend URL is required on first start (it can also be preconfigured for
   unattended/kiosk deployments via the `MIREYA_BACKEND_URL` environment variable). The client reconnects automatically
   with exponential backoff and shows a colour-coded connection indicator on screen.

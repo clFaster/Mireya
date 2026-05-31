@@ -19,7 +19,8 @@ Mireya consists of several components:
 - **Mireya.Database.Sqlite** - SQLite database provider and migrations (development)
 - **Mireya.Database.Postgres** - PostgreSQL database provider and migrations (production)
 - **Mireya.ApiClient** - API wrapper to be used in clients
-- **Mireya.Client.Avalonia** - Desktop/embedded client application (Windows/Linux)
+- **Mireya.Client.Core** - Shared Avalonia UI, view-models and platform-abstraction interfaces for the client
+- **Mireya.Client.Desktop** - Windows/Linux desktop head (WebView2, LibVLC, DPAPI) that hosts the shared core
 - **Mireya.Application.Tests** - xUnit unit tests for the application services
 - **MireyaDigitalSignage.AppHost** / **MireyaDigitalSignage.ServiceDefaults** - .NET Aspire orchestration and shared service defaults (telemetry, health checks)
 
@@ -106,7 +107,7 @@ Default admin credentials (development):
 ### 6. Run the Desktop Client (Optional)
 
 ```bash
-cd src/Mireya.Client.Avalonia
+cd src/Mireya.Client.Desktop
 dotnet run
 ```
 
@@ -142,11 +143,28 @@ styled with **Bootstrap 5**. Files are located in:
 
 ### Client Development
 
-#### Avalonia Desktop Client
+#### Avalonia Client
 
-- ViewModels: `src/Mireya.Client.Avalonia/ViewModels/`
-- Views: `src/Mireya.Client.Avalonia/Views/`
-- Services: `src/Mireya.Client.Avalonia/Services/`
+The Avalonia client is split into a shared core and per-platform heads so it can be
+shipped to Windows (Store/MSIX), Linux (incl. Raspberry Pi) and Android (Android TV):
+
+- `src/Mireya.Client.Core/` - Shared Avalonia UI, view-models, converters and the
+  platform-abstraction interfaces (`Platform/IAssetViewFactory`, `IWebsiteRenderer`,
+  `IVideoRenderer`). References Avalonia but no platform-only packages.
+  - ViewModels: `src/Mireya.Client.Core/ViewModels/`
+  - Views: `src/Mireya.Client.Core/Views/`
+  - Services: `src/Mireya.Client.Core/Services/`
+- `src/Mireya.Client.Desktop/` - Windows/Linux desktop head. Provides the desktop
+  composition root (`Platform/DesktopServices`) and the platform implementations
+  (WebView2 website renderer, LibVLC video renderer, DPAPI credential storage).
+  This is the project you build/run for the desktop app.
+
+Both projects intentionally keep the historical `Mireya.Client.Avalonia` root namespace
+(only the assembly names differ) to avoid churn across the moved XAML and code.
+
+```bash
+dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
+```
 
 ## Running Tests
 
@@ -200,7 +218,7 @@ The Avalonia client currently targets Windows and Linux. Publish a self-containe
 for a specific runtime identifier:
 
 ```bash
-cd src/Mireya.Client.Avalonia
+cd src/Mireya.Client.Desktop
 
 # Windows
 dotnet publish -c Release -r win-x64 -o ./publish

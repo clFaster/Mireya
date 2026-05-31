@@ -4,6 +4,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using Mireya.Client.Avalonia.Platform;
 using Mireya.Client.Avalonia.ViewModels;
 using Mireya.Client.Avalonia.Views.Components;
 
@@ -14,11 +16,45 @@ public partial class ContentDisplayView : UserControl
     private Window? _overlayWindow;
     private Window? _parentWindow;
     private ContentDisplayViewModel? _viewModel;
+    private IWebsiteRenderer? _websiteRenderer;
+    private IVideoRenderer? _videoRenderer;
 
     public ContentDisplayView()
     {
         InitializeComponent();
+        CreatePlatformRenderers();
         DataContextChanged += OnDataContextChanged;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Platform renderer hosting
+    // ──────────────────────────────────────────────────────────────
+
+    private void CreatePlatformRenderers()
+    {
+        // Website and video rendering is platform specific (WebView2 / LibVLC on
+        // desktop, native components elsewhere). The active platform head supplies an
+        // IAssetViewFactory through dependency injection; resolve it and host the
+        // resulting controls inside the placeholders declared in XAML.
+        var factory = App.Services?.GetService<IAssetViewFactory>();
+        if (factory == null)
+            return;
+
+        var websiteHost = this.FindControl<ContentControl>("WebsiteHost");
+        if (websiteHost != null)
+        {
+            var websiteControl = factory.CreateWebsiteRenderer();
+            websiteHost.Content = websiteControl;
+            _websiteRenderer = websiteControl as IWebsiteRenderer;
+        }
+
+        var videoHost = this.FindControl<ContentControl>("VideoHost");
+        if (videoHost != null)
+        {
+            var videoControl = factory.CreateVideoRenderer();
+            videoHost.Content = videoControl;
+            _videoRenderer = videoControl as IVideoRenderer;
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -38,24 +74,22 @@ public partial class ContentDisplayView : UserControl
 
         _viewModel = vm;
 
-        // Wire video component events
-        var videoDisplay = this.FindControl<VideoAssetDisplay>("VideoDisplay");
-        if (videoDisplay != null)
+        // Wire video component events to the platform video renderer
+        if (_videoRenderer != null)
         {
-            vm.VideoPlaybackRequested += videoDisplay.PlayVideo;
-            vm.VideoStopRequested += videoDisplay.Stop;
+            vm.VideoPlaybackRequested += _videoRenderer.Play;
+            vm.VideoStopRequested += _videoRenderer.Stop;
         }
 
-        // Wire WebView2 navigation on URI changes (kept as anonymous lambda for
-        // symmetry with the original design; unsubscription not required in practice
+        // Drive the platform website renderer on URI changes (kept as anonymous lambda
+        // for symmetry with the original design; unsubscription not required in practice
         // because the VM lifetime matches the View lifetime here)
-        var websiteDisplay = this.FindControl<WebsiteAssetDisplay>("WebsiteDisplay");
-        if (websiteDisplay != null)
+        if (_websiteRenderer != null)
         {
             vm.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(ContentDisplayViewModel.CurrentWebsiteUri))
-                    websiteDisplay.Navigate(vm.CurrentWebsiteUri);
+                    _websiteRenderer.Navigate(vm.CurrentWebsiteUri);
             };
         }
 

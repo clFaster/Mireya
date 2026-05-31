@@ -3,10 +3,11 @@ using Avalonia;
 using Avalonia.Controls;
 using LibVLCSharp.Avalonia;
 using LibVLCSharp.Shared;
+using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia.Views.Components;
 
-public partial class VideoAssetDisplay : UserControl
+public partial class VideoAssetDisplay : UserControl, IVideoRenderer
 {
     private LibVLC? _libVlc;
     private MediaPlayer? _mediaPlayer;
@@ -60,6 +61,8 @@ public partial class VideoAssetDisplay : UserControl
             Console.WriteLine($"Failed to initialize VLC: {ex.Message}");
         }
     }
+
+    public void Play(string path, bool muted) => PlayVideo(path, muted);
 
     public void PlayVideo(string videoPath, bool isMuted = false)
     {
