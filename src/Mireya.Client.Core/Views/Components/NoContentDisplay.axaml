@@ -22,6 +22,41 @@
                        FontSize="22"
                        Foreground="#999"
                        HorizontalAlignment="Center" />
+
+            <!-- First-run pairing / approval panel (UA3 + UA7) -->
+            <Border IsVisible="{Binding IsAwaitingApproval}"
+                    Background="#11161F"
+                    BorderBrush="#3D5AFE"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="40,28"
+                    Margin="0,12,0,0"
+                    HorizontalAlignment="Center">
+                <StackPanel Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock Text="PAIRING CODE"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#7C8AA5"
+                               LetterSpacing="3"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding PairingCode}"
+                               FontSize="46"
+                               FontWeight="Bold"
+                               FontFamily="Consolas, monospace"
+                               Foreground="#EAF0FF"
+                               LetterSpacing="4"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding ApprovalStatusText}"
+                               FontSize="16"
+                               Foreground="#9AA4BA"
+                               TextWrapping="Wrap"
+                               MaxWidth="520"
+                               TextAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
+
             <TextBlock Text="{Binding DisplayName}"
                        FontSize="15"
                        Foreground="#555"

@@ -79,6 +79,24 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private Uri? _currentWebsiteUri;
 
+    // ── First-run / approval (UA3) + pairing & remote identify (UA7) ──────────
+
+    /// <summary>True while the screen is registered but not yet approved by an admin.</summary>
+    [ObservableProperty]
+    private bool _isAwaitingApproval;
+
+    /// <summary>Human-readable pairing code (the screen identifier) an admin uses to find this screen.</summary>
+    [ObservableProperty]
+    private string _pairingCode = "";
+
+    /// <summary>Explanatory text shown beneath the pairing code while awaiting approval.</summary>
+    [ObservableProperty]
+    private string _approvalStatusText = "Waiting for an administrator to approve this screen…";
+
+    /// <summary>True for a few seconds after an admin sends the "identify" command, flashing the screen.</summary>
+    [ObservableProperty]
+    private bool _isIdentifying;
+
     // Event to notify video component to start playback
     public event Action<string, bool>? VideoPlaybackRequested; // path, isMuted
     public event Action? VideoStopRequested;
@@ -135,6 +153,10 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                 return;
 
             await EnsureAuthenticatedAndConnectedAsync(state);
+
+            // First-run / approval gate (UA3): surface the pairing code and wait
+            // for an administrator to approve this screen before expecting content.
+            await PollApprovalAsync();
         }
         catch (Exception ex)
         {
@@ -214,6 +236,88 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         _logger.LogInformation("Authentication completed, SignalR connected: {IsConnected}", _hubService.IsConnected);
     }
 
+    /// <summary>
+    ///     Polls the backend for this screen's approval status. While the screen is not yet
+    ///     approved it shows the pairing code (screen identifier) and an explanatory message so
+    ///     an operator can locate and approve it. Returns once the screen is approved (the server
+    ///     then pushes a configuration via SignalR) or the view model is disposed.
+    /// </summary>
+    private async Task PollApprovalAsync()
+    {
+        var firstPass = true;
+        while (!_disposed)
+        {
+            var info = await _authenticationService.GetScreenInfoAsync();
+            if (info == null)
+            {
+                // Could not read status yet (e.g. token not ready); retry shortly.
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                continue;
+            }
+
+            var approved = string.Equals(info.ApprovalStatus, "Approved", StringComparison.OrdinalIgnoreCase);
+            var rejected = string.Equals(info.ApprovalStatus, "Rejected", StringComparison.OrdinalIgnoreCase);
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                PairingCode = FormatPairingCode(info.ScreenIdentifier);
+                if (!string.IsNullOrWhiteSpace(info.ScreenName))
+                    DisplayName = info.ScreenName;
+
+                if (approved)
+                {
+                    IsAwaitingApproval = false;
+                }
+                else
+                {
+                    IsAwaitingApproval = true;
+                    ApprovalStatusText = rejected
+                        ? "This screen was rejected. Please contact your administrator."
+                        : "Waiting for an administrator to approve this screen…";
+                    StatusText = ApprovalStatusText;
+                }
+            });
+
+            if (approved)
+            {
+                _logger.LogInformation("Screen approved; awaiting configuration push");
+                return;
+            }
+
+            if (firstPass)
+            {
+                _logger.LogInformation(
+                    "Screen not yet approved (status: {Status}); showing pairing code {Code}",
+                    info.ApprovalStatus, info.ScreenIdentifier);
+                firstPass = false;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+        }
+    }
+
+    /// <summary>Groups the identifier into readable blocks (e.g. "AB12-CD34-EF56") for easier reading.</summary>
+    private static string FormatPairingCode(string? identifier)
+    {
+        if (string.IsNullOrWhiteSpace(identifier))
+            return "";
+
+        var upper = identifier.Trim().ToUpperInvariant();
+        var groups = new List<string>();
+        for (var i = 0; i < upper.Length; i += 4)
+            groups.Add(upper.Substring(i, Math.Min(4, upper.Length - i)));
+        return string.Join("-", groups);
+    }
+
+    /// <summary>Flashes the screen for a few seconds so an operator can locate it within a fleet (UA7).</summary>
+    private async Task FlashIdentifyAsync()
+    {
+        _logger.LogInformation("Identify command received; flashing screen");
+        await Dispatcher.UIThread.InvokeAsync(() => IsIdentifying = true);
+        await Task.Delay(TimeSpan.FromSeconds(6));
+        await Dispatcher.UIThread.InvokeAsync(() => IsIdentifying = false);
+    }
+
     private void OnHubReconnecting()
     {
         Dispatcher.UIThread.Post(() =>
@@ -252,6 +356,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
         Dispatcher.UIThread.InvokeAsync(() =>
         {
+            IsAwaitingApproval = false;
             DisplayName = config.ScreenName;
             StatusText = "Syncing assets...";
         });
@@ -307,6 +412,11 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                 case "reload":
                     if (_playlist.Count > 0)
                         ShowCurrentItem();
+                    break;
+                case "identify":
+                    _ = FlashIdentifyAsync().ContinueWith(
+                        t => _logger.LogError(t.Exception, "Identify flash faulted"),
+                        TaskContinuationOptions.OnlyOnFaulted);
                     break;
                 default:
                     _logger.LogWarning("Ignoring unknown remote command: {Command}", command);
