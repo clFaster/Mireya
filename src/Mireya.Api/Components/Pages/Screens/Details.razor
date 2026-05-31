@@ -62,11 +62,14 @@ else
     }
 }
 
+<ConfirmDialog @ref="_confirmDialog" />
+
 @code {
     [Parameter] public Guid Id { get; set; }
     private ScreenWithCampaignsResponse? _screen;
     private string? _message;
     private bool _isError;
+    private ConfirmDialog _confirmDialog = default!;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -83,6 +86,12 @@ else
 
     private async Task RejectAsync()
     {
+        var confirmed = await _confirmDialog.ShowAsync(
+            "Reject screen",
+            $"Reject \"{_screen?.Name}\"? The device will need to register again to be approved.",
+            confirmText: "Reject");
+        if (!confirmed) return;
+
         try { await ScreenManagementService.RejectScreenAsync(Id); _message = "Screen rejected."; _isError = false; await LoadAsync(); }
         catch (Exception ex) { _message = ex.Message; _isError = true; }
     }

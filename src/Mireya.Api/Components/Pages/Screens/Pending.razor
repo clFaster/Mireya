@@ -40,10 +40,13 @@ else
     </div>
 }
 
+<ConfirmDialog @ref="_confirmDialog" />
+
 @code {
     private List<ScreenDetailsResponse> _screens = [];
     private bool _loading = true, _isError;
     private string? _message;
+    private ConfirmDialog _confirmDialog = default!;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -61,6 +64,13 @@ else
     }
     private async Task RejectAsync(Guid id)
     {
+        var screen = _screens.FirstOrDefault(s => s.Id == id);
+        var confirmed = await _confirmDialog.ShowAsync(
+            "Reject screen",
+            $"Reject \"{screen?.Name}\"? The device will need to register again to be approved.",
+            confirmText: "Reject");
+        if (!confirmed) return;
+
         try { await ScreenManagementService.RejectScreenAsync(id); _message = "Rejected."; _isError = false; await LoadAsync(); }
         catch (Exception ex) { _message = ex.Message; _isError = true; }
     }

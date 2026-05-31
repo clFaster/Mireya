@@ -23,7 +23,13 @@
 }
 else if (_campaigns.Count == 0)
 {
-    <p class="text-muted">No campaigns yet. <a href="/campaigns/create">Create one</a>.</p>
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-megaphone fs-1 d-block mb-2"></i>
+        <p class="mb-2">No campaigns yet.</p>
+        <a href="/campaigns/create" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Create your first campaign
+        </a>
+    </div>
 }
 else
 {
@@ -72,11 +78,14 @@ else
     </div>
 }
 
+<ConfirmDialog @ref="_confirmDialog" />
+
 @code {
     private List<CampaignSummary> _campaigns = [];
     private bool _loading = true;
     private string? _message;
     private bool _isError;
+    private ConfirmDialog _confirmDialog = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,6 +95,12 @@ else
 
     private async Task DeleteAsync(Guid id)
     {
+        var campaign = _campaigns.FirstOrDefault(c => c.Id == id);
+        var confirmed = await _confirmDialog.ShowAsync(
+            "Delete campaign",
+            $"Are you sure you want to delete \"{campaign?.Name}\"? This cannot be undone.");
+        if (!confirmed) return;
+
         try
         {
             await CampaignService.DeleteCampaignAsync(id);

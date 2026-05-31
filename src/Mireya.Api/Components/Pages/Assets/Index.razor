@@ -33,7 +33,13 @@
 }
 else if (_assets.Count == 0)
 {
-    <p class="text-muted">No assets found.</p>
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-images fs-1 d-block mb-2"></i>
+        <p class="mb-2">No assets@(_typeFilter == null ? "" : " of this type") found.</p>
+        <a href="/assets/upload" class="btn btn-primary btn-sm">
+            <i class="bi bi-upload me-1"></i>Upload an asset
+        </a>
+    </div>
 }
 else
 {
@@ -120,6 +126,8 @@ else
     </div>
 }
 
+<ConfirmDialog @ref="_confirmDialog" />
+
 @code {
     private List<Mireya.Database.Models.Asset> _assets = [];
     private int _page = 1, _totalPages = 1, _total;
@@ -131,6 +139,7 @@ else
     private Mireya.Database.Models.Asset? _editAsset;
     private string _editName = "", _editDescription = "";
     private int? _editDuration;
+    private ConfirmDialog _confirmDialog = default!;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -155,6 +164,12 @@ else
 
     private async Task DeleteAsync(Guid id)
     {
+        var asset = _assets.FirstOrDefault(a => a.Id == id);
+        var confirmed = await _confirmDialog.ShowAsync(
+            "Delete asset",
+            $"Are you sure you want to delete \"{asset?.Name}\"? This cannot be undone.");
+        if (!confirmed) return;
+
         try
         {
             await AssetService.DeleteAssetAsync(id);
