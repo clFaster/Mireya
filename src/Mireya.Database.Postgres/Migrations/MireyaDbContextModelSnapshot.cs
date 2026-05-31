@@ -173,6 +173,9 @@ namespace Mireya.Database.Postgres.Migrations
                     b.Property<long?>("FileSizeBytes")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("ImageFit")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsMuted")
                         .HasColumnType("boolean");
 

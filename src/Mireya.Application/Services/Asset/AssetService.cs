@@ -287,6 +287,9 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
         if (request.Tags != null)
             asset.Tags = NormalizeTags(request.Tags);
 
+        if (request.ImageFit.HasValue)
+            asset.ImageFit = request.ImageFit.Value;
+
         asset.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();

@@ -58,6 +58,11 @@ public class Asset
     /// </summary>
     public bool IsMuted { get; set; }
 
+    /// <summary>
+    ///     How an image asset should be fitted to the screen when displayed.
+    /// </summary>
+    public ImageFit ImageFit { get; set; } = ImageFit.Contain;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -71,4 +76,19 @@ public enum AssetType
     Image = 1,
     Video = 2,
     Website = 3,
+}
+
+/// <summary>
+///     How an image is scaled to fit the screen.
+/// </summary>
+public enum ImageFit
+{
+    /// <summary>Scale to fit entirely within the screen, preserving aspect ratio (letterboxed).</summary>
+    Contain = 0,
+
+    /// <summary>Scale to fill the whole screen, preserving aspect ratio (edges may be cropped).</summary>
+    Cover = 1,
+
+    /// <summary>Stretch to fill the whole screen, ignoring aspect ratio.</summary>
+    Fill = 2,
 }

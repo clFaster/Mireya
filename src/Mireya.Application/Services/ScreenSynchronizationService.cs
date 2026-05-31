@@ -121,7 +121,8 @@ public class ScreenSynchronizationService(
                     a.Position,
                     a.DurationSeconds,
                     AssetDurationResolver.Resolve(a.Asset, a.DurationSeconds),
-                    a.Asset.IsMuted
+                    a.Asset.IsMuted,
+                    a.Asset.ImageFit
                 ))
                 .ToList(),
             [],

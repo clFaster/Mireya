@@ -83,7 +83,8 @@ public record CampaignAssetDetail(
     int Position,
     int? DurationSeconds,
     int ResolvedDuration, // Calculated: use DurationSeconds or asset's duration or default
-    bool IsMuted // Whether video audio should be muted
+    bool IsMuted, // Whether video audio should be muted
+    ImageFit ImageFit = ImageFit.Contain // How an image is fitted to the screen
 );
 
 public record DisplayInfo(Guid Id, string Name, string Location);

@@ -62,6 +62,12 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private Bitmap? _currentImage;
 
     [ObservableProperty]
+    private Stretch _currentImageStretch = Stretch.Uniform;
+
+    [ObservableProperty]
+    private double _currentImageOpacity = 1;
+
+    [ObservableProperty]
     private string? _currentVideoPath;
 
     [ObservableProperty]
@@ -344,6 +350,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             DurationSeconds = asset.ResolvedDuration,
             Position = asset.Position,
             IsMuted = asset.IsMuted,
+            ImageFit = asset.ImageFit,
         };
     }
 
@@ -423,6 +430,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         CurrentVideoUri = null;
         CurrentWebsiteUrl = null;
         CurrentWebsiteUri = null;
+        CurrentImageStretch = MapStretch(item.ImageFit);
 
         try
         {
@@ -431,6 +439,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                 var oldImage = CurrentImage;
                 CurrentImage = new Bitmap(item.LocalPath);
                 oldImage?.Dispose();
+                FadeInImage();
             }
             else
             {
@@ -450,6 +459,23 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
         // Set timer to advance after duration
         StartAdvanceTimer(item.DurationSeconds);
+    }
+
+    private static Stretch MapStretch(ImageFit fit) => fit switch
+    {
+        ImageFit.Cover => Stretch.UniformToFill,
+        ImageFit.Fill => Stretch.Fill,
+        _ => Stretch.Uniform,
+    };
+
+    /// <summary>
+    ///     Restarts the image opacity at zero and animates it back to full on the next UI tick,
+    ///     producing a fade-in via the Opacity transition declared on the image control.
+    /// </summary>
+    private void FadeInImage()
+    {
+        CurrentImageOpacity = 0;
+        Dispatcher.UIThread.Post(() => CurrentImageOpacity = 1, DispatcherPriority.Background);
     }
 
     private void ShowVideo(PlaylistItem item)
@@ -643,6 +669,7 @@ public class PlaylistItem
     public int DurationSeconds { get; set; }
     public int Position { get; set; }
     public bool IsMuted { get; set; }
+    public ImageFit ImageFit { get; set; }
 }
 
 public enum ContentType

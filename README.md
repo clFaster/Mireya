@@ -28,7 +28,8 @@ scheduled content.
   re-syncs screens automatically when a campaign's active window opens or closes, so time-based changes take effect
   without an edit.
 - **Assets** — Images, videos and websites. Videos get an automatically generated poster-frame thumbnail, and assets
-  can be organised with **tags** and filtered via search in the admin.
+  can be organised with **tags** and filtered via search in the admin. Images support a per-asset **fit mode**
+  (contain, cover or fill) controlling how they scale to the screen, and transition with a smooth fade on the client.
 - **Audit log** — Administrative actions (creating, updating, deleting campaigns and assets; approving, rejecting and
   updating screens) are recorded with the acting user and a timestamp, viewable in the admin under **Audit Log**.
 
