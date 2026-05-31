@@ -5,6 +5,7 @@
 @inject ICampaignService CampaignService
 @inject IAssetService AssetService
 @inject NavigationManager Navigation
+@using System.ComponentModel.DataAnnotations
 @using Mireya.Database.Models
 
 <PageTitle>@(Id == null ? "New Campaign" : "Edit Campaign") - Mireya Admin</PageTitle>
@@ -15,131 +16,135 @@
     <div class="alert alert-danger">@_error</div>
 }
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Name *</label>
-                    <input class="form-control" @bind="_name" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-control" @bind="_description"></textarea>
+<EditForm EditContext="_editContext" OnValidSubmit="SaveAsync">
+    <DataAnnotationsValidator />
+    <div class="row">
+        <div class="col-md-8">
+            <ValidationSummary class="mb-3" />
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="campaignName">Name *</label>
+                        <InputText id="campaignName" class="form-control" @bind-Value="_model.Name" />
+                        <ValidationMessage For="() => _model.Name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="campaignDescription">Description</label>
+                        <InputTextArea id="campaignDescription" class="form-control" @bind-Value="_model.Description" />
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card mb-3">
-            <div class="card-header">Scheduling</div>
-            <div class="card-body">
-                <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="enabledSwitch" @bind="_isEnabled" />
-                    <label class="form-check-label" for="enabledSwitch">
-                        Enabled (uncheck to hide this campaign from all screens)
-                    </label>
-                </div>
-                <div class="row">
-                    <div class="col-sm-6 mb-3">
-                        <label class="form-label">Start (UTC)</label>
-                        <input type="datetime-local" class="form-control" @bind="_startDate" />
-                        <div class="form-text">Leave empty to start immediately.</div>
+            <div class="card mb-3">
+                <div class="card-header">Scheduling</div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <InputCheckbox class="form-check-input" id="enabledSwitch" @bind-Value="_model.IsEnabled" />
+                        <label class="form-check-label" for="enabledSwitch">
+                            Enabled (uncheck to hide this campaign from all screens)
+                        </label>
                     </div>
-                    <div class="col-sm-6 mb-3">
-                        <label class="form-label">End (UTC)</label>
-                        <input type="datetime-local" class="form-control" @bind="_endDate" />
-                        <div class="form-text">Leave empty to run indefinitely.</div>
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="campaignStart">Start (UTC)</label>
+                            <InputDate id="campaignStart" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.StartDate" />
+                            <div class="form-text">Leave empty to start immediately.</div>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <label class="form-label" for="campaignEnd">End (UTC)</label>
+                            <InputDate id="campaignEnd" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EndDate" />
+                            <div class="form-text">Leave empty to run indefinitely.</div>
+                        </div>
                     </div>
-                </div>
-                <div class="mb-1">
-                    <label class="form-label">Priority</label>
-                    <input type="number" class="form-control" style="max-width:140px" @bind="_priority" />
-                    <div class="form-text">Higher priority campaigns play first on a screen.</div>
+                    <div class="mb-1">
+                        <label class="form-label" for="campaignPriority">Priority</label>
+                        <InputNumber id="campaignPriority" class="form-control" style="max-width:140px" @bind-Value="_model.Priority" />
+                        <ValidationMessage For="() => _model.Priority" />
+                        <div class="form-text">Higher priority campaigns play first on a screen.</div>
+                    </div>
                 </div>
             </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Assets in Campaign</div>
+                <div class="card-body">
+                    @if (Id.HasValue)
+                    {
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Assigned to @_assignedScreenCount screen@(_assignedScreenCount == 1 ? "" : "s").
+                            Screen assignments are managed on each screen's edit page and are not changed by saving here.
+                        </div>
+                    }
+                    @if (_selectedAssets.Count == 0)
+                    {
+                        <p class="text-muted">No assets added. Pick from the list on the right.</p>
+                    }
+                    @foreach (var (asset, i) in _selectedAssets.Select((a, i) => (a, i)))
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
+                            <span class="flex-grow-1">@(i + 1). @asset.Name (@asset.Type)</span>
+                            @if (asset.Type != AssetType.Video)
+                            {
+                                <input type="number" class="form-control form-control-sm" style="width:90px"
+                                       placeholder="secs" @bind="asset.DurationSeconds" min="1" />
+                            }
+                            <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove @asset.Name" @onclick="() => RemoveAsset(asset)">
+                                <i class="bi bi-x" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary me-2" disabled="@_saving">
+                @if (_saving)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                }
+                @(Id == null ? "Create" : "Save Changes")
+            </button>
+            <a href="/campaigns" class="btn btn-secondary">Cancel</a>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-header">Assets in Campaign</div>
-            <div class="card-body">
-                @if (Id.HasValue)
-                {
-                    <div class="alert alert-info py-2 small mb-3">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Assigned to @_assignedScreenCount screen@(_assignedScreenCount == 1 ? "" : "s").
-                        Screen assignments are managed on each screen's edit page and are not changed by saving here.
-                    </div>
-                }
-                @if (_selectedAssets.Count == 0)
-                {
-                    <p class="text-muted">No assets added. Pick from the list on the right.</p>
-                }
-                @foreach (var (asset, i) in _selectedAssets.Select((a, i) => (a, i)))
-                {
-                    <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
-                        <span class="flex-grow-1">@(i + 1). @asset.Name (@asset.Type)</span>
-                        @if (asset.Type != AssetType.Video)
-                        {
-                            <input type="number" class="form-control form-control-sm" style="width:90px"
-                                   placeholder="secs" @bind="asset.DurationSeconds" min="1" />
-                        }
-                        <button class="btn btn-sm btn-outline-danger" aria-label="Remove @asset.Name" @onclick="() => RemoveAsset(asset)">
-                            <i class="bi bi-x" aria-hidden="true"></i>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Available Assets</div>
+                <div class="list-group list-group-flush" style="max-height:500px;overflow-y:auto">
+                    @foreach (var asset in _availableAssets)
+                    {
+                        var alreadyAdded = _selectedAssets.Any(s => s.AssetId == asset.Id);
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(alreadyAdded ? "disabled text-muted" : "")"
+                                @onclick="() => AddAsset(asset)"
+                                disabled="@alreadyAdded">
+                            <span>@asset.Name</span>
+                            <span>
+                                <small class="text-muted me-2">@asset.Type</small>
+                                @if (alreadyAdded)
+                                {
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-plus-circle"></i>
+                                }
+                            </span>
                         </button>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <button class="btn btn-primary me-2" @onclick="SaveAsync" disabled="@_saving">
-            @if (_saving)
-            {
-                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            }
-            @(Id == null ? "Create" : "Save Changes")
-        </button>
-        <a href="/campaigns" class="btn btn-secondary">Cancel</a>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">Available Assets</div>
-            <div class="list-group list-group-flush" style="max-height:500px;overflow-y:auto">
-                @foreach (var asset in _availableAssets)
-                {
-                    var alreadyAdded = _selectedAssets.Any(s => s.AssetId == asset.Id);
-                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(alreadyAdded ? "disabled text-muted" : "")"
-                            @onclick="() => AddAsset(asset)"
-                            disabled="@alreadyAdded">
-                        <span>@asset.Name</span>
-                        <span>
-                            <small class="text-muted me-2">@asset.Type</small>
-                            @if (alreadyAdded)
-                            {
-                                <i class="bi bi-check-circle-fill text-success"></i>
-                            }
-                            else
-                            {
-                                <i class="bi bi-plus-circle"></i>
-                            }
-                        </span>
-                    </button>
-                }
+                    }
+                </div>
             </div>
         </div>
     </div>
-</div>
+</EditForm>
 
 <ConfirmDialog @ref="_confirmDialog" />
 
 @code {
     [Parameter] public Guid? Id { get; set; }
 
-    private string _name = "", _description = "";
-    private bool _isEnabled = true;
-    private DateTime? _startDate;
-    private DateTime? _endDate;
-    private int _priority;
+    private readonly CampaignFormModel _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messageStore = default!;
     private List<SelectedCampaignAsset> _selectedAssets = [];
     private List<Mireya.Database.Models.Asset> _availableAssets = [];
     private int _assignedScreenCount;
@@ -152,18 +157,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _editContext = new EditContext(_model);
+        _messageStore = new ValidationMessageStore(_editContext);
+
         var all = await AssetService.GetAssetsAsync(new(1, 1000));
         _availableAssets = all.Items;
 
         if (Id.HasValue)
         {
             var campaign = await CampaignService.GetCampaignAsync(Id.Value);
-            _name = campaign.Name;
-            _description = campaign.Description ?? "";
-            _isEnabled = campaign.IsEnabled;
-            _startDate = campaign.StartDateUtc;
-            _endDate = campaign.EndDateUtc;
-            _priority = campaign.Priority;
+            _model.Name = campaign.Name;
+            _model.Description = campaign.Description ?? "";
+            _model.IsEnabled = campaign.IsEnabled;
+            _model.StartDate = campaign.StartDateUtc;
+            _model.EndDate = campaign.EndDateUtc;
+            _model.Priority = campaign.Priority;
             _selectedAssets = campaign.Assets.Select(a => new SelectedCampaignAsset
             {
                 AssetId = a.AssetId,
@@ -180,7 +188,7 @@
 
     private string CurrentSnapshot() =>
         string.Join("|",
-            _name, _description, _isEnabled, _startDate, _endDate, _priority,
+            _model.Name, _model.Description, _model.IsEnabled, _model.StartDate, _model.EndDate, _model.Priority,
             string.Join(",", _selectedAssets.Select(a => $"{a.AssetId}:{a.DurationSeconds}")));
 
     private bool IsDirty() => !_allowNavigation && CurrentSnapshot() != _initialSnapshot;
@@ -213,26 +221,52 @@
     private async Task SaveAsync()
     {
         _error = null;
-        if (string.IsNullOrWhiteSpace(_name)) { _error = "Name is required."; return; }
-        if (_selectedAssets.Count == 0) { _error = "Add at least one asset."; return; }
+
+        // The asset list is not a simple bound field, so validate it against the
+        // EditContext so its message appears in the validation summary like the rest.
+        _messageStore.Clear();
+        if (_selectedAssets.Count == 0)
+        {
+            _messageStore.Add(new FieldIdentifier(_model, fieldName: string.Empty), "Add at least one asset.");
+            _editContext.NotifyValidationStateChanged();
+            return;
+        }
 
         _saving = true;
         try
         {
             var assets = _selectedAssets.Select((a, i) => new CampaignAssetDto(a.AssetId, i + 1, a.DurationSeconds)).ToList();
-            var startUtc = _startDate.HasValue ? DateTime.SpecifyKind(_startDate.Value, DateTimeKind.Utc) : (DateTime?)null;
-            var endUtc = _endDate.HasValue ? DateTime.SpecifyKind(_endDate.Value, DateTimeKind.Utc) : (DateTime?)null;
+            var startUtc = _model.StartDate.HasValue ? DateTime.SpecifyKind(_model.StartDate.Value, DateTimeKind.Utc) : (DateTime?)null;
+            var endUtc = _model.EndDate.HasValue ? DateTime.SpecifyKind(_model.EndDate.Value, DateTimeKind.Utc) : (DateTime?)null;
             if (Id.HasValue)
                 // DisplayIds = null: screen assignments are managed on the Screen edit page and must not be touched here.
-                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_name, _description, assets, null, _isEnabled, startUtc, endUtc, _priority));
+                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_model.Name, _model.Description, assets, null, _model.IsEnabled, startUtc, endUtc, _model.Priority));
             else
-                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_name, _description, assets, [], _isEnabled, startUtc, endUtc, _priority));
+                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_model.Name, _model.Description, assets, [], _model.IsEnabled, startUtc, endUtc, _model.Priority));
 
             _allowNavigation = true;
             Navigation.NavigateTo("/campaigns");
         }
         catch (Exception ex) { _error = ex.Message; _allowNavigation = false; }
         finally { _saving = false; }
+    }
+
+    private sealed class CampaignFormModel
+    {
+        [Required(ErrorMessage = "Name is required.")]
+        [StringLength(200, ErrorMessage = "Name must be 200 characters or fewer.")]
+        public string Name { get; set; } = "";
+
+        public string Description { get; set; } = "";
+
+        public bool IsEnabled { get; set; } = true;
+
+        public DateTime? StartDate { get; set; }
+
+        public DateTime? EndDate { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Priority must be 0 or greater.")]
+        public int Priority { get; set; }
     }
 
     private sealed class SelectedCampaignAsset

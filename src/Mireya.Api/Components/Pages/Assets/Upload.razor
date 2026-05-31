@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject IAssetService AssetService
 @inject NavigationManager Navigation
+@using System.ComponentModel.DataAnnotations
 @using Mireya.Api.Services
 
 <PageTitle>Upload Assets - Mireya Admin</PageTitle>
@@ -26,28 +27,37 @@
 <div class="card">
     <div class="card-header">Add Website</div>
     <div class="card-body">
-        <div class="mb-3">
-            <label class="form-label">URL</label>
-            <input type="url" class="form-control" @bind="_websiteUrl" placeholder="https://example.com" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Name</label>
-            <input class="form-control" @bind="_websiteName" />
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Description</label>
-            <input class="form-control" @bind="_websiteDesc" />
-        </div>
-        <button class="btn btn-primary" @onclick="AddWebsiteAsync">Add Website</button>
+        <EditForm Model="_website" OnValidSubmit="AddWebsiteAsync">
+            <DataAnnotationsValidator />
+            <div class="mb-3">
+                <label class="form-label" for="websiteUrl">URL</label>
+                <InputText type="url" id="websiteUrl" class="form-control" @bind-Value="_website.Url" placeholder="https://example.com" />
+                <ValidationMessage For="() => _website.Url" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="websiteName">Name</label>
+                <InputText id="websiteName" class="form-control" @bind-Value="_website.Name" />
+                <ValidationMessage For="() => _website.Name" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="websiteDesc">Description</label>
+                <InputText id="websiteDesc" class="form-control" @bind-Value="_website.Description" />
+            </div>
+            <button type="submit" class="btn btn-primary" disabled="@_addingWebsite">
+                @if (_addingWebsite) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Add Website
+            </button>
+        </EditForm>
     </div>
 </div>
 
 @code {
     private List<IBrowserFile> _files = [];
     private bool _uploading;
+    private bool _addingWebsite;
     private string? _message;
     private bool _isError;
-    private string _websiteUrl = "", _websiteName = "", _websiteDesc = "";
+    private readonly WebsiteFormModel _website = new();
 
     private void HandleFiles(InputFileChangeEventArgs e)
         => _files = e.GetMultipleFiles(100).ToList();
@@ -74,17 +84,33 @@
 
     private async Task AddWebsiteAsync()
     {
+        _addingWebsite = true;
+        _message = null;
         try
         {
-            await AssetService.CreateWebsiteAssetAsync(_websiteUrl, _websiteName, _websiteDesc);
-            _message = $"Website '{_websiteName}' added.";
+            await AssetService.CreateWebsiteAssetAsync(_website.Url, _website.Name, _website.Description);
+            _message = $"Website '{_website.Name}' added.";
             _isError = false;
-            _websiteUrl = _websiteName = _websiteDesc = "";
+            _website.Url = _website.Name = _website.Description = "";
         }
         catch (Exception ex)
         {
             _message = ex.Message;
             _isError = true;
         }
+        finally { _addingWebsite = false; }
+    }
+
+    private sealed class WebsiteFormModel
+    {
+        [Required(ErrorMessage = "URL is required.")]
+        [Url(ErrorMessage = "Enter a valid absolute URL (e.g. https://example.com).")]
+        public string Url { get; set; } = "";
+
+        [Required(ErrorMessage = "Name is required.")]
+        [StringLength(200, ErrorMessage = "Name must be 200 characters or fewer.")]
+        public string Name { get; set; } = "";
+
+        public string Description { get; set; } = "";
     }
 }
