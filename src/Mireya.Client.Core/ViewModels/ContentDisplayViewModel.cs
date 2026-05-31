@@ -418,6 +418,14 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                         t => _logger.LogError(t.Exception, "Identify flash faulted"),
                         TaskContinuationOptions.OnlyOnFaulted);
                     break;
+                case "next":
+                    if (_playlist.Count > 0)
+                        AdvanceToNext();
+                    break;
+                case "previous":
+                    if (_playlist.Count > 0)
+                        GoToPrevious();
+                    break;
                 default:
                     _logger.LogWarning("Ignoring unknown remote command: {Command}", command);
                     break;
@@ -746,6 +754,11 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private void PreviousAsset()
     {
         _logger.LogInformation("Manual advance to previous asset");
+        GoToPrevious();
+    }
+
+    private void GoToPrevious()
+    {
         _advanceTimer?.Stop();
 
         _currentIndex--;

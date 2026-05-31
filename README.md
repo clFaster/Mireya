@@ -44,8 +44,9 @@ scheduled content.
   updating screens; sending remote commands) are recorded with the acting user and a timestamp, viewable in the admin
   under **Audit Log**.
 - **Remote screen actions** — From a screen's detail page an administrator can push live commands to a connected
-  screen over SignalR: **Restart** (replay the playlist from the start), **Reload** (re-render the current content) and
-  **Identify** (briefly flash the screen and show its pairing code so it can be located within a fleet).
+  screen over SignalR: **Restart** (replay the playlist from the start), **Previous**/**Next** (step through the
+  queue), **Reload** (re-render the current content) and **Identify** (briefly flash the screen and show its pairing
+  code so it can be located within a fleet).
 - **First-run pairing & approval** — On first launch a client registers itself and displays a large **pairing code**
   (its screen identifier) with a "waiting for approval" message until an administrator approves it under **Screens**.
   Once approved, content is pushed automatically — no client restart needed.
