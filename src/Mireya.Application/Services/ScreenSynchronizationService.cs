@@ -79,6 +79,8 @@ public class ScreenSynchronizationService(
         return display.CampaignAssignments
             .Select(ca => ca.Campaign)
             .Where(c => c.IsActiveAt(utcNow))
+            .OrderByDescending(c => c.Priority)
+            .ThenBy(c => c.Name)
             .Select(c => new CampaignDetail(
                 c.Id,
                 c.Name,

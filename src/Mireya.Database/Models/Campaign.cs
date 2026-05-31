@@ -37,6 +37,11 @@ public class Campaign
     public DateTime? EndDateUtc { get; set; }
 
     /// <summary>
+    ///     Relative ordering priority. Campaigns with a higher priority are played first on a screen.
+    /// </summary>
+    public int Priority { get; set; }
+
+    /// <summary>
     ///     Determines whether the campaign is active (enabled and within its schedule) at the given UTC time.
     /// </summary>
     public bool IsActiveAt(DateTime utcNow) =>

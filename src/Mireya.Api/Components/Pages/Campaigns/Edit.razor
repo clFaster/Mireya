@@ -50,6 +50,11 @@
                         <div class="form-text">Leave empty to run indefinitely.</div>
                     </div>
                 </div>
+                <div class="mb-1">
+                    <label class="form-label">Priority</label>
+                    <input type="number" class="form-control" style="max-width:140px" @bind="_priority" />
+                    <div class="form-text">Higher priority campaigns play first on a screen.</div>
+                </div>
             </div>
         </div>
 
@@ -127,6 +132,7 @@
     private bool _isEnabled = true;
     private DateTime? _startDate;
     private DateTime? _endDate;
+    private int _priority;
     private List<SelectedCampaignAsset> _selectedAssets = [];
     private List<Mireya.Database.Models.Asset> _availableAssets = [];
     private int _assignedScreenCount;
@@ -145,6 +151,7 @@
             _isEnabled = campaign.IsEnabled;
             _startDate = campaign.StartDateUtc;
             _endDate = campaign.EndDateUtc;
+            _priority = campaign.Priority;
             _selectedAssets = campaign.Assets.Select(a => new SelectedCampaignAsset
             {
                 AssetId = a.AssetId,
@@ -182,9 +189,9 @@
             var endUtc = _endDate.HasValue ? DateTime.SpecifyKind(_endDate.Value, DateTimeKind.Utc) : (DateTime?)null;
             if (Id.HasValue)
                 // DisplayIds = null: screen assignments are managed on the Screen edit page and must not be touched here.
-                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_name, _description, assets, null, _isEnabled, startUtc, endUtc));
+                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_name, _description, assets, null, _isEnabled, startUtc, endUtc, _priority));
             else
-                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_name, _description, assets, [], _isEnabled, startUtc, endUtc));
+                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_name, _description, assets, [], _isEnabled, startUtc, endUtc, _priority));
 
             Navigation.NavigateTo("/campaigns");
         }
