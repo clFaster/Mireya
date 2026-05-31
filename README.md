@@ -20,7 +20,9 @@ scheduled content.
   and loop playback. Minimal setup: only the backend URL is required on first start (it can also be preconfigured for
   unattended/kiosk deployments via the `MIREYA_BACKEND_URL` environment variable). The client reconnects automatically
   with exponential backoff and shows a colour-coded connection indicator on screen.
-- **Campaigns** — Ordered lists of assets (images, videos, URLs). Images/web pages use a configured display duration;
+- **Campaigns** — Ordered lists of assets (images, videos, URLs). Assets can be reordered by drag-and-drop (or
+  accessible up/down buttons) in the campaign editor, and bulk-uploaded several files at once.
+  Images/web pages use a configured display duration;
   videos use their own runtime. Assets loop, and campaigns can be enabled/disabled and scheduled with optional
   start/end dates plus **weekly recurrence** (specific weekdays and/or a daily time window evaluated in a chosen
   time zone, with windows that may span midnight). A campaign can be marked as the **default (fallback) campaign**,

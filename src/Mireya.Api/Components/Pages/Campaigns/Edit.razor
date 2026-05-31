@@ -136,13 +136,30 @@
                     }
                     @foreach (var (asset, i) in _selectedAssets.Select((a, i) => (a, i)))
                     {
-                        <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
+                        <div class="d-flex align-items-center gap-2 mb-2 p-2 border rounded @(_dragIndex == i ? "border-primary bg-light" : "")"
+                             draggable="true"
+                             @ondragstart="() => OnDragStart(i)"
+                             @ondragover:preventDefault="true"
+                             @ondragenter="() => OnDragEnter(i)"
+                             @ondrop="() => OnDrop(i)"
+                             @ondragend="OnDragEnd">
+                            <i class="bi bi-grip-vertical text-muted" style="cursor:grab" aria-hidden="true"></i>
                             <span class="flex-grow-1">@(i + 1). @asset.Name (@asset.Type)</span>
                             @if (asset.Type != AssetType.Video)
                             {
                                 <input type="number" class="form-control form-control-sm" style="width:90px"
                                        placeholder="secs" @bind="asset.DurationSeconds" min="1" />
                             }
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Reorder @asset.Name">
+                                <button type="button" class="btn btn-outline-secondary" aria-label="Move @asset.Name up"
+                                        disabled="@(i == 0)" @onclick="() => MoveAsset(i, i - 1)">
+                                    <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" aria-label="Move @asset.Name down"
+                                        disabled="@(i == _selectedAssets.Count - 1)" @onclick="() => MoveAsset(i, i + 1)">
+                                    <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                                </button>
+                            </div>
                             <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove @asset.Name" @onclick="() => RemoveAsset(asset)">
                                 <i class="bi bi-x" aria-hidden="true"></i>
                             </button>
@@ -296,6 +313,37 @@
     }
 
     private void RemoveAsset(SelectedCampaignAsset asset) => _selectedAssets.Remove(asset);
+
+    private int? _dragIndex;
+
+    private void OnDragStart(int index) => _dragIndex = index;
+
+    private void OnDragEnter(int index)
+    {
+        if (_dragIndex is { } from && from != index)
+        {
+            MoveAsset(from, index);
+            _dragIndex = index;
+        }
+    }
+
+    private void OnDrop(int index)
+    {
+        if (_dragIndex is { } from && from != index)
+            MoveAsset(from, index);
+        _dragIndex = null;
+    }
+
+    private void OnDragEnd() => _dragIndex = null;
+
+    private void MoveAsset(int from, int to)
+    {
+        if (from < 0 || to < 0 || from >= _selectedAssets.Count || to >= _selectedAssets.Count || from == to)
+            return;
+        var item = _selectedAssets[from];
+        _selectedAssets.RemoveAt(from);
+        _selectedAssets.Insert(to, item);
+    }
 
     private async Task SaveAsync()
     {
