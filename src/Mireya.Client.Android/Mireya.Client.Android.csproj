@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <!-- Keep the historical root namespace so shared code and XAML need no churn. -->
+    <RootNamespace>Mireya.Client.Avalonia</RootNamespace>
+    <AssemblyName>Mireya.Client.Android</AssemblyName>
+    <ApplicationId>com.mireya.signage.tv</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AndroidResource Include="Icon.png">
+      <Link>Resources\drawable\Icon.png</Link>
+    </AndroidResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" Version="12.0.2" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.16" />
+    <!-- LibVLCSharp core ships the native Android VideoView; VideoLAN.LibVLC.Android
+         supplies the libvlc .so binaries bundled into the APK. The Avalonia VideoView
+         package is desktop-only (net8.0/netstandard2.0) so it is intentionally not used. -->
+    <PackageReference Include="LibVLCSharp" Version="3.9.7.1" />
+    <PackageReference Include="VideoLAN.LibVLC.Android" Version="3.6.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mireya.Client.Core\Mireya.Client.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -53,48 +53,17 @@ public class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // Build the composition root, run migrations and load settings. This shared
+        // startup is identical for every platform head (Desktop, Android, …); only the
+        // way the resulting ViewModel is presented (Window vs single MainView) differs.
+        var (serviceProvider, appSettings, mainViewModel) = InitializeCore();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Ensure the application shuts down when the main window is closed
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
-            // Setup dependency injection (AppSettings singleton registered inside).
-            // The platform head provides the composition root so that platform-only
-            // implementations (credential storage, asset renderers, …) are wired in.
-            var serviceProvider = ServiceProviderFactory?.Invoke()
-                ?? throw new InvalidOperationException(
-                    "App.ServiceProviderFactory must be set by the platform head before startup.");
-            Services = serviceProvider;
-
-            // Apply database migrations and load settings in the same startup scope
-            Log.Information("Initializing database and applying migrations...");
-            using (var startupScope = serviceProvider.CreateScope())
-            {
-                var db = startupScope.ServiceProvider.GetRequiredService<LocalDbContext>();
-                try
-                {
-                    db.Database.Migrate();
-                    Log.Information("Database migrations applied successfully");
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException(
-                        "Failed to apply database migrations. See inner exception for details.", ex);
-                }
-            }
-
-            // Load app settings from DB now that migrations have run.
-            // GetAwaiter().GetResult() is intentional: startup must be synchronous
-            // so that Fullscreen/AutoStart are available when the main window is created.
-            var appSettings = serviceProvider.GetRequiredService<AppSettings>();
-            appSettings.LoadAsync().GetAwaiter().GetResult();
-            Log.Information(
-                "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}, HideScreenInfo={HideScreenInfo}",
-                appSettings.Fullscreen, appSettings.AutoStart, appSettings.HideScreenInfo
-            );
-
             // Create main window with dependency-injected ViewModel
-            var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
             var mainWindow = new MainWindow { DataContext = mainViewModel };
             desktop.MainWindow = mainWindow;
 
@@ -154,7 +123,68 @@ public class App : Application
                 Log.CloseAndFlush();
             };
         }
+        else if (ApplicationLifetime is IActivityApplicationLifetime activity)
+        {
+            // Preferred Android lifetime (Avalonia 12). The MainView is recreated by the
+            // factory whenever the hosting activity is recreated, always bound to the same
+            // dependency-injected root ViewModel.
+            activity.MainViewFactory = () => new MainView { DataContext = mainViewModel };
+        }
+        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
+        {
+            // Fallback single-view lifetime (other mobile/embedded platforms). Hosts a
+            // single root control instead of a Window. Fullscreen is implicit, so the
+            // desktop-only fullscreen toggle and Exit handlers are not wired here.
+            singleView.MainView = new MainView { DataContext = mainViewModel };
+        }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    ///     Shared, platform-agnostic startup: build the composition root supplied by the
+    ///     active platform head, apply database migrations, and load persisted settings.
+    ///     Returns the service provider together with the loaded settings and the root
+    ///     ViewModel so each lifetime branch can present it appropriately.
+    /// </summary>
+    private static (IServiceProvider Services, AppSettings Settings, MainWindowViewModel ViewModel) InitializeCore()
+    {
+        // Setup dependency injection (AppSettings singleton registered inside).
+        // The platform head provides the composition root so that platform-only
+        // implementations (credential storage, asset renderers, …) are wired in.
+        var serviceProvider = ServiceProviderFactory?.Invoke()
+            ?? throw new InvalidOperationException(
+                "App.ServiceProviderFactory must be set by the platform head before startup.");
+        Services = serviceProvider;
+
+        // Apply database migrations and load settings in the same startup scope
+        Log.Information("Initializing database and applying migrations...");
+        using (var startupScope = serviceProvider.CreateScope())
+        {
+            var db = startupScope.ServiceProvider.GetRequiredService<LocalDbContext>();
+            try
+            {
+                db.Database.Migrate();
+                Log.Information("Database migrations applied successfully");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Failed to apply database migrations. See inner exception for details.", ex);
+            }
+        }
+
+        // Load app settings from DB now that migrations have run.
+        // GetAwaiter().GetResult() is intentional: startup must be synchronous
+        // so that Fullscreen/AutoStart are available when the root view is created.
+        var appSettings = serviceProvider.GetRequiredService<AppSettings>();
+        appSettings.LoadAsync().GetAwaiter().GetResult();
+        Log.Information(
+            "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}, HideScreenInfo={HideScreenInfo}",
+            appSettings.Fullscreen, appSettings.AutoStart, appSettings.HideScreenInfo
+        );
+
+        var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
+        return (serviceProvider, appSettings, mainViewModel);
     }
 }
