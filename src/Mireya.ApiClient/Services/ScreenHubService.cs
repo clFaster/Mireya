@@ -47,7 +47,7 @@ public class ScreenHubService : IScreenHubService
                         Task.FromResult(_accessTokenProvider.GetAccessToken());
                 }
             )
-            .WithAutomaticReconnect()
+            .WithAutomaticReconnect(new BackoffRetryPolicy())
             .ConfigureLogging(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Debug);
@@ -111,12 +111,44 @@ public class ScreenHubService : IScreenHubService
 
     public async Task ConnectAsync()
     {
-        if (_hubConnection.State == HubConnectionState.Disconnected)
+        if (_hubConnection.State != HubConnectionState.Disconnected)
+            return;
+
+        // The screen may boot before the server is reachable (e.g. a Raspberry Pi
+        // powering on with the server), so retry the initial connection with a
+        // capped exponential backoff before surfacing a failure to the UI.
+        const int maxAttempts = 6;
+        Exception? lastError = null;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
-            _logger.LogInformation("Connecting to SignalR hub");
-            await _hubConnection.StartAsync();
-            _logger.LogInformation("Connected: {ConnectionId}", _hubConnection.ConnectionId);
+            if (attempt > 0)
+            {
+                var delay = BackoffRetryPolicy.GetDelay(attempt);
+                _logger.LogWarning(
+                    lastError,
+                    "Initial SignalR connection attempt {Attempt} failed, retrying in {Delay}s",
+                    attempt,
+                    delay.TotalSeconds
+                );
+                await Task.Delay(delay);
+            }
+
+            try
+            {
+                _logger.LogInformation("Connecting to SignalR hub");
+                await _hubConnection.StartAsync();
+                _logger.LogInformation("Connected: {ConnectionId}", _hubConnection.ConnectionId);
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+            }
         }
+
+        _logger.LogError(lastError, "Failed to connect to SignalR hub after {Attempts} attempts", maxAttempts);
+        if (lastError is not null)
+            throw lastError;
     }
 
     public async Task DisconnectAsync()
@@ -197,6 +229,32 @@ public class ScreenHubService : IScreenHubService
         )
         {
             Console.WriteLine($"[{logLevel}] {categoryName}: {formatter(state, exception)}");
+        }
+    }
+
+    /// <summary>
+    ///     Reconnect policy with a capped exponential backoff that retries indefinitely, so an
+    ///     unattended screen recovers on its own after an extended server outage instead of giving
+    ///     up after the default 30 seconds.
+    /// </summary>
+    internal sealed class BackoffRetryPolicy : IRetryPolicy
+    {
+        public TimeSpan? NextRetryDelay(RetryContext retryContext)
+        {
+            return GetDelay((int)retryContext.PreviousRetryCount + 1);
+        }
+
+        /// <summary>
+        ///     Capped exponential backoff: ~2s, 4s, 8s, 16s, 32s, then 60s for all subsequent attempts.
+        /// </summary>
+        public static TimeSpan GetDelay(int attempt)
+        {
+            if (attempt < 1)
+                return TimeSpan.Zero;
+
+            const double maxSeconds = 60;
+            var seconds = Math.Min(maxSeconds, Math.Pow(2, attempt));
+            return TimeSpan.FromSeconds(seconds);
         }
     }
 }
