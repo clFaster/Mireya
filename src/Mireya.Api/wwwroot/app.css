@@ -30,11 +30,12 @@
     --text-on-ink: #eef1f8;
     --text-on-ink-soft: #9aa4ba;
 
-    /* Brand signal: amber -> orange */
-    --brand: #ffb020;
-    --brand-2: #ff7a1a;
-    --brand-ink: #4a2f00;
-    --brand-grad: linear-gradient(135deg, #ffc24d 0%, #ff8a1f 100%);
+    /* Brand signal: teal -> cyan/blue (matches the Mireya logo) */
+    --brand: #1bc6b6;
+    --brand-2: #38bdf8;
+    --brand-ink: #04302c;
+    --brand-grad: linear-gradient(135deg, #2ee0d0 0%, #38bdf8 100%);
+    --brand-rgb: 32, 214, 199;
 
     /* Semantics */
     --ok: #16a36a;
@@ -69,7 +70,7 @@
     --shadow-sm: 0 2px 6px -1px rgba(15, 22, 40, .10), 0 1px 2px rgba(15, 22, 40, .06);
     --shadow: 0 10px 28px -10px rgba(15, 22, 40, .22), 0 2px 6px -2px rgba(15, 22, 40, .10);
     --shadow-lg: 0 30px 70px -24px rgba(13, 17, 27, .42);
-    --ring: 0 0 0 3px rgba(255, 154, 30, .32);
+    --ring: 0 0 0 3px rgba(var(--brand-rgb), .34);
 
     /* Motion */
     --ease: cubic-bezier(.4, 0, .2, 1);
@@ -100,8 +101,8 @@ html, body {
 
 body {
     background:
-        radial-gradient(1200px 600px at 100% -10%, rgba(255, 154, 30, .06), transparent 60%),
-        radial-gradient(900px 500px at -10% 110%, rgba(47, 114, 224, .06), transparent 55%),
+        radial-gradient(1200px 600px at 100% -10%, rgba(var(--brand-rgb), .07), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(56, 189, 248, .06), transparent 55%),
         var(--paper);
     min-height: 100vh;
 }
@@ -118,7 +119,7 @@ h1, .h1 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.1rem); }
 a { color: var(--ink-700); text-decoration: none; transition: color var(--t-fast) var(--ease); }
 a:hover { color: var(--brand-2); }
 
-::selection { background: rgba(255, 154, 30, .28); }
+::selection { background: rgba(var(--brand-rgb), .26); }
 
 /* Tabular figures for stats/timestamps */
 .font-mono, .stat-value, td.num, .mono { font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
@@ -165,7 +166,7 @@ nav.bg-dark::before {
     position: absolute;
     inset: 0 0 auto 0;
     height: 220px;
-    background: radial-gradient(120% 80% at 20% 0%, rgba(255, 154, 30, .14), transparent 70%);
+    background: radial-gradient(120% 80% at 20% 0%, rgba(var(--brand-rgb), .12), transparent 70%);
     pointer-events: none;
 }
 
@@ -190,17 +191,21 @@ nav.bg-dark::before {
     height: 38px;
     border-radius: 11px;
     background: var(--brand-grad);
-    color: #2a1900;
+    color: var(--brand-ink);
     font-size: 1.15rem;
-    box-shadow: 0 6px 16px -4px rgba(255, 138, 31, .55), inset 0 1px 0 rgba(255, 255, 255, .4);
+    box-shadow: 0 6px 16px -4px rgba(var(--brand-rgb), .5), inset 0 1px 0 rgba(255, 255, 255, .4);
 }
 .brand-mark .brand-text { display: flex; flex-direction: column; line-height: 1.05; }
 .brand-mark .brand-logo {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     border-radius: 11px;
     flex: 0 0 auto;
-    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .07);
+    /* The logo art has a near-black frame; sit it on a light chip so it
+       stands out against the dark sidebar instead of blending in. */
+    background: #f8fafc;
+    padding: 3px;
+    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .55), 0 0 0 1px rgba(var(--brand-rgb), .35);
 }
 .brand-mark .brand-sub {
     font-family: var(--font-mono);
@@ -230,7 +235,7 @@ nav.bg-dark .nav-link:hover {
 }
 nav.bg-dark .nav-link.active {
     color: #fff !important;
-    background: linear-gradient(100deg, rgba(255, 154, 30, .20), rgba(255, 154, 30, .05));
+    background: linear-gradient(100deg, rgba(var(--brand-rgb), .20), rgba(var(--brand-rgb), .05));
 }
 nav.bg-dark .nav-link.active::before {
     content: "";
@@ -242,7 +247,7 @@ nav.bg-dark .nav-link.active::before {
     height: 1.45rem;
     border-radius: var(--r-pill);
     background: var(--brand-grad);
-    box-shadow: 0 0 14px rgba(255, 154, 30, .7);
+    box-shadow: 0 0 14px rgba(var(--brand-rgb), .7);
 }
 
 nav.bg-dark .btn-outline-light {
@@ -295,7 +300,7 @@ nav.bg-dark .btn-outline-light:hover {
     border: none;
     color: var(--brand-ink);
     font-weight: 700;
-    box-shadow: 0 6px 16px -8px rgba(255, 138, 31, .7);
+    box-shadow: 0 6px 16px -8px rgba(var(--brand-rgb), .7);
 }
 .btn-warning:hover, .btn-warning:focus { color: var(--brand-ink); filter: brightness(1.04); }
 
@@ -525,8 +530,8 @@ nav.bg-dark .btn-outline-light:hover {
 /* ---- Login --------------------------------------------------------------- */
 .bg-dark.min-vh-100 {
     background:
-        radial-gradient(900px 600px at 80% -10%, rgba(255, 154, 30, .16), transparent 60%),
-        radial-gradient(800px 500px at 10% 110%, rgba(47, 114, 224, .14), transparent 55%),
+        radial-gradient(900px 600px at 80% -10%, rgba(var(--brand-rgb), .16), transparent 60%),
+        radial-gradient(800px 500px at 10% 110%, rgba(56, 189, 248, .14), transparent 55%),
         linear-gradient(180deg, var(--ink-850), var(--ink-950)) !important;
 }
 .bg-dark.min-vh-100 .card { border-radius: var(--r-xl); box-shadow: var(--shadow-lg); animation: page-rise .55s var(--ease-out) both; }
