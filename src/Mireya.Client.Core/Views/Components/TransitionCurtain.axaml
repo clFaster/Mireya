@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
+             x:Class="Mireya.Client.Avalonia.Views.Components.TransitionCurtain"
+             x:DataType="vm:ContentDisplayViewModel"
+             Background="Transparent"
+             IsHitTestVisible="False">
+
+    <!-- A plain black layer whose opacity is animated by the view model to mask the
+         flash while one asset is swapped for the next (dip-to-black crossfade). It is
+         hosted in a top-most transparent window so it also covers the native WebView2 /
+         LibVLC surfaces that paint over ordinary Avalonia visuals. -->
+    <Border Background="Black"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Opacity="{Binding TransitionCurtainOpacity}">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+            </Transitions>
+        </Border.Transitions>
+    </Border>
+
+</UserControl>

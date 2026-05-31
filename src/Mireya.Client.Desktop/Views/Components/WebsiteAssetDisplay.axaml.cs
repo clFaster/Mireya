@@ -11,6 +11,9 @@ namespace Mireya.Client.Avalonia.Views.Components;
 
 public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
 {
+    /// <summary>Raised once a navigated page has loaded and painted (see <see cref="IWebsiteRenderer" />).</summary>
+    public event Action? ContentReady;
+
     private Grid? _browserContainer;
     private Panel? _loadingPanel;
     private StackPanel? _errorPanel;
@@ -486,6 +489,10 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
             if (_loadingPanel != null) _loadingPanel.IsVisible = false;
             Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
         }
+
+        // Signal the transition layer that the page is loaded and painted so the
+        // crossfade curtain can be lifted without revealing a loading flash.
+        ContentReady?.Invoke();
     }
 
     private void ShowError(string? reason = null)

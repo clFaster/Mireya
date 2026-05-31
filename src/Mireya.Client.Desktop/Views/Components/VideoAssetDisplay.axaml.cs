@@ -9,12 +9,18 @@ namespace Mireya.Client.Avalonia.Views.Components;
 
 public partial class VideoAssetDisplay : UserControl, IVideoRenderer
 {
+    /// <summary>Raised once the first frame of the current video has rendered (see <see cref="IVideoRenderer" />).</summary>
+    public event Action? FirstFrameReady;
+
     private LibVLC? _libVlc;
     private MediaPlayer? _mediaPlayer;
     private Media? _currentMedia;
 
     // Track desired mute state across lifecycle events
     private bool _isMuted;
+
+    // Guards FirstFrameReady so it is raised only once per Play() call
+    private bool _firstFrameSignaled;
 
     public VideoAssetDisplay()
     {
@@ -54,6 +60,18 @@ public partial class VideoAssetDisplay : UserControl, IVideoRenderer
                 { /* ignore */
                 }
             };
+
+            // TimeChanged fires once playback actually progresses, i.e. the first frame has
+            // been decoded and presented. Use it as a "first frame ready" signal so the
+            // transition layer can reveal the video without a black first-frame flash.
+            // Note: this event is raised on a LibVLC background thread.
+            _mediaPlayer.TimeChanged += (_, __) =>
+            {
+                if (_firstFrameSignaled)
+                    return;
+                _firstFrameSignaled = true;
+                FirstFrameReady?.Invoke();
+            };
         }
         catch (Exception ex)
         {
@@ -79,6 +97,9 @@ public partial class VideoAssetDisplay : UserControl, IVideoRenderer
 
             // Store desired mute state
             _isMuted = isMuted;
+
+            // New media: allow the next first-frame signal to fire
+            _firstFrameSignaled = false;
 
             // Hint initial volume through media options to prevent loud blips on start
             // Note: LibVLC expects values 0-512; 0 is muted.
