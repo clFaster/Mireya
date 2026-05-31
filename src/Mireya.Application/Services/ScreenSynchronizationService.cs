@@ -140,6 +140,7 @@ public class ScreenSynchronizationService(
             ApprovalStatus = display.ApprovalStatus.ToString(),
             ResolutionWidth = display.ResolutionWidth,
             ResolutionHeight = display.ResolutionHeight,
+            ShufflePlayback = display.ShufflePlayback,
             Campaigns = campaigns,
         };
 

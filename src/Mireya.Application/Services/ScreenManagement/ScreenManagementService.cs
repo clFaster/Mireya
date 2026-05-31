@@ -249,6 +249,9 @@ public class ScreenManagementService(
         if (!string.IsNullOrWhiteSpace(request.Location))
             display.Location = request.Location;
 
+        if (request.ShufflePlayback.HasValue)
+            display.ShufflePlayback = request.ShufflePlayback.Value;
+
         display.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
@@ -370,6 +373,7 @@ public class ScreenManagementService(
             ResolutionHeight = response.ResolutionHeight,
             IsActive = response.IsActive,
             LastSeenAt = response.LastSeenAt,
+            ShufflePlayback = response.ShufflePlayback,
             CreatedAt = response.CreatedAt,
             UpdatedAt = response.UpdatedAt,
             AssignedCampaigns = display.CampaignAssignments
@@ -398,6 +402,9 @@ public class ScreenManagementService(
             display.Description = request.Description;
         if (!string.IsNullOrWhiteSpace(request.Location))
             display.Location = request.Location;
+
+        if (request.ShufflePlayback.HasValue)
+            display.ShufflePlayback = request.ShufflePlayback.Value;
 
         display.UpdatedAt = DateTime.UtcNow;
 
@@ -462,6 +469,7 @@ public class ScreenManagementService(
             ResolutionHeight = display.ResolutionHeight,
             IsActive = display.IsActive,
             LastSeenAt = display.LastSeenAt,
+            ShufflePlayback = display.ShufflePlayback,
             CreatedAt = display.CreatedAt,
             UpdatedAt = display.UpdatedAt,
         };
