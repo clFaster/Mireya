@@ -45,8 +45,16 @@ public class AssetSyncEndpoints : ICarterModule
 
         try
         {
-            await assetSyncService.UpdateAssetSyncStatusAsync(displayId, request);
-            return Results.Ok();
+            var result = await assetSyncService.UpdateAssetSyncStatusAsync(displayId, request);
+            return result switch
+            {
+                AssetSyncUpdateResult.Updated => Results.Ok(),
+                AssetSyncUpdateResult.NotFound => Results.NotFound(
+                    $"No sync status found for asset {request.AssetId} on this display."),
+                AssetSyncUpdateResult.InvalidState => Results.BadRequest(
+                    $"Invalid sync state '{request.SyncState}'."),
+                _ => Results.Ok(),
+            };
         }
         catch (Exception ex)
         {
