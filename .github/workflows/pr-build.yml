@@ -34,6 +34,7 @@ jobs:
           dotnet restore ./src/Mireya.Api/Mireya.Api.csproj
           dotnet restore ./src/Mireya.Client.Avalonia/Mireya.Client.Avalonia.csproj
           dotnet restore ./src/Mireya.ApiClient/Mireya.ApiClient.csproj
+          dotnet restore ./src/Mireya.Application.Tests/Mireya.Application.Tests.csproj
 
       - name: Build backend API
         run: dotnet build ./src/Mireya.Api/Mireya.Api.csproj --configuration Release --no-restore
@@ -43,3 +44,14 @@ jobs:
 
       - name: Build Avalonia client
         run: dotnet build ./src/Mireya.Client.Avalonia/Mireya.Client.Avalonia.csproj --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ./src/Mireya.Application.Tests/Mireya.Application.Tests.csproj --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults/*.trx
+          if-no-files-found: ignore
