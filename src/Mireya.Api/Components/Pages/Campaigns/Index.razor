@@ -50,6 +50,10 @@ else
                             {
                                 <span class="badge bg-warning text-dark">Scheduled</span>
                             }
+                            @if (c.IsDefault)
+                            {
+                                <span class="badge bg-info text-dark ms-1" title="Shown on screens with no other active campaign">Default</span>
+                            }
                             @if (c.IsEnabled && (c.StartDateUtc.HasValue || c.EndDateUtc.HasValue))
                             {
                                 <br />

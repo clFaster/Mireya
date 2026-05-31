@@ -42,6 +42,12 @@ public class Campaign
     public int Priority { get; set; }
 
     /// <summary>
+    ///     When true, this campaign is the global fallback shown on any screen that has no other
+    ///     active campaign assigned. At most one campaign should be marked as default.
+    /// </summary>
+    public bool IsDefault { get; set; }
+
+    /// <summary>
     ///     Determines whether the campaign is active (enabled and within its schedule) at the given UTC time.
     /// </summary>
     public bool IsActiveAt(DateTime utcNow) =>

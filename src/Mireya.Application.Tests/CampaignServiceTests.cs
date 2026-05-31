@@ -117,4 +117,31 @@ public class CampaignServiceTests
             Arg.Is<IEnumerable<Guid>>(ids =>
                 ids.Contains(oldDisplay.Id) && ids.Contains(newDisplay.Id)));
     }
+
+    [Fact]
+    public async Task SettingDefault_ClearsDefaultOnOtherCampaigns()
+    {
+        using var db = new TestDatabase();
+        var sync = Substitute.For<IScreenSynchronizationService>();
+
+        var asset = NewAsset();
+        db.Context.Assets.Add(asset);
+        await db.Context.SaveChangesAsync();
+
+        var service = new CampaignService(db.Context, sync);
+
+        var first = await service.CreateCampaignAsync(new CreateCampaignRequest(
+            "First Default", null, [new CampaignAssetDto(asset.Id, 1, 5)], [], IsDefault: true));
+
+        var second = await service.CreateCampaignAsync(new CreateCampaignRequest(
+            "Second Default", null, [new CampaignAssetDto(asset.Id, 1, 5)], [], IsDefault: true));
+
+        await using var verify = db.NewContext();
+        var firstReloaded = await verify.Campaigns.FindAsync(first.Id);
+        var secondReloaded = await verify.Campaigns.FindAsync(second.Id);
+
+        Assert.False(firstReloaded!.IsDefault);
+        Assert.True(secondReloaded!.IsDefault);
+        Assert.Equal(1, await verify.Campaigns.CountAsync(c => c.IsDefault));
+    }
 }

@@ -11,7 +11,8 @@ public record CreateCampaignRequest(
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
-    int Priority = 0
+    int Priority = 0,
+    bool IsDefault = false
 );
 
 public record UpdateCampaignRequest(
@@ -23,7 +24,8 @@ public record UpdateCampaignRequest(
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
-    int Priority = 0
+    int Priority = 0,
+    bool IsDefault = false
 );
 
 public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
@@ -41,7 +43,8 @@ public record CampaignSummary(
     DateTime? StartDateUtc,
     DateTime? EndDateUtc,
     bool IsActive,
-    int Priority = 0
+    int Priority = 0,
+    bool IsDefault = false
 );
 
 public record CampaignDetail(
@@ -55,7 +58,8 @@ public record CampaignDetail(
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
-    int Priority = 0
+    int Priority = 0,
+    bool IsDefault = false
 );
 
 public record CampaignAssetDetail(

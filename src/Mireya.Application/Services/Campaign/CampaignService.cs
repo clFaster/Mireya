@@ -46,7 +46,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 c.StartDateUtc,
                 c.EndDateUtc,
                 c.IsActiveAt(DateTime.UtcNow),
-                c.Priority
+                c.Priority,
+                c.IsDefault
             ))
             .ToList();
     }
@@ -97,7 +98,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             campaign.IsEnabled,
             campaign.StartDateUtc,
             campaign.EndDateUtc,
-            campaign.Priority
+            campaign.Priority,
+            campaign.IsDefault
         );
     }
 
@@ -121,16 +123,25 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             StartDateUtc = request.StartDateUtc,
             EndDateUtc = request.EndDateUtc,
             Priority = request.Priority,
+            IsDefault = request.IsDefault,
         };
 
         db.Campaigns.Add(campaign);
         AddCampaignAssets(campaign.Id, request.Assets);
         AddCampaignAssignments(campaign.Id, request.DisplayIds);
 
+        if (request.IsDefault)
+            await ClearOtherDefaultsAsync(campaign.Id);
+
         await db.SaveChangesAsync();
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
-        await syncService.SyncScreensAsync(request.DisplayIds);
+
+        // A new default campaign affects every screen that currently has nothing active.
+        if (request.IsDefault)
+            await SyncAllDisplaysAsync();
+        else
+            await syncService.SyncScreensAsync(request.DisplayIds);
 
         return campaignDetail;
     }
@@ -149,6 +160,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
         var oldDisplayIds = campaign.CampaignAssignments.Select(ca => ca.DisplayId).ToList();
+        var defaultChanged = campaign.IsDefault != request.IsDefault;
 
         await VerifyAssetsExistAsync(request.Assets.Select(a => a.AssetId).Distinct().ToList(), request.Assets.Count);
 
@@ -162,6 +174,10 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         campaign.StartDateUtc = request.StartDateUtc;
         campaign.EndDateUtc = request.EndDateUtc;
         campaign.Priority = request.Priority;
+        campaign.IsDefault = request.IsDefault;
+
+        if (request.IsDefault)
+            await ClearOtherDefaultsAsync(campaign.Id);
 
         db.CampaignAssets.RemoveRange(campaign.CampaignAssets);
         AddCampaignAssets(campaign.Id, request.Assets);
@@ -180,7 +196,13 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         await db.SaveChangesAsync();
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
-        await syncService.SyncScreensAsync(affectedDisplayIds);
+
+        // Changing the default designation (or editing the default campaign's content)
+        // can affect any screen that relies on the fallback, so re-sync everything.
+        if (defaultChanged || campaign.IsDefault)
+            await SyncAllDisplaysAsync();
+        else
+            await syncService.SyncScreensAsync(affectedDisplayIds);
 
         return campaignDetail;
     }
@@ -252,6 +274,21 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         var existingDisplays = await db.Displays.Where(d => displayIds.Contains(d.Id)).CountAsync();
         if (existingDisplays != displayIds.Distinct().Count())
             throw new ArgumentException("One or more displays do not exist");
+    }
+
+    private async Task ClearOtherDefaultsAsync(Guid keepCampaignId)
+    {
+        var otherDefaults = await db.Campaigns
+            .Where(c => c.IsDefault && c.Id != keepCampaignId)
+            .ToListAsync();
+        foreach (var other in otherDefaults)
+            other.IsDefault = false;
+    }
+
+    private async Task SyncAllDisplaysAsync()
+    {
+        var displayIds = await db.Displays.Select(d => d.Id).ToListAsync();
+        await syncService.SyncScreensAsync(displayIds);
     }
 
     private void AddCampaignAssets(Guid campaignId, List<CampaignAssetDto> assets)

@@ -256,6 +256,9 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Property<DateTime?>("EndDateUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("INTEGER");
 

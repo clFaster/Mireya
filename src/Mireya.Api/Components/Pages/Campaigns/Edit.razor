@@ -62,6 +62,13 @@
                         <ValidationMessage For="() => _model.Priority" />
                         <div class="form-text">Higher priority campaigns play first on a screen.</div>
                     </div>
+                    <div class="form-check form-switch mt-3">
+                        <InputCheckbox class="form-check-input" id="defaultSwitch" @bind-Value="_model.IsDefault" />
+                        <label class="form-check-label" for="defaultSwitch">
+                            Default campaign (shown on any screen with no other active campaign)
+                        </label>
+                        <div class="form-text">Only one campaign can be the default; setting this clears it from any other campaign.</div>
+                    </div>
                 </div>
             </div>
 
@@ -172,6 +179,7 @@
             _model.StartDate = campaign.StartDateUtc;
             _model.EndDate = campaign.EndDateUtc;
             _model.Priority = campaign.Priority;
+            _model.IsDefault = campaign.IsDefault;
             _selectedAssets = campaign.Assets.Select(a => new SelectedCampaignAsset
             {
                 AssetId = a.AssetId,
@@ -188,7 +196,7 @@
 
     private string CurrentSnapshot() =>
         string.Join("|",
-            _model.Name, _model.Description, _model.IsEnabled, _model.StartDate, _model.EndDate, _model.Priority,
+            _model.Name, _model.Description, _model.IsEnabled, _model.StartDate, _model.EndDate, _model.Priority, _model.IsDefault,
             string.Join(",", _selectedAssets.Select(a => $"{a.AssetId}:{a.DurationSeconds}")));
 
     private bool IsDirty() => !_allowNavigation && CurrentSnapshot() != _initialSnapshot;
@@ -240,9 +248,9 @@
             var endUtc = _model.EndDate.HasValue ? DateTime.SpecifyKind(_model.EndDate.Value, DateTimeKind.Utc) : (DateTime?)null;
             if (Id.HasValue)
                 // DisplayIds = null: screen assignments are managed on the Screen edit page and must not be touched here.
-                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_model.Name, _model.Description, assets, null, _model.IsEnabled, startUtc, endUtc, _model.Priority));
+                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_model.Name, _model.Description, assets, null, _model.IsEnabled, startUtc, endUtc, _model.Priority, _model.IsDefault));
             else
-                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_model.Name, _model.Description, assets, [], _model.IsEnabled, startUtc, endUtc, _model.Priority));
+                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_model.Name, _model.Description, assets, [], _model.IsEnabled, startUtc, endUtc, _model.Priority, _model.IsDefault));
 
             _allowNavigation = true;
             Navigation.NavigateTo("/campaigns");
@@ -267,6 +275,8 @@
 
         [Range(0, int.MaxValue, ErrorMessage = "Priority must be 0 or greater.")]
         public int Priority { get; set; }
+
+        public bool IsDefault { get; set; }
     }
 
     private sealed class SelectedCampaignAsset
