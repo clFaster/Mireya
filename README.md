@@ -30,7 +30,9 @@ scheduled content.
   which is shown automatically on any screen that has no other active campaign assigned. A background scheduler
   re-syncs screens automatically when a campaign's active window opens or closes, so time-based changes take effect
   without an edit. Individual screens can opt into **shuffled playback** to randomise their asset order.
-- **Assets** — Images, videos and websites. Videos get an automatically generated poster-frame thumbnail, and assets
+- **Assets** — Images, videos and websites. Media can be added via a drag-and-drop upload area that previews each
+  selected file (with image thumbnails and sizes) and lets you remove items before uploading. Videos get an
+  automatically generated poster-frame thumbnail, and assets
   can be organised with **tags** and filtered via search in the admin. Images support a per-asset **fit mode**
   (contain, cover or fill) controlling how they scale to the screen, and transition with a smooth fade on the client.
 - **Audit log** — Administrative actions (creating, updating, deleting campaigns and assets; approving, rejecting and

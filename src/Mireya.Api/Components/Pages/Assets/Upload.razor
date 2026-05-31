@@ -10,17 +10,66 @@
 
 @if (!string.IsNullOrEmpty(_message))
 {
-    <div class="alert @(_isError ? "alert-danger" : "alert-success")">@_message</div>
+    <div class="alert @(_isError ? "alert-danger" : "alert-success") d-flex align-items-start gap-2">
+        <i class="bi @(_isError ? "bi-exclamation-triangle-fill" : "bi-check-circle-fill") mt-1"></i>
+        <div>@_message</div>
+    </div>
 }
 
 <div class="card mb-4">
-    <div class="card-header">Upload Files</div>
+    <div class="card-header">Upload Media</div>
     <div class="card-body">
-        <InputFile OnChange="HandleFiles" multiple class="form-control mb-3" accept="image/*,video/*" />
-        <button class="btn btn-primary" @onclick="UploadAsync" disabled="@(_files.Count == 0 || _uploading)">
-            @if (_uploading) { <span class="spinner-border spinner-border-sm me-1"></span> }
-            Upload @(_files.Count > 0 ? $"({_files.Count} file(s))" : "")
-        </button>
+        <div class="dropzone @(_isDragOver ? "is-dragover" : "") @(_files.Count > 0 ? "mb-3" : "")"
+             @ondragenter="() => _isDragOver = true"
+             @ondragleave="() => _isDragOver = false"
+             @ondrop="() => _isDragOver = false">
+            <InputFile OnChange="HandleFiles" multiple class="dropzone-input"
+                       accept="image/*,video/*" aria-label="Choose files to upload" />
+            <span class="dropzone-glyph"><i class="bi bi-cloud-arrow-up"></i></span>
+            <span class="dropzone-title">Drag &amp; drop images or videos here</span>
+            <span class="dropzone-hint">or click to browse &mdash; up to 100&nbsp;MB per file</span>
+        </div>
+
+        @if (_files.Count > 0)
+        {
+            <div class="mb-3">
+                @foreach (var item in _files)
+                {
+                    <div class="file-row">
+                        <span class="file-thumb">
+                            @if (item.ThumbnailUrl is not null)
+                            {
+                                <img src="@item.ThumbnailUrl" alt="@item.File.Name preview" />
+                            }
+                            else
+                            {
+                                <i class="bi @(item.IsVideo ? "bi-film" : "bi-image")"></i>
+                            }
+                        </span>
+                        <div class="file-meta">
+                            <div class="file-name" title="@item.File.Name">@item.File.Name</div>
+                            <div class="file-size">@FormatSize(item.File.Size) &middot; @item.KindLabel</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                aria-label="Remove @item.File.Name" @onclick="() => RemoveFile(item)" disabled="@_uploading">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button class="btn btn-primary" @onclick="UploadAsync" disabled="@(_files.Count == 0 || _uploading)">
+                @if (_uploading) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Upload @(_files.Count > 0 ? $"{_files.Count} file(s)" : "")
+            </button>
+            @if (_files.Count > 0 && !_uploading)
+            {
+                <button class="btn btn-outline-secondary" @onclick="ClearFiles">Clear</button>
+                <span class="text-muted small ms-auto">Total: @FormatSize(_files.Sum(f => f.File.Size))</span>
+            }
+        </div>
     </div>
 </div>
 
@@ -52,15 +101,34 @@
 </div>
 
 @code {
-    private List<IBrowserFile> _files = [];
+    private const long MaxThumbnailSourceBytes = 30L * 1024 * 1024; // skip preview for very large files
+    private readonly List<PendingFile> _files = [];
     private bool _uploading;
     private bool _addingWebsite;
+    private bool _isDragOver;
     private string? _message;
     private bool _isError;
     private readonly WebsiteFormModel _website = new();
 
-    private void HandleFiles(InputFileChangeEventArgs e)
-        => _files = e.GetMultipleFiles(100).ToList();
+    private async Task HandleFiles(InputFileChangeEventArgs e)
+    {
+        _message = null;
+        _isDragOver = false;
+        foreach (var file in e.GetMultipleFiles(100))
+        {
+            // De-duplicate by name + size so re-picking the same file does not add it twice.
+            if (_files.Any(f => f.File.Name == file.Name && f.File.Size == file.Size))
+                continue;
+
+            var pending = new PendingFile(file);
+            await pending.TryLoadThumbnailAsync(MaxThumbnailSourceBytes);
+            _files.Add(pending);
+        }
+    }
+
+    private void RemoveFile(PendingFile item) => _files.Remove(item);
+
+    private void ClearFiles() => _files.Clear();
 
     private async Task UploadAsync()
     {
@@ -68,11 +136,11 @@
         _message = null;
         try
         {
-            var formFiles = _files.Select(f => (IFormFile)new BrowserIFormFile(f)).ToList();
+            var formFiles = _files.Select(f => (IFormFile)new BrowserIFormFile(f.File)).ToList();
             var results = await AssetService.UploadAssetsAsync(formFiles);
             _message = $"Successfully uploaded {results.Count} asset(s).";
             _isError = false;
-            _files = [];
+            _files.Clear();
         }
         catch (Exception ex)
         {
@@ -99,6 +167,44 @@
             _isError = true;
         }
         finally { _addingWebsite = false; }
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double size = bytes;
+        var unit = 0;
+        while (size >= 1024 && unit < units.Length - 1) { size /= 1024; unit++; }
+        return unit == 0 ? $"{bytes} {units[unit]}" : $"{size:0.#} {units[unit]}";
+    }
+
+    private sealed class PendingFile(IBrowserFile file)
+    {
+        public IBrowserFile File { get; } = file;
+        public string? ThumbnailUrl { get; private set; }
+        public bool IsVideo => File.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
+        public bool IsImage => File.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+        public string KindLabel => IsVideo ? "Video" : IsImage ? "Image" : "File";
+
+        public async Task TryLoadThumbnailAsync(long maxSourceBytes)
+        {
+            if (!IsImage || File.Size > maxSourceBytes)
+                return;
+            try
+            {
+                // Resize in the browser before reading, so previews stay cheap.
+                var resized = await File.RequestImageFileAsync("image/png", 96, 96);
+                await using var stream = resized.OpenReadStream(4 * 1024 * 1024);
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                ThumbnailUrl = $"data:image/png;base64,{Convert.ToBase64String(ms.ToArray())}";
+            }
+            catch
+            {
+                // Non-rasterisable formats (e.g. some SVGs) just fall back to the icon.
+                ThumbnailUrl = null;
+            }
+        }
     }
 
     private sealed class WebsiteFormModel
