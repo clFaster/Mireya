@@ -53,6 +53,8 @@ public class ScreenSynchronizationService(
         }
 
         var campaigns = BuildCampaignList(display);
+        if (campaigns.Count == 0)
+            campaigns = await BuildDefaultCampaignListAsync();
         var config = BuildScreenConfiguration(display, campaigns);
 
         logger.LogInformation(
@@ -81,29 +83,51 @@ public class ScreenSynchronizationService(
             .Where(c => c.IsActiveAt(utcNow))
             .OrderByDescending(c => c.Priority)
             .ThenBy(c => c.Name)
-            .Select(c => new CampaignDetail(
-                c.Id,
-                c.Name,
-                c.Description,
-                c.CampaignAssets.OrderBy(a => a.Position)
-                    .Select(a => new CampaignAssetDetail(
-                        a.Id,
-                        a.AssetId,
-                        a.Asset.Name,
-                        a.Asset.Type,
-                        a.Asset.Source,
-                        a.Position,
-                        a.DurationSeconds,
-                        AssetDurationResolver.Resolve(a.Asset, a.DurationSeconds),
-                        a.Asset.IsMuted
-                    ))
-                    .ToList(),
-                [],
-                c.CreatedAt,
-                c.UpdatedAt
-            ))
+            .Select(MapCampaign)
             .ToList();
     }
+
+    /// <summary>
+    ///     Builds the playlist from the global default (fallback) campaign, when one is configured and
+    ///     active. Used for screens that have no other active campaign assigned.
+    /// </summary>
+    private async Task<List<CampaignDetail>> BuildDefaultCampaignListAsync()
+    {
+        var utcNow = DateTime.UtcNow;
+        var defaultCampaign = await db.Campaigns
+            .Include(c => c.CampaignAssets)
+                .ThenInclude(ca => ca.Asset)
+            .Where(c => c.IsDefault)
+            .FirstOrDefaultAsync();
+
+        if (defaultCampaign == null || !defaultCampaign.IsActiveAt(utcNow))
+            return [];
+
+        return [MapCampaign(defaultCampaign)];
+    }
+
+    private static CampaignDetail MapCampaign(Database.Models.Campaign c) =>
+        new(
+            c.Id,
+            c.Name,
+            c.Description,
+            c.CampaignAssets.OrderBy(a => a.Position)
+                .Select(a => new CampaignAssetDetail(
+                    a.Id,
+                    a.AssetId,
+                    a.Asset.Name,
+                    a.Asset.Type,
+                    a.Asset.Source,
+                    a.Position,
+                    a.DurationSeconds,
+                    AssetDurationResolver.Resolve(a.Asset, a.DurationSeconds),
+                    a.Asset.IsMuted
+                ))
+                .ToList(),
+            [],
+            c.CreatedAt,
+            c.UpdatedAt
+        );
 
     private static ScreenConfiguration BuildScreenConfiguration(Display display, List<CampaignDetail> campaigns) =>
         new()

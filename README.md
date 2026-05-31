@@ -22,7 +22,10 @@ scheduled content.
   with exponential backoff and shows a colour-coded connection indicator on screen.
 - **Campaigns** — Ordered lists of assets (images, videos, URLs). Images/web pages use a configured display duration;
   videos use their own runtime. Assets loop, and campaigns can be enabled/disabled and scheduled with optional
-  start/end dates.
+  start/end dates. A campaign can be marked as the **default (fallback) campaign**, which is shown automatically on
+  any screen that has no other active campaign assigned.
+- **Assets** — Images, videos and websites. Videos get an automatically generated poster-frame thumbnail, and assets
+  can be organised with **tags** and filtered via search in the admin.
 
 ---
 
