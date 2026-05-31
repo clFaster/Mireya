@@ -9,12 +9,14 @@ using Mireya.Api.Endpoints;
 using Mireya.Api.Extensions;
 using Mireya.Api.Hubs;
 using Mireya.Api.Middleware;
+using Mireya.Api.Services;
 using Mireya.Api.Startup;
 using Mireya.Application.Constants;
 using Mireya.Application.Hubs;
 using Mireya.Application.Services;
 using Mireya.Application.Services.Asset;
 using Mireya.Application.Services.AssetSync;
+using Mireya.Application.Services.Audit;
 using Mireya.Application.Services.Campaign;
 using Mireya.Application.Services.ScreenManagement;
 using Mireya.Database;
@@ -105,6 +107,9 @@ builder.Services.AddAuthorization(options =>
 
 // ─── Application services ─────────────────────────────────────────────────────
 builder.Services.AddSignalR(options => { options.EnableDetailedErrors = builder.Environment.IsDevelopment(); });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IInitializerService, InitializerService>();
 builder.Services.AddScoped<Mireya.Api.Services.ToastService>();
 builder.Services.AddScoped<IAssetService, AssetService>();

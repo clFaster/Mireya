@@ -1,3 +1,4 @@
+using Mireya.Application.Services.Audit;
 using Mireya.Application.Services.Campaign;
 using Mireya.Database.Models;
 using NSubstitute;
@@ -58,7 +59,7 @@ public class CampaignSchedulingTests
         db.Context.Assets.Add(asset);
         await db.Context.SaveChangesAsync();
 
-        var service = new CampaignService(db.Context, sync);
+        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.CreateCampaignAsync(
             new CreateCampaignRequest(
@@ -80,7 +81,7 @@ public class CampaignSchedulingTests
         db.Context.Assets.Add(asset);
         await db.Context.SaveChangesAsync();
 
-        var service = new CampaignService(db.Context, sync);
+        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
         var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
             "Scheduled", null,
             [new CampaignAssetDto(asset.Id, 1, 5)],
@@ -104,7 +105,7 @@ public class CampaignSchedulingTests
         db.Context.Assets.Add(asset);
         await db.Context.SaveChangesAsync();
 
-        var service = new CampaignService(db.Context, sync);
+        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
         var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
             "Prioritised", null,
             [new CampaignAssetDto(asset.Id, 1, 5)],

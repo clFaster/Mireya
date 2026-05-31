@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Mireya.Application.Constants;
+using Mireya.Application.Services.Audit;
 using Mireya.Database;
 using Mireya.Database.Models;
 
@@ -15,7 +16,7 @@ public interface ICampaignService
     Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId);
 }
 
-public class CampaignService(MireyaDbContext db, IScreenSynchronizationService syncService)
+public class CampaignService(MireyaDbContext db, IScreenSynchronizationService syncService, IAuditService audit)
     : ICampaignService
 {
 
@@ -146,6 +147,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
 
+        await audit.LogAsync("Created", "Campaign", campaign.Id.ToString(), $"Created campaign '{campaign.Name}'");
+
         // A new default campaign affects every screen that currently has nothing active.
         if (request.IsDefault)
             await SyncAllDisplaysAsync();
@@ -211,6 +214,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
 
+        await audit.LogAsync("Updated", "Campaign", campaign.Id.ToString(), $"Updated campaign '{campaign.Name}'");
+
         // Changing the default designation (or editing the default campaign's content)
         // can affect any screen that relies on the fallback, so re-sync everything.
         if (defaultChanged || campaign.IsDefault)
@@ -235,6 +240,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
         db.Campaigns.Remove(campaign);
         await db.SaveChangesAsync();
+
+        await audit.LogAsync("Deleted", "Campaign", id.ToString(), $"Deleted campaign '{campaign.Name}'");
 
         // Notify affected screens so they stop showing deleted campaign content
         if (affectedDisplayIds.Count > 0)

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Mireya.Application.Constants;
+using Mireya.Application.Services.Audit;
 using Mireya.Application.Services.Campaign;
 using Mireya.Database;
 using Mireya.Database.Models;
@@ -80,7 +81,8 @@ public class ScreenManagementService(
     MireyaDbContext db,
     UserManager<User> userManager,
     ILogger<ScreenManagementService> logger,
-    IScreenSynchronizationService syncService
+    IScreenSynchronizationService syncService,
+    IAuditService audit
 ) : IScreenManagementService
 {
     public async Task<RegisterScreenResponse> RegisterScreenAsync(RegisterScreenRequest request)
@@ -291,6 +293,8 @@ public class ScreenManagementService(
         // Notify screen of approval
         await syncService.SyncScreenAsync(display.Id);
 
+        await audit.LogAsync("Approved", "Screen", display.Id.ToString(), $"Approved screen '{display.Name}'");
+
         return new ApproveScreenResponse { Screen = MapToDetailsResponse(display) };
     }
 
@@ -307,6 +311,8 @@ public class ScreenManagementService(
         await db.SaveChangesAsync();
 
         logger.LogInformation("Screen {DisplayId} rejected", display.Id);
+
+        await audit.LogAsync("Rejected", "Screen", display.Id.ToString(), $"Rejected screen '{display.Name}'");
 
         return MapToDetailsResponse(display);
     }
@@ -424,6 +430,9 @@ public class ScreenManagementService(
 
         await db.SaveChangesAsync();
         logger.LogInformation("Screen {DisplayId} updated with {CampaignCount} campaigns", display.Id, campaignIds.Count);
+
+        await audit.LogAsync("Updated", "Screen", display.Id.ToString(),
+            $"Updated screen '{display.Name}' ({campaignIds.Count} campaign(s) assigned)");
 
         await syncService.SyncScreenAsync(display.Id);
     }
