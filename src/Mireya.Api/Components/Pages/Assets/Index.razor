@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject IAssetService AssetService
 @inject NavigationManager Navigation
+@inject ToastService Toast
 @using Mireya.Database.Models
 
 <PageTitle>Assets - Mireya Admin</PageTitle>
@@ -10,14 +11,6 @@
     <h1>Assets</h1>
     <a href="/assets/upload" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Upload</a>
 </div>
-
-@if (!string.IsNullOrEmpty(_message))
-{
-    <div class="alert @(_isError ? "alert-danger" : "alert-success") alert-dismissible">
-        @_message
-        <button type="button" class="btn-close" @onclick="() => _message = null"></button>
-    </div>
-}
 
 <div class="mb-3 d-flex gap-2">
     @foreach (var filter in new[] { (null as string, "All"), ("Image", "Images"), ("Video", "Videos"), ("Website", "Websites") })
@@ -135,8 +128,6 @@ else
     private const int PageSize = 12;
     private string? _typeFilter;
     private bool _loading = true;
-    private string? _message;
-    private bool _isError;
     private Mireya.Database.Models.Asset? _editAsset;
     private string _editName = "", _editDescription = "";
     private int? _editDuration;
@@ -174,14 +165,12 @@ else
         try
         {
             await AssetService.DeleteAssetAsync(id);
-            _message = "Asset deleted.";
-            _isError = false;
+            Toast.ShowSuccess($"Asset \"{asset?.Name}\" deleted.");
             await LoadAsync();
         }
         catch (Exception ex)
         {
-            _message = ex.Message;
-            _isError = true;
+            Toast.ShowError(ex.Message);
         }
     }
 
@@ -207,15 +196,13 @@ else
                 DurationSeconds = _editDuration,
             };
             await AssetService.UpdateAssetMetadataAsync(_editAsset.Id, req);
-            _message = "Asset updated.";
-            _isError = false;
+            Toast.ShowSuccess("Asset updated.");
             _editAsset = null;
             await LoadAsync();
         }
         catch (Exception ex)
         {
-            _message = ex.Message;
-            _isError = true;
+            Toast.ShowError(ex.Message);
         }
     }
 

@@ -1,0 +1,57 @@
+@using Mireya.Api.Services
+@implements IDisposable
+@inject ToastService ToastService
+
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1100">
+    @foreach (var toast in ToastService.Messages)
+    {
+        <div class="toast show align-items-center text-bg-@CssFor(toast.Level) border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi @IconFor(toast.Level) me-2" aria-hidden="true"></i>@toast.Text
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        aria-label="Dismiss" @onclick="() => ToastService.Remove(toast.Id)"></button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly HashSet<Guid> _scheduled = [];
+
+    protected override void OnInitialized() => ToastService.OnChange += OnToastsChanged;
+
+    private async void OnToastsChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+        foreach (var toast in ToastService.Messages.ToList())
+        {
+            if (_scheduled.Add(toast.Id))
+                _ = AutoDismissAsync(toast.Id);
+        }
+    }
+
+    private async Task AutoDismissAsync(Guid id)
+    {
+        await Task.Delay(4000);
+        _scheduled.Remove(id);
+        ToastService.Remove(id);
+    }
+
+    private static string CssFor(ToastLevel level) => level switch
+    {
+        ToastLevel.Success => "success",
+        ToastLevel.Error => "danger",
+        _ => "secondary",
+    };
+
+    private static string IconFor(ToastLevel level) => level switch
+    {
+        ToastLevel.Success => "bi-check-circle",
+        ToastLevel.Error => "bi-exclamation-triangle",
+        _ => "bi-info-circle",
+    };
+
+    public void Dispose() => ToastService.OnChange -= OnToastsChanged;
+}
