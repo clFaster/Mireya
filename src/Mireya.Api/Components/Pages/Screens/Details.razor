@@ -32,6 +32,10 @@ else
                         disabled="@(!_screen.IsActive || _sendingCommand)" title="Reload the current content">
                     <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Reload
                 </button>
+                <button class="btn btn-outline-primary" @onclick="IdentifyAsync"
+                        disabled="@(!_screen.IsActive || _sendingCommand)" title="Flash this screen to locate it">
+                    <i class="bi bi-lightbulb" aria-hidden="true"></i> Identify
+                </button>
             }
         </div>
     </div>
@@ -105,6 +109,8 @@ else
     private Task RestartPlaybackAsync() => SendCommandAsync(ScreenCommands.RestartPlayback, "Restart command sent.");
 
     private Task ReloadContentAsync() => SendCommandAsync(ScreenCommands.ReloadContent, "Reload command sent.");
+
+    private Task IdentifyAsync() => SendCommandAsync(ScreenCommands.Identify, "Identify command sent; the screen will flash.");
 
     private async Task SendCommandAsync(string command, string successMessage)
     {
