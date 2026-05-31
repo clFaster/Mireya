@@ -72,8 +72,9 @@ else
                         <button class="btn btn-sm btn-outline-secondary flex-grow-1"
                                 @onclick="() => StartEdit(asset)">Edit</button>
                         <button class="btn btn-sm btn-outline-danger"
+                                aria-label="Delete @asset.Name"
                                 @onclick="() => DeleteAsync(asset.Id)">
-                            <i class="bi bi-trash"></i>
+                            <i class="bi bi-trash" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>

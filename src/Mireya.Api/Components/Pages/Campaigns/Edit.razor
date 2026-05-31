@@ -82,8 +82,8 @@
                             <input type="number" class="form-control form-control-sm" style="width:90px"
                                    placeholder="secs" @bind="asset.DurationSeconds" min="1" />
                         }
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveAsset(asset)">
-                            <i class="bi bi-x"></i>
+                        <button class="btn btn-sm btn-outline-danger" aria-label="Remove @asset.Name" @onclick="() => RemoveAsset(asset)">
+                            <i class="bi bi-x" aria-hidden="true"></i>
                         </button>
                     </div>
                 }
