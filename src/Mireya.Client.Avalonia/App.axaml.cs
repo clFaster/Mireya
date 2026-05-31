@@ -21,6 +21,8 @@ namespace Mireya.Client.Avalonia;
 
 public class App : Application
 {
+    private const string DefaultBackendUrl = "http://localhost:5000";
+
     public override void Initialize()
     {
         // Configure Serilog
@@ -145,10 +147,14 @@ public class App : Application
             builder.AddSerilog(Log.Logger, true);
         });
 
-        // Configure API client options (will be set by user via settings)
+        // Configure API client options. The default backend URL can be preconfigured for
+        // unattended/kiosk deployments via the MIREYA_BACKEND_URL environment variable;
+        // it is otherwise overridden by the URL the user enters on first start.
         services.Configure<MireyaApiClientOptions>(options =>
         {
-            options.BaseUrl = "http://localhost:5000"; // Default, will be overridden by settings
+            options.BaseUrl =
+                Environment.GetEnvironmentVariable("MIREYA_BACKEND_URL")
+                ?? DefaultBackendUrl;
         });
 
         // Configure local SQLite database
