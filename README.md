@@ -35,6 +35,11 @@ scheduled content.
   automatically generated poster-frame thumbnail, and assets
   can be organised with **tags** and filtered via search in the admin. Images support a per-asset **fit mode**
   (contain, cover or fill) controlling how they scale to the screen, and transition with a smooth fade on the client.
+- **Screens & Zones** — Each screen can be assigned campaigns directly, and can also belong to a **zone** (a named
+  group of screens). A campaign assigned to a zone automatically plays on every member screen — including screens
+  added to the zone later — so fleets can be managed together instead of one screen at a time. A screen's effective
+  playlist is the union of its directly assigned campaigns and its zone's campaigns. Manage zones under **Zones**, and
+  set a screen's zone from its edit page.
 - **Audit log** — Administrative actions (creating, updating, deleting campaigns and assets; approving, rejecting and
   updating screens; sending remote commands) are recorded with the acting user and a timestamp, viewable in the admin
   under **Audit Log**.
