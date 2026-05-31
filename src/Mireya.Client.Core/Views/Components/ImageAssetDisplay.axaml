@@ -8,8 +8,15 @@
              x:DataType="vm:ContentDisplayViewModel">
 
     <Image Source="{Binding CurrentImage}"
-           Stretch="Uniform"
+           Stretch="{Binding CurrentImageStretch}"
+           Opacity="{Binding CurrentImageOpacity}"
            HorizontalAlignment="Center"
-           VerticalAlignment="Center" />
+           VerticalAlignment="Center">
+        <Image.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.4" />
+            </Transitions>
+        </Image.Transitions>
+    </Image>
 
 </UserControl>

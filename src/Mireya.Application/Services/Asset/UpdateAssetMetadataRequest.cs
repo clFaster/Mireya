@@ -1,3 +1,5 @@
+using Mireya.Database.Models;
+
 namespace Mireya.Application.Services.Asset;
 
 public class UpdateAssetMetadataRequest
@@ -7,4 +9,5 @@ public class UpdateAssetMetadataRequest
     public int? DurationSeconds { get; set; }
     public bool? IsMuted { get; set; }
     public string? Tags { get; set; }
+    public ImageFit? ImageFit { get; set; }
 }

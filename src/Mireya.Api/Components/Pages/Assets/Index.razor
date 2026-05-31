@@ -143,6 +143,18 @@ else
                             <input type="number" class="form-control" @bind="_editDuration" min="1" />
                         </div>
                     }
+                    @if (_editAsset.Type == AssetType.Image)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Image fit</label>
+                            <select class="form-select" @bind="_editImageFit">
+                                <option value="@ImageFit.Contain">Contain (fit whole image, may letterbox)</option>
+                                <option value="@ImageFit.Cover">Cover (fill screen, may crop edges)</option>
+                                <option value="@ImageFit.Fill">Fill (stretch to screen, ignores aspect ratio)</option>
+                            </select>
+                            <div class="form-text">Controls how this image is scaled on the screen.</div>
+                        </div>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
@@ -166,6 +178,7 @@ else
     private Mireya.Database.Models.Asset? _editAsset;
     private string _editName = "", _editDescription = "", _editTags = "";
     private int? _editDuration;
+    private ImageFit _editImageFit = ImageFit.Contain;
     private ConfirmDialog _confirmDialog = default!;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
@@ -231,6 +244,7 @@ else
         _editDescription = asset.Description ?? "";
         _editTags = asset.Tags ?? "";
         _editDuration = asset.DurationSeconds;
+        _editImageFit = asset.ImageFit;
     }
 
     private void CancelEdit() => _editAsset = null;
@@ -246,6 +260,7 @@ else
                 Description = _editDescription,
                 Tags = _editTags,
                 DurationSeconds = _editDuration,
+                ImageFit = _editAsset.Type == AssetType.Image ? _editImageFit : null,
             };
             await AssetService.UpdateAssetMetadataAsync(_editAsset.Id, req);
             Toast.ShowSuccess("Asset updated.");
