@@ -39,6 +39,14 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddCarter();
 builder.Services.AddEndpointsApiExplorer();
 
+// ─── Consistent error responses (RFC 7807 ProblemDetails) ─────────────────────
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// ─── Readiness health check (database connectivity) ───────────────────────────
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
+
 // ─── NSwag OpenAPI ───────────────────────────────────────────────────────────
 builder.Services.AddOpenApiDocument(generatorSettings =>
 {
@@ -117,6 +125,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();
 
