@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inject IScreenManagementService ScreenManagementService
 @inject NavigationManager Navigation
+@inject ToastService Toast
 @using Mireya.Database.Models
 
 <PageTitle>Edit Screen - Mireya Admin</PageTitle>
@@ -10,11 +11,6 @@
 @if (_screen == null) { <LoadingSpinner /> }
 else
 {
-    @if (!string.IsNullOrEmpty(_message))
-    {
-        <div class="alert @(_isError ? "alert-danger" : "alert-success")">@_message</div>
-    }
-
     <div class="card" style="max-width:600px">
         <div class="card-body">
             <div class="mb-3">
@@ -30,20 +26,47 @@ else
                 <textarea class="form-control" @bind="_description"></textarea>
             </div>
 
-            <h6 class="mt-4">Campaign Assignments</h6>
-            @foreach (var campaign in _screen.AllCampaigns)
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <h6 class="mb-0">Campaign Assignments</h6>
+                <small class="text-muted">@_selectedCampaignIds.Count of @_screen.AllCampaigns.Count selected</small>
+            </div>
+            @if (_screen.AllCampaigns.Count > 8)
             {
-                var assigned = _selectedCampaignIds.Contains(campaign.Id);
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="c_@campaign.Id"
-                           checked="@assigned"
-                           @onchange="e => ToggleCampaign(campaign.Id, (bool)e.Value!)" />
-                    <label class="form-check-label" for="c_@campaign.Id">@campaign.Name</label>
-                </div>
+                <input class="form-control form-control-sm my-2" placeholder="Search campaigns..."
+                       @bind="_campaignSearch" @bind:event="oninput" aria-label="Search campaigns" />
             }
+            <div class="mt-2" style="max-height:320px;overflow-y:auto">
+                @{
+                    var visibleCampaigns = string.IsNullOrWhiteSpace(_campaignSearch)
+                        ? _screen.AllCampaigns
+                        : _screen.AllCampaigns
+                            .Where(c => c.Name.Contains(_campaignSearch, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                }
+                @if (visibleCampaigns.Count == 0)
+                {
+                    <p class="text-muted small mb-0">No campaigns match "@_campaignSearch".</p>
+                }
+                @foreach (var campaign in visibleCampaigns)
+                {
+                    var assigned = _selectedCampaignIds.Contains(campaign.Id);
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="c_@campaign.Id"
+                               checked="@assigned"
+                               @onchange="e => ToggleCampaign(campaign.Id, (bool)e.Value!)" />
+                        <label class="form-check-label" for="c_@campaign.Id">@campaign.Name</label>
+                    </div>
+                }
+            </div>
 
             <div class="mt-4 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="SaveAsync">Save</button>
+                <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_saving">
+                    @if (_saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    }
+                    Save
+                </button>
                 <a href="/screens/@Id" class="btn btn-secondary">Cancel</a>
             </div>
         </div>
@@ -57,8 +80,8 @@ else
     private string _name = string.Empty;
     private string _location = string.Empty;
     private string? _description;
-    private string? _message;
-    private bool _isError;
+    private string _campaignSearch = string.Empty;
+    private bool _saving;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,6 +101,7 @@ else
     private async Task SaveAsync()
     {
         if (_screen == null) return;
+        _saving = true;
         try
         {
             var request = new UpdateScreenRequest
@@ -87,8 +111,9 @@ else
                 Location = _location,
             };
             await ScreenManagementService.UpdateScreenWithCampaignsAsync(Id, request, _selectedCampaignIds.ToList());
+            Toast.ShowSuccess("Screen saved.");
             Navigation.NavigateTo($"/screens/{Id}");
         }
-        catch (Exception ex) { _message = ex.Message; _isError = true; }
+        catch (Exception ex) { Toast.ShowError(ex.Message); _saving = false; }
     }
 }
