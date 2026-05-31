@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Models;
 using Mireya.ApiClient.Services;
 
@@ -17,9 +18,12 @@ public class AvaloniaCredentialStorage : ICredentialStorage
     private const string CredentialsFileName = "credentials.dat";
     private const string AppFolderName = "Mireya";
     private readonly string _credentialsFilePath;
+    private readonly ILogger<AvaloniaCredentialStorage> _logger;
 
-    public AvaloniaCredentialStorage()
+    public AvaloniaCredentialStorage(ILogger<AvaloniaCredentialStorage> logger)
     {
+        _logger = logger;
+
         // Get platform-specific app data folder
         var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var appFolder = Path.Combine(appDataFolder, AppFolderName);
@@ -40,7 +44,7 @@ public class AvaloniaCredentialStorage : ICredentialStorage
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CredentialStorage] Error saving credentials: {ex.Message}");
+            _logger.LogError(ex, "Error saving credentials");
             throw new InvalidOperationException("Failed to save credentials securely", ex);
         }
     }
@@ -58,7 +62,7 @@ public class AvaloniaCredentialStorage : ICredentialStorage
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CredentialStorage] Error reading credentials: {ex.Message}");
+            _logger.LogError(ex, "Error reading credentials");
             return null;
         }
     }
@@ -72,7 +76,7 @@ public class AvaloniaCredentialStorage : ICredentialStorage
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CredentialStorage] Error deleting credentials: {ex.Message}");
+            _logger.LogError(ex, "Error deleting credentials");
             throw new InvalidOperationException("Failed to delete credentials", ex);
         }
     }

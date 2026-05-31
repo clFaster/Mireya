@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 using Mireya.ApiClient.Services;
 
@@ -15,9 +16,12 @@ public class SettingsService : ISettingsService
     private const string SettingsFileName = "settings.json";
     private const string AppFolderName = "Mireya";
     private readonly string _settingsFilePath;
+    private readonly ILogger<SettingsService> _logger;
 
-    public SettingsService()
+    public SettingsService(ILogger<SettingsService> logger)
     {
+        _logger = logger;
+
         // Get platform-specific app data folder
         var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var appFolder = Path.Combine(appDataFolder, AppFolderName);
@@ -41,9 +45,7 @@ public class SettingsService : ISettingsService
         }
         catch (Exception ex)
         {
-            // PoC: In production, use proper logging framework (e.g., Serilog, NLog)
-            // For now, write to console for debugging purposes
-            Console.WriteLine($"[SettingsService] Error reading settings: {ex.Message}");
+            _logger.LogError(ex, "Error reading settings from {Path}", _settingsFilePath);
             return null;
         }
     }
@@ -62,9 +64,7 @@ public class SettingsService : ISettingsService
         }
         catch (Exception ex)
         {
-            // PoC: In production, use proper logging framework (e.g., Serilog, NLog)
-            // For now, write to console and rethrow to notify UI
-            Console.WriteLine($"[SettingsService] Error saving settings: {ex.Message}");
+            _logger.LogError(ex, "Error saving settings to {Path}", _settingsFilePath);
             throw;
         }
     }
