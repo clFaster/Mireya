@@ -36,7 +36,7 @@
     </label>
 </div>
 
-@if (_loading) { <p>Loading...</p> }
+@if (_loading) { <LoadingSpinner Message="Loading screens..." /> }
 else if (_screens.Count == 0) { <p class="text-muted">No screens found.</p> }
 else
 {
