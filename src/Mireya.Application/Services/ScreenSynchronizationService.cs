@@ -56,7 +56,7 @@ public class ScreenSynchronizationService(
         var config = BuildScreenConfiguration(display, campaigns);
 
         logger.LogInformation(
-            "SYNC SCREEN: {ScreenName} - CampaignAssignments: {Count}, Config campaigns: {ConfigCampaigns}, UserId: {UserId}",
+            "SYNC SCREEN: {ScreenName} - CampaignAssignments: {Count}, Active campaigns: {ConfigCampaigns}, UserId: {UserId}",
             display.Name,
             display.CampaignAssignments.Count,
             campaigns.Count,
@@ -73,9 +73,12 @@ public class ScreenSynchronizationService(
         return display?.Id;
     }
 
-    private static List<CampaignDetail> BuildCampaignList(Display display) =>
-        display.CampaignAssignments
+    private static List<CampaignDetail> BuildCampaignList(Display display)
+    {
+        var utcNow = DateTime.UtcNow;
+        return display.CampaignAssignments
             .Select(ca => ca.Campaign)
+            .Where(c => c.IsActiveAt(utcNow))
             .Select(c => new CampaignDetail(
                 c.Id,
                 c.Name,
@@ -98,6 +101,7 @@ public class ScreenSynchronizationService(
                 c.UpdatedAt
             ))
             .ToList();
+    }
 
     private static ScreenConfiguration BuildScreenConfiguration(Display display, List<CampaignDetail> campaigns) =>
         new()

@@ -369,11 +369,13 @@ public class ScreenManagementService(
             AssignedCampaigns = display.CampaignAssignments
                 .Select(ca => ca.Campaign)
                 .Select(c => new CampaignSummary(c.Id, c.Name, c.Description,
-                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt))
+                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt,
+                    c.IsEnabled, c.StartDateUtc, c.EndDateUtc, c.IsActiveAt(DateTime.UtcNow)))
                 .ToList(),
             AllCampaigns = allCampaigns
                 .Select(c => new CampaignSummary(c.Id, c.Name, c.Description,
-                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt))
+                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt,
+                    c.IsEnabled, c.StartDateUtc, c.EndDateUtc, c.IsActiveAt(DateTime.UtcNow)))
                 .ToList(),
         };
     }

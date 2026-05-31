@@ -30,6 +30,30 @@
         </div>
 
         <div class="card mb-3">
+            <div class="card-header">Scheduling</div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="enabledSwitch" @bind="_isEnabled" />
+                    <label class="form-check-label" for="enabledSwitch">
+                        Enabled (uncheck to hide this campaign from all screens)
+                    </label>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 mb-3">
+                        <label class="form-label">Start (UTC)</label>
+                        <input type="datetime-local" class="form-control" @bind="_startDate" />
+                        <div class="form-text">Leave empty to start immediately.</div>
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <label class="form-label">End (UTC)</label>
+                        <input type="datetime-local" class="form-control" @bind="_endDate" />
+                        <div class="form-text">Leave empty to run indefinitely.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
             <div class="card-header">Assets in Campaign</div>
             <div class="card-body">
                 @if (Id.HasValue)
@@ -100,6 +124,9 @@
     [Parameter] public Guid? Id { get; set; }
 
     private string _name = "", _description = "";
+    private bool _isEnabled = true;
+    private DateTime? _startDate;
+    private DateTime? _endDate;
     private List<SelectedCampaignAsset> _selectedAssets = [];
     private List<Mireya.Database.Models.Asset> _availableAssets = [];
     private int _assignedScreenCount;
@@ -115,6 +142,9 @@
             var campaign = await CampaignService.GetCampaignAsync(Id.Value);
             _name = campaign.Name;
             _description = campaign.Description ?? "";
+            _isEnabled = campaign.IsEnabled;
+            _startDate = campaign.StartDateUtc;
+            _endDate = campaign.EndDateUtc;
             _selectedAssets = campaign.Assets.Select(a => new SelectedCampaignAsset
             {
                 AssetId = a.AssetId,
@@ -148,11 +178,13 @@
         try
         {
             var assets = _selectedAssets.Select((a, i) => new CampaignAssetDto(a.AssetId, i + 1, a.DurationSeconds)).ToList();
+            var startUtc = _startDate.HasValue ? DateTime.SpecifyKind(_startDate.Value, DateTimeKind.Utc) : (DateTime?)null;
+            var endUtc = _endDate.HasValue ? DateTime.SpecifyKind(_endDate.Value, DateTimeKind.Utc) : (DateTime?)null;
             if (Id.HasValue)
                 // DisplayIds = null: screen assignments are managed on the Screen edit page and must not be touched here.
-                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_name, _description, assets, null));
+                await CampaignService.UpdateCampaignAsync(Id.Value, new UpdateCampaignRequest(_name, _description, assets, null, _isEnabled, startUtc, endUtc));
             else
-                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_name, _description, assets, []));
+                await CampaignService.CreateCampaignAsync(new CreateCampaignRequest(_name, _description, assets, [], _isEnabled, startUtc, endUtc));
 
             Navigation.NavigateTo("/campaigns");
         }

@@ -41,7 +41,11 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
                 c.CampaignAssets.Count,
                 c.CampaignAssignments.Count,
                 c.CreatedAt,
-                c.UpdatedAt
+                c.UpdatedAt,
+                c.IsEnabled,
+                c.StartDateUtc,
+                c.EndDateUtc,
+                c.IsActiveAt(DateTime.UtcNow)
             ))
             .ToList();
     }
@@ -88,13 +92,17 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             assets,
             displays,
             campaign.CreatedAt,
-            campaign.UpdatedAt
+            campaign.UpdatedAt,
+            campaign.IsEnabled,
+            campaign.StartDateUtc,
+            campaign.EndDateUtc
         );
     }
 
     public async Task<CampaignDetail> CreateCampaignAsync(CreateCampaignRequest request)
     {
         ValidateCampaignRequest(request.Name, request.Assets);
+        ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
 
         await VerifyAssetsExistAsync(request.Assets.Select(a => a.AssetId).Distinct().ToList(), request.Assets.Count);
 
@@ -107,6 +115,9 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             Description = request.Description,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
+            IsEnabled = request.IsEnabled,
+            StartDateUtc = request.StartDateUtc,
+            EndDateUtc = request.EndDateUtc,
         };
 
         db.Campaigns.Add(campaign);
@@ -124,6 +135,7 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
     public async Task<CampaignDetail> UpdateCampaignAsync(Guid id, UpdateCampaignRequest request)
     {
         ValidateCampaignRequest(request.Name, request.Assets);
+        ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
 
         var campaign = await db
             .Campaigns.Include(c => c.CampaignAssets)
@@ -143,6 +155,9 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         campaign.Name = request.Name;
         campaign.Description = request.Description;
         campaign.UpdatedAt = DateTime.UtcNow;
+        campaign.IsEnabled = request.IsEnabled;
+        campaign.StartDateUtc = request.StartDateUtc;
+        campaign.EndDateUtc = request.EndDateUtc;
 
         db.CampaignAssets.RemoveRange(campaign.CampaignAssets);
         AddCampaignAssets(campaign.Id, request.Assets);
@@ -205,6 +220,12 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
         if (assets.Any(a => a.DurationSeconds.HasValue && a.DurationSeconds.Value <= 0))
             throw new ArgumentException("Duration must be positive if provided");
+    }
+
+    private static void ValidateSchedule(DateTime? startDateUtc, DateTime? endDateUtc)
+    {
+        if (startDateUtc.HasValue && endDateUtc.HasValue && endDateUtc.Value < startDateUtc.Value)
+            throw new ArgumentException("Campaign end date must not be earlier than its start date");
     }
 
     private async Task VerifyAssetsExistAsync(List<Guid> assetIds, int totalRequestedCount)
