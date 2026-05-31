@@ -54,6 +54,16 @@
     --r-xl: 28px;
     --r-pill: 999px;
 
+    /* Spacing scale (4px base) — use these instead of ad-hoc rem values */
+    --sp-1: .25rem;
+    --sp-2: .5rem;
+    --sp-3: .75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.5rem;
+    --sp-6: 2rem;
+    --sp-7: 2.5rem;
+    --sp-8: 3rem;
+
     /* Elevation */
     --shadow-xs: 0 1px 2px rgba(15, 22, 40, .06);
     --shadow-sm: 0 2px 6px -1px rgba(15, 22, 40, .10), 0 1px 2px rgba(15, 22, 40, .06);
@@ -131,7 +141,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: var(--sp-4);
     margin-bottom: 1.6rem;
     padding-bottom: 1.1rem;
     border-bottom: 1px solid var(--line);
@@ -547,7 +557,7 @@ nav.bg-dark .btn-outline-light:hover {
     justify-content: center;
     gap: .35rem;
     text-align: center;
-    padding: 2.4rem 1.5rem;
+    padding: 2.4rem var(--sp-5);
     border: 2px dashed var(--line-strong);
     border-radius: var(--r);
     background:

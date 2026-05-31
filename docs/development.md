@@ -141,6 +141,13 @@ styled with **Bootstrap 5**. Files are located in:
 - `src/Mireya.Api/Components/Pages/` - Razor (Blazor) pages and components
 - `src/Mireya.Api/wwwroot/` - Static assets (CSS/JS) served to the browser
 
+The "Control Room" theme in `wwwroot/app.css` layers a cohesive design system over
+Bootstrap. It exposes design tokens as CSS custom properties under `:root` — colours
+(`--ink-*`, `--brand*`, semantic `--ok/--warn/--bad/--info`), geometry (`--r-*`),
+a 4px-based spacing scale (`--sp-1`…`--sp-8`), elevation (`--shadow-*`), motion
+(`--ease*`, `--t*`) and fonts (`--font-display/body/mono`). Prefer these tokens over
+ad-hoc values when adding styles so spacing and colour stay consistent.
+
 ### Client Development
 
 #### Avalonia Client
