@@ -19,7 +19,8 @@ scheduled content.
 - **Client (Mireya.Client.Avalonia)** — Display apps that register to the backend, receive campaigns, cache assets,
   and loop playback. Minimal setup: only the backend URL is required on first start.
 - **Campaigns** — Ordered lists of assets (images, videos, URLs). Images/web pages use a configured display duration;
-  videos use their own runtime. Assets loop; scheduling rules are planned.
+  videos use their own runtime. Assets loop, and campaigns can be enabled/disabled and scheduled with optional
+  start/end dates.
 
 ---
 
@@ -46,7 +47,25 @@ scheduled content.
 **Requirements:**
 
 - .NET 10 SDK
-- sqlite or PostgreSQL
+- SQLite (default, zero-setup) or PostgreSQL
+
+**Run the backend locally:**
+
+```bash
+cd src/Mireya.Api
+dotnet run
+```
+
+The admin UI is then available at `https://localhost:5001/login`.
+
+**Or run the full stack with Docker (API + PostgreSQL):**
+
+```bash
+docker compose up --build   # API on http://localhost:8080
+```
+
+See the [technical documentation](https://mireya.moritzreis.dev/#/development) for database
+configuration, migrations, tests, and operational endpoints (`/api/info`, `/alive`, `/health`).
 
 ---
 
