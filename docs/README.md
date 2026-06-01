@@ -1,50 +1,37 @@
 # Mireya
 
-> **Development status:** ⚠️ This project is currently in active development and is not in a usable or production-ready state. The design, features, and user experience may change frequently.
+Mireya is an open digital-signage system for managing screens, content, schedules, and playback reporting from one web backend.
 
-## The Vision
+The project is in active development. The current implementation supports local development and evaluation, but still needs production hardening and packaging work before it should be treated as a finished product.
 
-Mireya aims to be a modern, flexible, and open digital signage solution that makes it easy to manage and display dynamic content across multiple screens from Android TVs to Raspberry Pi devices. The goal is to provide a seamless end-to-end experience for administrators and operators, combining simplicity in setup with powerful campaign management.
+![Mireya Admin Dashboard](img/mireya-admin-dashboard.png)
 
-## Core Concept
+## System overview
 
-Mireya consists of two main components:
+Mireya has two main parts:
 
-1. **Mireya Backend (Web Admin Panel)** – A centralized management platform where administrators can:
-   - Register and manage display screens
-   - Upload and organize assets (images, videos, or websites)
-   - Create campaigns that define what content should be shown and for how long
-   - Assign campaigns to specific screens or groups of screens
-   - Monitor screen status and playback activity
+- **Backend/admin app**: an ASP.NET Core application with a Blazor Server admin UI, REST APIs, Identity authentication, OpenAPI, SignalR screen messaging, EF Core persistence, and background services.
+- **Display clients**: Avalonia-based clients that run on signage devices. The shared client core is hosted by desktop and Android TV platform heads.
 
-   ![Mireya Admin Dashboard](../img/mireya-admin-dashboard.png)
+Administrators use the web UI to upload assets, create campaigns, approve screens, assign campaigns directly or through zones, review playback activity, and send remote commands to connected screens.
 
-2. **Mireya Client (Display App)** – A lightweight application designed to run on display devices such as Android TVs (and later Raspberry Pi or other embedded devices).
-   - On first startup, the client only needs the Mireya backend URL
-   - The screen automatically registers itself with the backend
-   - After admin approval, the screen begins receiving its assigned campaigns and displaying assets according to schedule
-   - Supports offline playback by caching assets locally
+Display clients connect to a Mireya backend, register themselves, wait for approval, sync assigned campaign content, cache media locally, and play the active playlist. Clients reconnect automatically and can keep playing downloaded media after content has been cached.
 
-### Campaign System
+## Current capabilities
 
-A Campaign defines what is shown on a screen and in what order:
+- **Assets**: images, videos, and website URLs; upload workflow; thumbnails/poster frames; tags; search/filtering; image fit modes.
+- **Campaigns**: ordered playlists, custom durations, priorities, enable/disable state, default fallback campaign, start/end dates, weekday recurrence, daily time windows, and recurrence time zones.
+- **Screens**: first-run registration, pairing code, approval/rejection, online status, last-seen tracking, shuffle playback, asset sync status, and remote commands.
+- **Zones**: named groups of screens. Campaigns assigned to a zone apply to all member screens in addition to directly assigned campaigns.
+- **Reports**: proof-of-play records every asset start reported by a screen and aggregates plays by screen and asset over a selected time window.
+- **Audit log**: mutating admin actions are recorded with actor, target, action, timestamp, and summary.
+- **Offline alerting**: optional webhook notifications for screens that stay offline beyond a configured threshold, plus recovery notifications when they come back online.
+- **Operations**: SQLite and PostgreSQL providers, automatic migrations on startup, Docker Compose, .NET Aspire AppHost, health endpoints, and generated API client support.
 
-- Each campaign consists of multiple assets (images, videos, or web URLs)
-- For static content (images, web pages), the admin sets a custom display duration
-- Videos use their own runtime duration automatically
-- Assets rotate in a loop, following the campaign configuration
-- Future versions may include scheduling rules (e.g., time of day, weekdays, etc.)
+## Documentation map
 
-## Planned Features & Roadmap
-
-- ✅ **Phase 1** – Core backend & client communication (screen registration, asset management, campaign assignment)
-- 📱 **Phase 2** – Extended client support (Raspberry Pi, Windows, web players)
-- 📊 **Phase 3** – Monitoring & analytics (screen uptime, playback stats, asset performance)
-- 🧩 **Phase 4** – Advanced scheduling (time-based rules, recurring campaigns)
-
-## Key Values
-
-- **Ease of Use** – One-step screen registration; automatic syncing with the backend
-- **Flexibility** – Support for diverse asset types and dynamic scheduling
-- **Scalability** – Manage from one to hundreds of displays
-- **Open & Extensible** – Designed for future community contributions and integrations
+- [Features](features.md): operator-facing guide to what the admin and client apps do.
+- [Development](development.md): local setup, project structure, build/test commands, migrations, and client development.
+- [Operations](operations.md): configuration, Docker, Aspire, health checks, alerting, and runtime notes.
+- [API](api.md): endpoint groups, auth roles, SignalR hub behavior, and generated client workflow.
+- [Packaging](packaging.md): current client platform status and packaging notes.

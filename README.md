@@ -1,131 +1,98 @@
 # Mireya
 
-> ⚠️ **Active development** — not production ready.
+> Active development: Mireya is usable for local evaluation and development, but is not production ready.
 
-Mireya is an open, flexible digital-signage platform: a web admin backend to manage screens, assets, and campaigns, and
-lightweight clients (Android TV, Avalonia desktop, Raspberry Pi planned) that auto-register, cache assets, and play
-scheduled content.
+Mireya is an open digital-signage platform with a web admin backend and lightweight display clients. It manages screens, uploads and organizes content assets, schedules campaigns, pushes configuration to approved screens, caches media locally, and records proof-of-play activity.
 
-[**Vision: detailed page**](https://mireya.moritzreis.dev/#/?id=mireya)
+[Hosted documentation](https://mireya.moritzreis.dev/#/) | [Development guide](https://mireya.moritzreis.dev/#/development) | [Packaging notes](https://mireya.moritzreis.dev/#/packaging)
 
-[**Technical documentation**](https://mireya.moritzreis.dev/#/development)
+## What is implemented
 
----
+- **Backend and admin UI**: ASP.NET Core, Carter minimal APIs, Blazor Server admin interface, ASP.NET Identity, OpenAPI via NSwag, and SignalR for live screen updates.
+- **Assets**: image, video, and website assets; drag-and-drop uploads; website asset creation; thumbnails and poster frames; tags; search/filtering; image fit modes.
+- **Campaigns**: ordered playlists, per-item durations, enable/disable state, priority, default fallback campaign, start/end dates, weekly recurrence, daily time windows, and time-zone-aware scheduling.
+- **Screens and zones**: first-run screen registration, admin approval/rejection, screen details, direct campaign assignment, zone membership, zone-level campaign assignment, online status, and shuffle playback.
+- **Display clients**: shared Avalonia client core with desktop and Android TV heads. Clients store backend configuration, register with the backend, reconnect automatically, sync campaign assets, cache media locally, and play scheduled content.
+- **Remote control**: restart, reload, identify, next, and previous commands are pushed to connected screens over SignalR.
+- **Monitoring and audit**: proof-of-play reporting, asset sync status, audit log, health endpoints, and optional webhook alerting for screens that remain offline beyond a configured threshold.
+- **Development and deployment support**: SQLite for local development, PostgreSQL for production-like runs, EF Core migrations per provider, Docker Compose, .NET Aspire AppHost, xUnit application tests, and generated API client code.
 
-## 🧠 Key Concepts
+## Quickstart
 
-- **Backend (Mireya.Api)** — Admin UI + ASP.NET Core Web API: register/manage screens, upload assets, create/assign
-  campaigns, monitor playback. The admin interface uses a modern, responsive "Control Room" design system (custom
-  Bootstrap theme with dedicated display, body and monospace typefaces) that adapts from desktop to mobile.
-- **Client (Mireya.Client.Core + Mireya.Client.Desktop)** — Display apps that register to the backend, receive campaigns, cache assets,
-  and loop playback. Minimal setup: only the backend URL is required on first start (it can also be preconfigured for
-  unattended/kiosk deployments via the `MIREYA_BACKEND_URL` environment variable). The client reconnects automatically
-  with exponential backoff and shows a colour-coded connection indicator on screen.
-- **Campaigns** — Ordered lists of assets (images, videos, URLs). Assets can be reordered by drag-and-drop (or
-  accessible up/down buttons) in the campaign editor, and bulk-uploaded several files at once.
-  Images/web pages use a configured display duration;
-  videos use their own runtime. Assets loop, and campaigns can be enabled/disabled and scheduled with optional
-  start/end dates plus **weekly recurrence** (specific weekdays and/or a daily time window evaluated in a chosen
-  time zone, with windows that may span midnight). A campaign can be marked as the **default (fallback) campaign**,
-  which is shown automatically on any screen that has no other active campaign assigned. A background scheduler
-  re-syncs screens automatically when a campaign's active window opens or closes, so time-based changes take effect
-  without an edit. Individual screens can opt into **shuffled playback** to randomise their asset order.
-- **Assets** — Images, videos and websites. Media can be added via a drag-and-drop upload area that previews each
-  selected file (with image thumbnails and sizes) and lets you remove items before uploading. Videos get an
-  automatically generated poster-frame thumbnail, and assets
-  can be organised with **tags** and filtered via search in the admin. Images support a per-asset **fit mode**
-  (contain, cover or fill) controlling how they scale to the screen, and transition with a smooth fade on the client.
-- **Screens & Zones** — Each screen can be assigned campaigns directly, and can also belong to a **zone** (a named
-  group of screens). A campaign assigned to a zone automatically plays on every member screen — including screens
-  added to the zone later — so fleets can be managed together instead of one screen at a time. A screen's effective
-  playlist is the union of its directly assigned campaigns and its zone's campaigns. Manage zones under **Zones**, and
-  set a screen's zone from its edit page.
-- **Audit log** — Administrative actions (creating, updating, deleting campaigns and assets; approving, rejecting and
-  updating screens; sending remote commands) are recorded with the acting user and a timestamp, viewable in the admin
-  under **Audit Log**.
-- **Remote screen actions** — From a screen's detail page an administrator can push live commands to a connected
-  screen over SignalR: **Restart** (replay the playlist from the start), **Previous**/**Next** (step through the
-  queue), **Reload** (re-render the current content) and **Identify** (briefly flash the screen and show its pairing
-  code so it can be located within a fleet).
-- **First-run pairing & approval** — On first launch a client registers itself and displays a large **pairing code**
-  (its screen identifier) with a "waiting for approval" message until an administrator approves it under **Screens**.
-  Once approved, content is pushed automatically — no client restart needed.
-- **Proof of play** — Every time a screen starts showing an asset it is recorded, and the admin **Proof of Play**
-  report aggregates plays by asset and by screen over a selectable time window (24 hours to 90 days) with a recent-plays
-  log, so you can demonstrate exactly what played, where and when.
-- **Offline alerting** — An optional background monitor raises a **webhook** alert when an approved screen has been
-  offline beyond a configurable threshold, and a recovery alert when it reconnects. Each outage notifies once. Configure
-  it under the `Alerting` section (see below); compatible with Slack/Teams/Discord/n8n/Zapier and custom endpoints.
-
----
-
-## 🌟 Highlights / Values
-
-- **Ease of Use** — One-step screen registration and automatic syncing
-- **Flexibility** — Images, videos, web URLs, and multiple device targets
-- **Scalability** — From single displays to large fleets
-- **Open & Extensible** — Designed for community contributions
-
----
-
-## 🗺️ Roadmap (Short)
-
-- ✅ **Phase 1** — Core backend & client communication
-- 📱 **Phase 2** — More client targets (Raspberry Pi, web players)
-- 📊 **Phase 3** — Monitoring & analytics
-- 🧩 **Phase 4** — Advanced scheduling & recurrence
-
----
-
-## ⚙️ Quickstart (Developers)
-
-**Requirements:**
+### Requirements
 
 - .NET 10 SDK
-- SQLite (default, zero-setup) or PostgreSQL
+- SQLite for the default local setup
+- Docker, if using the Docker/PostgreSQL stack
+- Android workload and Android SDK only when building the Android TV client
 
-**Run the backend locally:**
-
-```bash
-cd src/Mireya.Api
-dotnet run
-```
-
-The admin UI is then available at `https://localhost:5001/login`.
-
-**Or run the full stack with Docker (API + PostgreSQL):**
+Restore local tools:
 
 ```bash
-docker compose up --build   # API on http://localhost:8080
+dotnet tool restore
 ```
 
-See the [technical documentation](https://mireya.moritzreis.dev/#/development) for database
-configuration, migrations, tests, and operational endpoints (`/api/info`, `/alive`, `/health`).
+Run the API/admin app with local SQLite:
 
-**Offline screen alerting (optional):**
-
-Set the `Alerting` section in `appsettings.json` (or the matching `Alerting__*` environment variables) to be
-notified when a screen drops offline:
-
-```json
-"Alerting": {
-  "Enabled": true,
-  "OfflineWebhookUrl": "https://hooks.example.com/your-endpoint",
-  "OfflineThresholdMinutes": 5,
-  "PollIntervalSeconds": 60
-}
+```bash
+dotnet run --project src/Mireya.Api/Mireya.Api.csproj --launch-profile https
 ```
 
-When enabled, a JSON payload (`{ "event": "screen.offline" | "screen.online", "screenId", "screenName",
-"location", "screenIdentifier", "lastSeenAtUtc", "timestampUtc", "message" }`) is POSTed to the webhook URL.
+Open the admin UI at `https://localhost:5001/login`.
 
----
+Development credentials are seeded from `src/Mireya.Api/appsettings.Development.json`:
 
-## 🤝 Contributing
+- Email: `admin@mireya.local`
+- Password: `Admin123!`
 
-1. Fork the repository
-2. Create a branch: git checkout -b feature/your-feature
-3. Make changes and test
-4. Submit a pull request with a clear description
+Run the desktop display client:
 
-Please ensure all tests pass and follow the existing code style.
+```bash
+dotnet run --project src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
+```
+
+Run the API with PostgreSQL through Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The API is published on `http://localhost:8080`.
+
+## Common commands
+
+```bash
+# Build the backend API
+dotnet build src/Mireya.Api/Mireya.Api.csproj -c Release
+
+# Build the generated API client project
+dotnet build src/Mireya.ApiClient/Mireya.ApiClient.csproj -c Release
+
+# Build the desktop client
+dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release
+
+# Run application tests
+dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj -c Release
+```
+
+## Documentation
+
+- [Feature guide](https://mireya.moritzreis.dev/#/features)
+- [Development guide](https://mireya.moritzreis.dev/#/development)
+- [Operations guide](https://mireya.moritzreis.dev/#/operations)
+- [API guide](https://mireya.moritzreis.dev/#/api)
+- [Client packaging](https://mireya.moritzreis.dev/#/packaging)
+
+## Roadmap
+
+- Completed: core API/admin workflow, screen registration and approval, campaign assignment, local client sync/cache, scheduling, zones, audit, proof of play, desktop client, and Android TV client head.
+- In progress / planned: production hardening, installer packaging, richer Linux/Raspberry Pi kiosk packaging, broader operational docs, and additional client targets.
+
+## Contributing
+
+1. Fork the repository.
+2. Create a branch: `git checkout -b feature/your-feature`.
+3. Make changes and run the relevant build/test commands.
+4. Submit a pull request with a clear description.
+
+Please keep changes aligned with the existing .NET, Blazor, Avalonia, and EF Core patterns.

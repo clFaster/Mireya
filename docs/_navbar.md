@@ -1,2 +1,6 @@
 - [Home](/)
+- [Features](features.md)
 - [Development](development.md)
+- [Operations](operations.md)
+- [API](api.md)
+- [Packaging](packaging.md)

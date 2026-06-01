@@ -1,343 +1,269 @@
 # Development
 
-This page contains information for developers who want to contribute to Mireya or run it locally for development purposes.
+This guide is for contributors and maintainers running Mireya locally.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
+- .NET 10 SDK
+- Git
+- SQLite for the default development database
+- Docker Desktop or compatible Docker runtime for Docker Compose and Aspire PostgreSQL runs
+- Android SDK plus the .NET Android workload when building the Android TV client
 
-- **.NET 10.0 SDK** - Download from [Microsoft's .NET website](https://dotnet.microsoft.com/download/dotnet/10.0)
-- **PostgreSQL** (optional, for production-like setup) - Download from [postgresql.org](https://www.postgresql.org/download/) or use Docker Image
-
-## Project Structure
-
-Mireya consists of several components:
-
-- **Mireya.Api** - ASP.NET Core Web API (Carter minimal API modules) and Blazor Server admin interface
-- **Mireya.Application** - Application services, SignalR hubs and business logic
-- **Mireya.Database** - Entity Framework Core database models and `MireyaDbContext`
-- **Mireya.Database.Sqlite** - SQLite database provider and migrations (development)
-- **Mireya.Database.Postgres** - PostgreSQL database provider and migrations (production)
-- **Mireya.ApiClient** - API wrapper to be used in clients
-- **Mireya.Client.Core** - Shared Avalonia UI, view-models and platform-abstraction interfaces for the client
-- **Mireya.Client.Desktop** - Windows/Linux desktop head (WebView2, LibVLC, DPAPI) that hosts the shared core
-- **Mireya.Client.Android** - Android TV head (native System WebView, LibVLC) that hosts the shared core
-- **Mireya.Application.Tests** - xUnit unit tests for the application services
-- **MireyaDigitalSignage.AppHost** / **MireyaDigitalSignage.ServiceDefaults** - .NET Aspire orchestration and shared service defaults (telemetry, health checks)
-
-## Running Mireya Locally
-
-### 1. Clone and Setup
+Restore local .NET tools before using NSwag:
 
 ```bash
-git clone https://github.com/clFaster/Mireya.git
-cd Mireya
+dotnet tool restore
 ```
 
-### 2. Database Setup
+## Project structure
 
-Mireya supports two database providers. The active provider is selected with the
-`provider` configuration key (`Sqlite` or `Postgres`), and each provider reads its
-own connection string from the `ConnectionStrings` section.
+| Project | Purpose |
+| --- | --- |
+| `src/Mireya.Api` | ASP.NET Core API, Blazor Server admin UI, Identity, SignalR hub, OpenAPI, static uploads, and startup wiring. |
+| `src/Mireya.Application` | Business services for assets, campaigns, scheduling, screens, zones, audit, playback reporting, alerting, and synchronization. |
+| `src/Mireya.Database` | Shared EF Core models and `MireyaDbContext`. |
+| `src/Mireya.Database.Sqlite` | SQLite provider and migrations for local development. |
+| `src/Mireya.Database.Postgres` | PostgreSQL provider and migrations for Docker/production-like runs. |
+| `src/Mireya.ApiClient` | Generated NSwag API client plus client-side services, auth, SignalR, local SQLite store, backend management, and asset sync. |
+| `src/Mireya.ApiClient.TestConsole` | Small console harness for manual API-client checks. |
+| `src/Mireya.Client.Core` | Shared Avalonia display-client UI, view models, settings, converters, and platform abstractions. |
+| `src/Mireya.Client.Desktop` | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage. |
+| `src/Mireya.Client.Android` | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior. |
+| `src/Mireya.Application.Tests` | xUnit tests for application services using in-memory SQLite and NSubstitute. |
+| `src/MireyaDigitalSignage.AppHost` | .NET Aspire orchestration for the API plus PostgreSQL. |
+| `src/MireyaDigitalSignage.ServiceDefaults` | Shared Aspire service defaults, health endpoints, telemetry, resilience, and service discovery. |
 
-#### SQLite (Recommended for Development)
+## Run locally
 
-SQLite is used by default for local development and requires no additional setup.
-`appsettings.Development.json` sets `"provider": "Sqlite"` with a `Sqlite` connection string.
+### API/admin with SQLite
 
-#### PostgreSQL (Production-like Setup)
-
-1. Install PostgreSQL and create a database:
+The development appsettings select SQLite by default:
 
 ```bash
-# Create database (adjust connection string as needed)
-createdb mireya_dev
+dotnet run --project src/Mireya.Api/Mireya.Api.csproj --launch-profile https
 ```
 
-2. Set `provider` to `Postgres` and configure the `Postgres` connection string in
-   `src/Mireya.Api/appsettings.Development.json`:
+The API/admin app listens on:
 
-```json
-{
-  "provider": "Postgres",
-  "ConnectionStrings": {
-    "Postgres": "Host=localhost;Database=mireya_dev;Username=your_username;Password=your_password"
-  }
-}
-```
+- `https://localhost:5001`
+- `http://localhost:5000`
 
-### 3. Run Database Migrations
+Open `https://localhost:5001/login`.
 
-Migrations are applied automatically on API startup. To apply them manually:
+Development credentials are seeded from `src/Mireya.Api/appsettings.Development.json`:
+
+- Email: `admin@mireya.local`
+- Password: `Admin123!`
+
+Migrations run automatically during API startup.
+
+### API/admin with Aspire and PostgreSQL
+
+The Aspire AppHost starts PostgreSQL, waits for it, and runs the API with `provider=Postgres`:
 
 ```bash
-# For SQLite (development)
+dotnet run --project src/MireyaDigitalSignage.AppHost/MireyaDigitalSignage.AppHost.csproj
+```
+
+Use this when you want a production-like database without manually configuring PostgreSQL.
+
+### Desktop client
+
+Start the API first, then run:
+
+```bash
+dotnet run --project src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
+```
+
+On first launch, enter the backend URL. For local HTTPS development use `https://localhost:5001`; for local HTTP use `http://localhost:5000`.
+
+The client can also be preconfigured for unattended/kiosk deployments:
+
+```bash
+# PowerShell
+$env:MIREYA_BACKEND_URL = "http://localhost:5000"
+dotnet run --project src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
+```
+
+```bash
+# bash
+MIREYA_BACKEND_URL=http://localhost:5000 dotnet run --project src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
+```
+
+## Database providers and migrations
+
+The active provider is selected by the `provider` configuration key:
+
+- `Sqlite`: reads `ConnectionStrings:Sqlite`
+- `Postgres`: reads `ConnectionStrings:Postgres`
+
+`appsettings.Development.json` uses SQLite. `appsettings.json`, Docker Compose, and Aspire are oriented around PostgreSQL.
+
+Apply migrations manually when needed:
+
+```bash
+# SQLite
 dotnet ef database update --project src/Mireya.Database.Sqlite --startup-project src/Mireya.Api
+```
 
-# For PostgreSQL (production) - the provider is read from the `provider` env var / config
+PowerShell:
+
+```powershell
+$env:provider = "Postgres"
+dotnet ef database update --project src/Mireya.Database.Postgres --startup-project src/Mireya.Api
+Remove-Item Env:\provider
+```
+
+bash:
+
+```bash
 provider=Postgres dotnet ef database update --project src/Mireya.Database.Postgres --startup-project src/Mireya.Api
 ```
 
-### 4. Run the API Server
+Add migrations to both provider projects for schema changes:
 
 ```bash
-cd src/Mireya.Api
-dotnet run
-```
-
-The API will be available at:
-
-- HTTP: `http://localhost:5000`
-- HTTPS: `https://localhost:5001`
-
-### 5. Access the Admin Interface
-
-Once the API is running, access the admin interface at:
-
-```
-https://localhost:5001/login
-```
-
-Default admin credentials (development):
-
-- **Email:** `admin@mireya.local`
-- **Password:** configured via `DefaultAdminUser:Password` (set to `Admin123!` in
-  `appsettings.Development.json`). In production, provide it through user secrets or
-  environment variables (`DefaultAdminUser__Password`) instead of committing it.
-
-### 6. Run the Desktop Client (Optional)
-
-```bash
-cd src/Mireya.Client.Desktop
-dotnet run
-```
-
-## Development Workflow
-
-### Making API Changes
-
-1. Modify controllers, models, or services in `src/Mireya.Api/`
-2. Update database models in `src/Mireya.Database/`
-3. Create and run migrations if database schema changes:
-
-```bash
-# Add migration (SQLite)
+# SQLite
 dotnet ef migrations add YourMigrationName --project src/Mireya.Database.Sqlite --startup-project src/Mireya.Api
-
-# Add the equivalent migration for PostgreSQL (note the provider env var)
-provider=Postgres dotnet ef migrations add YourMigrationName --project src/Mireya.Database.Postgres --startup-project src/Mireya.Api
-
-# Update database
-dotnet ef database update --project src/Mireya.Database.Sqlite --startup-project src/Mireya.Api
 ```
 
-> When you change the schema, always add a migration to **both** the SQLite and
-> PostgreSQL provider projects so the two databases stay in sync.
-
-### Admin Interface Development
-
-The admin interface is built with **Blazor Server** (interactive server components) and
-styled with **Bootstrap 5**. Files are located in:
-
-- `src/Mireya.Api/Components/Pages/` - Razor (Blazor) pages and components
-- `src/Mireya.Api/wwwroot/` - Static assets (CSS/JS) served to the browser
-
-The "Control Room" theme in `wwwroot/app.css` layers a cohesive design system over
-Bootstrap. It exposes design tokens as CSS custom properties under `:root` — colours
-(`--ink-*`, `--brand*`, semantic `--ok/--warn/--bad/--info`), geometry (`--r-*`),
-a 4px-based spacing scale (`--sp-1`…`--sp-8`), elevation (`--shadow-*`), motion
-(`--ease*`, `--t*`) and fonts (`--font-display/body/mono`). Prefer these tokens over
-ad-hoc values when adding styles so spacing and colour stay consistent.
-
-### Client Development
-
-#### Avalonia Client
-
-The Avalonia client is split into a shared core and per-platform heads so it can be
-shipped to Windows (Store/MSIX), Linux (incl. Raspberry Pi) and Android (Android TV):
-
-- `src/Mireya.Client.Core/` - Shared Avalonia UI, view-models, converters and the
-  platform-abstraction interfaces (`Platform/IAssetViewFactory`, `IWebsiteRenderer`,
-  `IVideoRenderer`). References Avalonia but no platform-only packages.
-  - ViewModels: `src/Mireya.Client.Core/ViewModels/`
-  - Views: `src/Mireya.Client.Core/Views/`
-  - Services: `src/Mireya.Client.Core/Services/`
-- `src/Mireya.Client.Desktop/` - Windows/Linux desktop head. Provides the desktop
-  composition root (`Platform/DesktopServices`) and the platform implementations
-  (WebView2 website renderer, LibVLC video renderer, DPAPI credential storage).
-  This is the project you build/run for the desktop app.
-- `src/Mireya.Client.Android/` - Android TV head (`net10.0-android`, application id
-  `com.mireya.signage.tv`). Provides the Android composition root
-  (`Platform/AndroidServices`) and the platform implementations (native `Android.Webkit`
-  WebView website renderer and a `LibVLCSharp` video renderer, both hosted in a
-  `NativeControlHost`). Registers in the Leanback (TV) launcher and runs as an immersive
-  full-screen kiosk.
-
-Both projects intentionally keep the historical `Mireya.Client.Avalonia` root namespace
-(only the assembly names differ) to avoid churn across the moved XAML and code.
+```powershell
+# PostgreSQL in PowerShell
+$env:provider = "Postgres"
+dotnet ef migrations add YourMigrationName --project src/Mireya.Database.Postgres --startup-project src/Mireya.Api
+Remove-Item Env:\provider
+```
 
 ```bash
-dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
+# PostgreSQL in bash
+provider=Postgres dotnet ef migrations add YourMigrationName --project src/Mireya.Database.Postgres --startup-project src/Mireya.Api
 ```
 
-##### Android TV
+Keep SQLite and PostgreSQL migrations in sync whenever the shared model changes.
 
-The Android TV head reuses the shared core and adds Android-specific renderers. Use the
-Android TV emulator (or a real Android TV device) to build, deploy and smoke-test it.
+## Build and test
 
-**Prerequisites**
+```bash
+# Backend API
+dotnet build src/Mireya.Api/Mireya.Api.csproj -c Release
 
-- The .NET Android workload:
+# Generated API client and supporting client services
+dotnet build src/Mireya.ApiClient/Mireya.ApiClient.csproj -c Release
 
-  ```bash
-  dotnet workload install android
-  # If a restore fails with a workload-band mismatch (NETSDK1147), realign the bands:
-  dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
-  ```
+# Desktop display client
+dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release
 
-- A **64-bit** Android TV emulator or device. The app ships **64-bit native libraries
-  only** (SkiaSharp and LibVLC), so a 32-bit `x86` system image fails to install with
-  `INSTALL_FAILED_NO_MATCHING_ABIS`. Create an AVD from a `x86_64` Android TV
-  (`google-atv`/`android-tv`) system image. `adb`, `emulator` and `sdkmanager` live under
-  `$ANDROID_HOME` (`%LOCALAPPDATA%\Android\Sdk` on Windows).
+# Application tests
+dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj -c Release
+```
 
-**Build**
+The PR workflow restores local tools, restores/builds the API, API client, desktop client, and runs `Mireya.Application.Tests`.
+
+## API client generation
+
+The generated client lives in `src/Mireya.ApiClient/Generated/MireyaApiClient.cs` and is produced from `src/Mireya.ApiClient/nswag.json`.
+
+Restore tools first, then run NSwag from the API client directory:
+
+```bash
+dotnet tool restore
+cd src/Mireya.ApiClient
+dotnet nswag run nswag.json
+```
+
+The NSwag config builds `../Mireya.Api/Mireya.Api.csproj` in the Development environment and writes the generated C# client to `Generated/MireyaApiClient.cs`.
+
+## Admin UI development
+
+The admin UI is built with Blazor Server interactive components and Bootstrap 5.
+
+- Pages and shared UI: `src/Mireya.Api/Components`
+- Static assets: `src/Mireya.Api/wwwroot`
+- Main theme: `src/Mireya.Api/wwwroot/app.css`
+
+Prefer the existing CSS custom properties in `app.css` for colors, spacing, radius, shadows, motion, and fonts. Keep new admin UI code consistent with the current Control Room design.
+
+## Client development
+
+The display client is split into a shared Avalonia core and platform heads:
+
+- `Mireya.Client.Core` owns the shared shell, views, view models, playback flow, backend-selection UI, local settings UI, and interfaces for website/video renderers.
+- `Mireya.Client.Desktop` wires desktop services, WebView2, LibVLC, and desktop credential storage.
+- `Mireya.Client.Android` wires Android services, native Android WebView, LibVLC, and Android TV entry points.
+
+The client workflow is:
+
+1. Choose or receive a backend URL.
+2. Register with `/api/screenmanagement/register`.
+3. Show a pairing code while awaiting approval.
+4. Authenticate as a screen after approval.
+5. Connect to `/hubs/screen`.
+6. Receive configuration and asset-sync requests.
+7. Cache image/video assets locally and mark sync progress.
+8. Play the active playlist and report now-playing/proof-of-play events.
+
+### Android TV
+
+Install or restore the Android workload:
+
+```bash
+dotnet workload install android
+dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
+```
+
+Use a 64-bit Android TV emulator or device. The APK includes 64-bit native libraries, so 32-bit `x86` images fail with `INSTALL_FAILED_NO_MATCHING_ABIS`.
+
+Build:
 
 ```bash
 dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj
 ```
 
-**Run on the emulator**
+For a local API running on the host machine, Android emulators reach the host at `http://10.0.2.2:5000`.
 
-1. Start the API server (see "Run the API Server" above) and the TV emulator. Make sure
-   the backend is reachable from the emulator. From the emulator, the host machine is
-   `http://10.0.2.2:5000` (not `localhost`, which points at the emulator itself). The
-   manifest enables cleartext HTTP so plain `http://` LAN backends work.
-2. Build a **standalone APK with the assemblies embedded** and install it with `adb`.
-   This is the most reliable path — a plain Debug APK installed by hand crashes on launch
-   with *"No assemblies found … Assuming this is part of Fast Deployment"* because Fast
-   Deployment expects the assemblies to be pushed separately by the IDE.
-
-   ```bash
-   dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj \
-     -p:EmbedAssembliesIntoApk=true -p:AndroidFastDeploymentType=None
-
-   adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/com.mireya.signage.tv-Signed.apk
-   adb shell monkey -p com.mireya.signage.tv -c android.intent.category.LAUNCHER 1
-   ```
-
-   Alternatively, deploy via the MSBuild target (handles Fast Deployment for you):
-
-   ```bash
-   dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -t:Run
-   ```
-
-3. On first launch the app shows the backend-selection screen. Enter the backend URL
-   (`http://10.0.2.2:5000` for the local API) and connect. The app then establishes a
-   SignalR connection and starts displaying the assigned campaign.
-
-**Useful diagnostics**
+Build and install a standalone Debug APK with embedded assemblies:
 
 ```bash
-# Follow the app's own log output (Serilog is routed to logcat under the DOTNET tag)
-adb logcat --pid=$(adb shell pidof com.mireya.signage.tv)
+dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -p:EmbedAssembliesIntoApk=true -p:AndroidFastDeploymentType=None
+adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/com.mireya.signage.tv-Signed.apk
+adb shell monkey -p com.mireya.signage.tv -c android.intent.category.LAUNCHER 1
+```
 
-# Capture a screenshot of the current screen
+Alternatively, let MSBuild deploy to the selected device:
+
+```bash
+dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -t:Run
+```
+
+Useful diagnostics:
+
+```bash
+adb logcat --pid=$(adb shell pidof com.mireya.signage.tv)
 adb exec-out screencap -p > screen.png
 ```
 
-> **Android dispatcher-priority note:** the shared playlist code advances assets with a
-> `DispatcherTimer`. The parameterless `DispatcherTimer` ctor ticks at
-> `DispatcherPriority.Background`, which sits below `Input` and is starved on Android by
-> the continuous compositor/video render loop — so the playlist never advanced
-> automatically there (only render-time-independent paths such as the remote "next"
-> command worked). The timer is therefore created at `DispatcherPriority.Default` bound to
-> `Dispatcher.UIThread` (see `ContentDisplayViewModel.StartAdvanceTimer`). Keep this in
-> mind for any other time-based UI work added to the shared core: prefer `Default` (or
-> higher) over `Background` so it isn't starved on mobile.
+## Docker development
 
-## Running Tests
-
-Unit tests live in `src/Mireya.Application.Tests` (xUnit + in-memory SQLite + NSubstitute):
+Docker Compose builds the API image and runs it with PostgreSQL:
 
 ```bash
-dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj
-```
-
-Tests also run automatically in the PR build workflow.
-
-## Operational Endpoints
-
-The API exposes a few endpoints useful for monitoring and client discovery:
-
-- `GET /api/info` - public server identity, returns `{ "application": "Mireya", "version": "..." }`.
-  Clients use this to confirm a host is a Mireya backend.
-- `GET /alive` - liveness probe (always available); returns `Healthy` when the process is up.
-- `GET /health` - readiness probe including database connectivity. Exposed in the
-  Development environment only; wire it up behind your infrastructure in production.
-
-## Running with Docker
-
-A multi-stage `Dockerfile` builds the API, and `docker-compose.yml` runs it against a
-PostgreSQL container:
-
-```bash
-# Optionally set credentials/admin password
-export POSTGRES_PASSWORD=change-me
-export MIREYA_ADMIN_PASSWORD=Admin123!
-
 docker compose up --build
 ```
 
-The API is published on `http://localhost:8080`. Uploaded media and database data are
-persisted in the `mireya-uploads` and `mireya-db` named volumes. Database migrations are
-applied automatically on startup.
+The API listens on `http://localhost:8080`. Uploaded media and PostgreSQL data are stored in the `mireya-uploads` and `mireya-db` named volumes.
 
-## Building for Production
+## Operational endpoints
 
-### API
-
-```bash
-cd src/Mireya.Api
-dotnet publish -c Release -o ./publish
-```
-
-### Desktop Client
-
-The Avalonia client currently targets Windows and Linux. Publish a self-contained build
-for a specific runtime identifier:
-
-```bash
-cd src/Mireya.Client.Desktop
-
-# Windows
-dotnet publish -c Release -r win-x64 -o ./publish
-
-# Linux (e.g. Raspberry Pi uses linux-arm64)
-dotnet publish -c Release -r linux-x64 -o ./publish
-```
-
-> Packaging for the Windows Store (MSIX), Linux, and Android TV is on the roadmap; see
-> [docs/packaging.md](packaging.md) for the client topology and the planned phased rollout.
+- `GET /api/info`: public server identity used by clients to recognize a Mireya backend.
+- `GET /alive`: liveness check.
+- `GET /health`: readiness check including database connectivity. It is exposed by the service defaults and intended for development/infrastructure use.
+- OpenAPI/Swagger UI: enabled in the Development environment.
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **Database connection errors**: Ensure your connection string is correct and the database exists
-2. **Migration errors**: Make sure you're using the correct database provider project
-3. **Admin login fails**: Check that the database is seeded with the default admin user
-
-### Getting Help
-
-- Check existing issues on [GitHub](https://github.com/clFaster/Mireya/issues)
-- Join the discussion in GitHub Discussions
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes and test thoroughly
-4. Submit a pull request with a clear description of your changes
-
-Please ensure all tests pass and follow the existing code style and patterns.
+- **Admin login fails**: confirm migrations ran and `DefaultAdminUser:Password` is configured for first startup.
+- **PostgreSQL migration uses SQLite**: set `provider=Postgres` in the same shell command/session that runs EF.
+- **Android emulator cannot reach backend**: use `http://10.0.2.2:5000` instead of `localhost`.
+- **Android APK crashes after manual install**: build with `EmbedAssembliesIntoApk=true` and `AndroidFastDeploymentType=None`, or deploy with `-t:Run`.
+- **Video/website rendering differs by platform**: desktop uses WebView2 and LibVLC; Android uses native Android WebView and LibVLC.
