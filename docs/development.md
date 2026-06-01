@@ -246,11 +246,15 @@ adb logcat --pid=$(adb shell pidof com.mireya.signage.tv)
 adb exec-out screencap -p > screen.png
 ```
 
-> **Known limitation:** on Android TV, assets in a campaign do **not** transition
-> automatically yet. Manual transitions triggered from the website renderer's "next"
-> action work, so content can still be advanced, but the automatic timed playlist
-> rotation that the desktop head performs is not yet wired up on Android. Automatic
-> asset transition on Android is a follow-up item.
+> **Android dispatcher-priority note:** the shared playlist code advances assets with a
+> `DispatcherTimer`. The parameterless `DispatcherTimer` ctor ticks at
+> `DispatcherPriority.Background`, which sits below `Input` and is starved on Android by
+> the continuous compositor/video render loop — so the playlist never advanced
+> automatically there (only render-time-independent paths such as the remote "next"
+> command worked). The timer is therefore created at `DispatcherPriority.Default` bound to
+> `Dispatcher.UIThread` (see `ContentDisplayViewModel.StartAdvanceTimer`). Keep this in
+> mind for any other time-based UI work added to the shared core: prefer `Default` (or
+> higher) over `Background` so it isn't starved on mobile.
 
 ## Running Tests
 
