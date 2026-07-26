@@ -172,7 +172,11 @@ The published image includes OCI source, revision, version, documentation, and l
 
 ## Aspire
 
-The Aspire AppHost in `src/MireyaDigitalSignage.AppHost` creates a PostgreSQL resource with a data volume, adds a `Postgres` database, and starts the API with `provider=Postgres`.
+The Aspire AppHost in `src/MireyaDigitalSignage.AppHost` pins PostgreSQL 18,
+stores its version-specific data in the `mireya-db-18` volume, adds a
+`Postgres` database, and starts the API with `provider=Postgres`. The older
+`mireya-db` volume is not upgraded automatically; migrate its data with
+`pg_dump`/`pg_restore` before switching an existing development environment.
 
 Run it with:
 
