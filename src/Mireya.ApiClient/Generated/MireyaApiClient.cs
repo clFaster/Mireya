@@ -37,6 +37,13 @@ namespace Mireya.ApiClient.Generated
         System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiInfoAsync();
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiInfoAsync(System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<RegisterScreenResponse> PostApiScreenmanagementRegisterAsync(RegisterScreenRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -198,6 +205,13 @@ namespace Mireya.ApiClient.Generated
         System.Threading.Tasks.Task GetApiAssetsyncCampaignsAsync(System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiAuditAsync(int? take);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetApiAuditAsync(int? take, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -266,6 +280,13 @@ namespace Mireya.ApiClient.Generated
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task PostApiScreenmanagementRejectAsync(System.Guid id, System.Threading.CancellationToken cancellationToken);
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PostApiScreenmanagementCommandAsync(System.Guid id, SendCommandRequest request);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task PostApiScreenmanagementCommandAsync(System.Guid id, SendCommandRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task GetApiScreenmanagementOnlineCountAsync();
@@ -351,6 +372,76 @@ namespace Mireya.ApiClient.Generated
                     urlBuilder_.Append("api/assetsync/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(displayId, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/status");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task GetApiInfoAsync()
+        {
+            return GetApiInfoAsync(System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task GetApiInfoAsync(System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/info"
+                    urlBuilder_.Append("api/info");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -2275,6 +2366,82 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task GetApiAuditAsync(int? take)
+        {
+            return GetApiAuditAsync(take, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task GetApiAuditAsync(int? take, System.Threading.CancellationToken cancellationToken)
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/audit"
+                    urlBuilder_.Append("api/audit");
+                    urlBuilder_.Append('?');
+                    if (take != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("take")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(take, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    urlBuilder_.Length--;
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId)
         {
             return GetApiCampaignAsync(displayId, System.Threading.CancellationToken.None);
@@ -3052,6 +3219,88 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task PostApiScreenmanagementCommandAsync(System.Guid id, SendCommandRequest request)
+        {
+            return PostApiScreenmanagementCommandAsync(id, request, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task PostApiScreenmanagementCommandAsync(System.Guid id, SendCommandRequest request, System.Threading.CancellationToken cancellationToken)
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            if (request == null)
+                throw new System.ArgumentNullException("request");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(request, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.ByteArrayContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
+                    // Operation Path: "api/screenmanagement/{id}/command"
+                    urlBuilder_.Append("api/screenmanagement/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/command");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task GetApiScreenmanagementOnlineCountAsync()
         {
             return GetApiScreenmanagementOnlineCountAsync(System.Threading.CancellationToken.None);
@@ -3566,6 +3815,24 @@ namespace Mireya.ApiClient.Generated
         [System.Text.Json.Serialization.JsonPropertyName("isMuted")]
         public bool? IsMuted { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("tags")]
+        public string? Tags { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("imageFit")]
+        public ImageFit? ImageFit { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum ImageFit
+    {
+
+        Contain = 0,
+
+        Cover = 1,
+
+        Fill = 2,
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -3622,6 +3889,33 @@ namespace Mireya.ApiClient.Generated
         [System.Text.Json.Serialization.JsonPropertyName("displayIds")]
         public System.Collections.Generic.ICollection<System.Guid> DisplayIds { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("isEnabled")]
+        public bool IsEnabled { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("startDateUtc")]
+        public System.DateTimeOffset? StartDateUtc { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("endDateUtc")]
+        public System.DateTimeOffset? EndDateUtc { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("priority")]
+        public int Priority { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isDefault")]
+        public bool IsDefault { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("recurrenceDaysMask")]
+        public int? RecurrenceDaysMask { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("dailyStartTime")]
+        public System.TimeSpan? DailyStartTime { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("dailyEndTime")]
+        public System.TimeSpan? DailyEndTime { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("recurrenceTimeZoneId")]
+        public string? RecurrenceTimeZoneId { get; set; } = default!;
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -3653,7 +3947,34 @@ namespace Mireya.ApiClient.Generated
         public System.Collections.Generic.ICollection<CampaignAssetDto> Assets { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("displayIds")]
-        public System.Collections.Generic.ICollection<System.Guid> DisplayIds { get; set; } = default!;
+        public System.Collections.Generic.ICollection<System.Guid>? DisplayIds { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isEnabled")]
+        public bool IsEnabled { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("startDateUtc")]
+        public System.DateTimeOffset? StartDateUtc { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("endDateUtc")]
+        public System.DateTimeOffset? EndDateUtc { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("priority")]
+        public int Priority { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isDefault")]
+        public bool IsDefault { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("recurrenceDaysMask")]
+        public int? RecurrenceDaysMask { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("dailyStartTime")]
+        public System.TimeSpan? DailyStartTime { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("dailyEndTime")]
+        public System.TimeSpan? DailyEndTime { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("recurrenceTimeZoneId")]
+        public string? RecurrenceTimeZoneId { get; set; } = default!;
 
     }
 
@@ -3681,6 +4002,24 @@ namespace Mireya.ApiClient.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("location")]
         public string? Location { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("shufflePlayback")]
+        public bool? ShufflePlayback { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("zoneAssignmentProvided")]
+        public bool ZoneAssignmentProvided { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("zoneId")]
+        public System.Guid? ZoneId { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.6.2.0 (NJsonSchema v11.5.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class SendCommandRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("command")]
+        public string Command { get; set; } = default!;
 
     }
 
