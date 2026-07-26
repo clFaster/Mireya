@@ -555,6 +555,7 @@ publish/
 # Note: Comment the next line if you want to checkin your web deploy settings,
 # but database connection strings (with potential passwords) will be unencrypted
 *.pubxml
+!src/Mireya.Client.Desktop/Properties/PublishProfiles/win-x64.pubxml
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
@@ -806,3 +807,4 @@ next-env.d.ts
 
 
 /src/Mireya.Api/uploads/
+/artifacts/

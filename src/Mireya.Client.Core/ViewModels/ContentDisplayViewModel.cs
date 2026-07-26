@@ -13,6 +13,7 @@ using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
 using Mireya.ApiClient.Services;
 using Mireya.Client.Avalonia.Services;
+using ClientImageFit = Mireya.ApiClient.Models.ImageFit;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
@@ -761,10 +762,10 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         StartAdvanceTimer(item.DurationSeconds);
     }
 
-    private static Stretch MapStretch(ImageFit fit) => fit switch
+    private static Stretch MapStretch(ClientImageFit fit) => fit switch
     {
-        ImageFit.Cover => Stretch.UniformToFill,
-        ImageFit.Fill => Stretch.Fill,
+        ClientImageFit.Cover => Stretch.UniformToFill,
+        ClientImageFit.Fill => Stretch.Fill,
         _ => Stretch.Uniform,
     };
 
@@ -985,7 +986,7 @@ public class PlaylistItem
     public int DurationSeconds { get; set; }
     public int Position { get; set; }
     public bool IsMuted { get; set; }
-    public ImageFit ImageFit { get; set; }
+    public ClientImageFit ImageFit { get; set; }
 }
 
 public enum ContentType

@@ -1,0 +1,270 @@
+name: Publish Microsoft Store
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Stable semantic version to package (for example 1.0.0)"
+        required: true
+        type: string
+      submit_to_store:
+        description: "Submit the validated package to Partner Center"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-microsoft-store
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  AVALONIA_TELEMETRY_OPTOUT: true
+  STORE_PACKAGE_IDENTITY_NAME: ${{ vars.MICROSOFT_STORE_PACKAGE_IDENTITY_NAME }}
+  STORE_DISPLAY_NAME: ${{ vars.MICROSOFT_STORE_DISPLAY_NAME }}
+  STORE_PUBLISHER: ${{ vars.MICROSOFT_STORE_PUBLISHER }}
+  STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.MICROSOFT_STORE_PUBLISHER_DISPLAY_NAME }}
+
+jobs:
+  package-and-publish:
+    name: Package, certify, and publish
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Resolve release version
+        id: version
+        shell: pwsh
+        env:
+          REQUESTED_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+        run: |
+          $version = $env:REQUESTED_VERSION -replace '^v', ''
+
+          if ($version -match '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            $parts = $version.Split('.') | ForEach-Object { [int] $_ }
+            if ($parts[0] -gt 65534 -or $parts[1] -gt 65535 -or $parts[2] -gt 65535) {
+              Write-Host "::error::Version '$version' cannot be represented as a Microsoft Store package version."
+              exit 1
+            }
+
+            # The Store requires a non-zero first component and reserves the
+            # fourth component: Mireya 0.2.0 becomes package 1.2.0.0.
+            $packageVersion = '{0}.{1}.{2}.0' -f ($parts[0] + 1), $parts[1], $parts[2]
+            "eligible=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "package_version=$packageVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            exit 0
+          }
+
+          if ($version -match '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-') {
+            Write-Host "::notice::Microsoft Store submission is skipped for pre-release version '$version'."
+            "eligible=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            exit 0
+          }
+
+          Write-Host "::error::Version '$version' is not a supported Semantic Version."
+          exit 1
+
+      - name: Validate Store package identity
+        if: steps.version.outputs.eligible == 'true'
+        shell: pwsh
+        run: |
+          $required = @{
+            MICROSOFT_STORE_PACKAGE_IDENTITY_NAME = $env:STORE_PACKAGE_IDENTITY_NAME
+            MICROSOFT_STORE_DISPLAY_NAME = $env:STORE_DISPLAY_NAME
+            MICROSOFT_STORE_PUBLISHER = $env:STORE_PUBLISHER
+            MICROSOFT_STORE_PUBLISHER_DISPLAY_NAME = $env:STORE_PUBLISHER_DISPLAY_NAME
+          }
+
+          foreach ($entry in $required.GetEnumerator()) {
+            if ([string]::IsNullOrWhiteSpace($entry.Value)) {
+              Write-Host "::error::Repository variable '$($entry.Key)' is required."
+              exit 1
+            }
+          }
+
+      - name: Set up .NET
+        if: steps.version.outputs.eligible == 'true'
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            **/packages.lock.json
+            **/*.csproj
+
+      - name: Set up MSBuild
+        if: steps.version.outputs.eligible == 'true'
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Store-ready MSIX
+        if: steps.version.outputs.eligible == 'true'
+        id: package
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: |
+          $manifestPath = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop.Package\Package.appxmanifest'
+          [xml] $manifest = Get-Content -LiteralPath $manifestPath -Raw
+          $namespaces = [System.Xml.XmlNamespaceManager]::new($manifest.NameTable)
+          $namespaces.AddNamespace('f', $manifest.DocumentElement.NamespaceURI)
+          $namespaces.AddNamespace('uap', 'http://schemas.microsoft.com/appx/manifest/uap/windows10')
+
+          $identity = $manifest.SelectSingleNode('/f:Package/f:Identity', $namespaces)
+          $identity.SetAttribute('Name', $env:STORE_PACKAGE_IDENTITY_NAME)
+          $identity.SetAttribute('Publisher', $env:STORE_PUBLISHER)
+          $identity.SetAttribute('Version', $env:PACKAGE_VERSION)
+          $manifest.SelectSingleNode('/f:Package/f:Properties/f:DisplayName', $namespaces).InnerText = $env:STORE_DISPLAY_NAME
+          $manifest.SelectSingleNode('/f:Package/f:Properties/f:PublisherDisplayName', $namespaces).InnerText = $env:STORE_PUBLISHER_DISPLAY_NAME
+          $visualElements = $manifest.SelectSingleNode(
+            '/f:Package/f:Applications/f:Application/uap:VisualElements',
+            $namespaces
+          )
+          $visualElements.SetAttribute('DisplayName', $env:STORE_DISPLAY_NAME)
+          $manifest.Save($manifestPath)
+
+          $packageProject = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop.Package\Mireya.Client.Desktop.Package.wapproj'
+          $packageDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts\microsoft-store\package'
+          New-Item -ItemType Directory -Path $packageDirectory -Force | Out-Null
+
+          msbuild $packageProject `
+            /restore `
+            /m:1 `
+            /p:BuildInParallel=false `
+            /p:UseSharedCompilation=false `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:RuntimeIdentifier=win-x64 `
+            /p:AppxBundle=Never `
+            /p:AppxPackageSigningEnabled=false `
+            /p:AppxPackageDir="$packageDirectory\" `
+            /p:AppxPackageVersion=$env:PACKAGE_VERSION `
+            /p:Version=$env:RELEASE_VERSION `
+            /p:FileVersion=$env:PACKAGE_VERSION `
+            /p:AssemblyVersion=$env:PACKAGE_VERSION
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSBuild failed with exit code $LASTEXITCODE."
+          }
+
+          $packages = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.msix' -File -Recurse)
+          if ($packages.Count -ne 1) {
+            throw "Expected exactly one MSIX package, found $($packages.Count)."
+          }
+
+          "msix_path=$($packages[0].FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Sign package for certification
+        if: steps.version.outputs.eligible == 'true'
+        shell: pwsh
+        env:
+          MSIX_PATH: ${{ steps.package.outputs.msix_path }}
+        run: |
+          $password = [Guid]::NewGuid().ToString('N')
+          $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+          $certificate = New-SelfSignedCertificate `
+            -Type Custom `
+            -Subject $env:STORE_PUBLISHER `
+            -KeyUsage DigitalSignature `
+            -KeyExportPolicy Exportable `
+            -KeyAlgorithm RSA `
+            -KeyLength 2048 `
+            -HashAlgorithm SHA256 `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3') `
+            -NotAfter (Get-Date).AddDays(1) `
+            -CertStoreLocation 'Cert:\CurrentUser\My'
+
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'mireya-store-test.pfx'
+          $cerPath = Join-Path $env:RUNNER_TEMP 'mireya-store-test.cer'
+          Export-PfxCertificate -Cert $certificate -FilePath $pfxPath -Password $securePassword | Out-Null
+          Export-Certificate -Cert $certificate -FilePath $cerPath | Out-Null
+          Import-Certificate -FilePath $cerPath -CertStoreLocation 'Cert:\CurrentUser\TrustedPeople' | Out-Null
+
+          $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
+          $signTool = Get-ChildItem -LiteralPath $sdkBin -Filter 'signtool.exe' -File -Recurse |
+            Where-Object { $_.Directory.Name -eq 'x64' } |
+            Sort-Object { [version] $_.Directory.Parent.Name } -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $signTool) {
+            throw 'signtool.exe was not found.'
+          }
+
+          & $signTool sign /fd SHA256 /f $pfxPath /p $password $env:MSIX_PATH
+          if ($LASTEXITCODE -ne 0) {
+            throw "SignTool failed with exit code $LASTEXITCODE."
+          }
+
+      - name: Run Windows App Certification Kit
+        if: steps.version.outputs.eligible == 'true'
+        shell: pwsh
+        env:
+          MSIX_PATH: ${{ steps.package.outputs.msix_path }}
+        run: |
+          $appCert = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\App Certification Kit\appcert.exe'
+          $reportPath = Join-Path $env:GITHUB_WORKSPACE 'artifacts\microsoft-store\WackReport.xml'
+
+          if (-not (Test-Path -LiteralPath $appCert)) {
+            throw 'Windows App Certification Kit was not found.'
+          }
+
+          & $appCert reset
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows App Certification Kit reset failed with exit code $LASTEXITCODE."
+          }
+
+          & $appCert test -appxpackagepath $env:MSIX_PATH -reportoutputpath $reportPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows App Certification Kit failed with exit code $LASTEXITCODE. Review WackReport.xml."
+          }
+
+      - name: Upload Store package and certification report
+        if: always() && steps.version.outputs.eligible == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mireya-microsoft-store-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/microsoft-store/package/**/*.msix
+            artifacts/microsoft-store/WackReport.xml
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Set up Microsoft Store Developer CLI
+        if: steps.version.outputs.eligible == 'true' && (github.event_name == 'push' || inputs.submit_to_store)
+        uses: microsoft/setup-msstore-cli@v1.4
+
+      - name: Configure Microsoft Store Developer CLI
+        if: steps.version.outputs.eligible == 'true' && (github.event_name == 'push' || inputs.submit_to_store)
+        shell: pwsh
+        env:
+          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+          AZURE_AD_APP_REGISTRATION_CLIENT_ID: ${{ secrets.AZURE_AD_APP_REGISTRATION_CLIENT_ID }}
+          AZURE_AD_APP_REGISTRATION_CLIENT_SECRET: ${{ secrets.AZURE_AD_APP_REGISTRATION_CLIENT_SECRET }}
+        run: |
+          msstore reconfigure `
+            --tenantId $env:AZURE_AD_TENANT_ID `
+            --sellerId $env:PARTNER_CENTER_SELLER_ID `
+            --clientId $env:AZURE_AD_APP_REGISTRATION_CLIENT_ID `
+            --clientSecret $env:AZURE_AD_APP_REGISTRATION_CLIENT_SECRET
+
+      - name: Publish package to Microsoft Store
+        if: steps.version.outputs.eligible == 'true' && (github.event_name == 'push' || inputs.submit_to_store)
+        shell: pwsh
+        env:
+          MSIX_PATH: ${{ steps.package.outputs.msix_path }}
+          STORE_APP_ID: ${{ secrets.STORE_APP_ID }}
+        run: |
+          msstore publish $env:GITHUB_WORKSPACE `
+            --inputFile $env:MSIX_PATH `
+            --appId $env:STORE_APP_ID
