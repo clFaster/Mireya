@@ -107,6 +107,10 @@ jobs:
         if: steps.version.outputs.eligible == 'true'
         uses: microsoft/setup-msbuild@v2
 
+      - name: Restore .NET tools
+        if: steps.version.outputs.eligible == 'true'
+        run: dotnet tool restore
+
       - name: Build Store-ready MSIX
         if: steps.version.outputs.eligible == 'true'
         id: package
