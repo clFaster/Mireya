@@ -102,14 +102,9 @@ public static class Extensions
             Predicate = r => r.Tags.Contains("live")
         });
 
-        // Adding the full health check endpoint (which can include dependency details) in
-        // non-development environments has security implications.
-        // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
-        if (app.Environment.IsDevelopment())
-        {
-            // All health checks must pass for app to be considered ready to accept traffic after starting
-            app.MapHealthChecks(HealthEndpointPath);
-        }
+        // Readiness is exposed in every environment for container orchestrators. The default
+        // response writer returns only the aggregate status and does not disclose check details.
+        app.MapHealthChecks(HealthEndpointPath);
 
         return app;
     }

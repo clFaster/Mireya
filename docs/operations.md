@@ -23,9 +23,9 @@ Alerting__Enabled=true
 
 The `provider` setting selects the EF Core provider:
 
-| Value | Provider project | Connection string |
-| --- | --- | --- |
-| `Sqlite` | `Mireya.Database.Sqlite` | `ConnectionStrings:Sqlite` |
+| Value      | Provider project           | Connection string            |
+| ---------- | -------------------------- | ---------------------------- |
+| `Sqlite`   | `Mireya.Database.Sqlite`   | `ConnectionStrings:Sqlite`   |
 | `Postgres` | `Mireya.Database.Postgres` | `ConnectionStrings:Postgres` |
 
 Development uses SQLite by default. Docker Compose and Aspire use PostgreSQL.
@@ -34,7 +34,7 @@ Migrations are applied automatically on API startup. For schema changes, keep mi
 
 ## Default admin user
 
-The initializer creates or updates the default admin user during startup when configuration is present.
+The initializer creates the default admin user during startup when configuration is present. If the user already exists, startup only ensures that it has the `Admin` role; it does not reset the existing password.
 
 Development settings include:
 
@@ -57,39 +57,101 @@ In Docker, uploads are mounted at `/app/uploads` and persisted in the `mireya-up
 
 `docker-compose.yml` runs:
 
-- `db`: PostgreSQL 17 Alpine with a named volume and health check.
-- `api`: the published Mireya API image, configured for PostgreSQL.
+- `db`: PostgreSQL 18 Alpine with a named volume and health check.
+- `api`: `moritzreis/mireya-digital-signage`, configured for PostgreSQL with a readiness health check.
 
-Start the stack:
+Create the local configuration file, replace both example passwords, and start the stack:
 
 ```bash
-docker compose up --build
+cp .env.example .env
+# Edit .env before continuing.
+docker compose up -d
 ```
 
-The API listens on:
+The `.env` file is ignored by Git and is the right place for host-specific Compose values. Do not commit it. On a production host, restrict its filesystem permissions and prefer the host or orchestrator's secret store when one is available.
+
+The admin UI listens on:
 
 ```text
-http://localhost:8080
+http://localhost:8080/login
 ```
 
-Useful environment variables:
+Check service state and readiness:
 
 ```bash
-POSTGRES_PASSWORD=change-me
-MIREYA_ADMIN_PASSWORD=Admin123!
+docker compose ps
+curl --fail http://localhost:8080/health
 ```
 
-The Compose file maps those into:
+Compose configuration:
 
-- `ConnectionStrings__Postgres`
-- `DefaultAdminUser__Password`
-- `provider=Postgres`
+| Variable                | Required | Default                             | Purpose                                                                                |
+| ----------------------- | -------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `MIREYA_IMAGE`          | No       | `moritzreis/mireya-digital-signage` | Image repository. Override with `mireya` for a local image.                            |
+| `MIREYA_VERSION`        | No       | `latest`                            | Image tag. Pin an exact version in production.                                         |
+| `MIREYA_HTTP_PORT`      | No       | `8080`                              | Port exposed on the host.                                                              |
+| `POSTGRES_DB`           | No       | `mireya`                            | PostgreSQL database name.                                                              |
+| `POSTGRES_USER`         | No       | `mireya`                            | PostgreSQL user.                                                                       |
+| `POSTGRES_PASSWORD`     | Yes      | None                                | PostgreSQL password. Avoid `;` because the value is inserted into a connection string. |
+| `MIREYA_ADMIN_EMAIL`    | No       | `admin@mireya.local`                | Initial administrator email.                                                           |
+| `MIREYA_ADMIN_PASSWORD` | Yes      | None                                | Initial administrator password; minimum nine characters and at least one digit.        |
 
 Validate the Compose configuration:
 
 ```bash
-docker compose config
+docker compose --env-file .env config
 ```
+
+The API applies Entity Framework migrations and creates the initial admin account during startup. The password is used only when creating that account. Changing `MIREYA_ADMIN_PASSWORD` later does not change an existing password.
+
+Three named volumes keep runtime state across container replacement:
+
+| Volume           | Container path                          | Contents                          |
+| ---------------- | --------------------------------------- | --------------------------------- |
+| `mireya-db`      | `/var/lib/postgresql`                   | PostgreSQL data                   |
+| `mireya-uploads` | `/app/uploads`                          | Uploaded assets and thumbnails    |
+| `mireya-keys`    | `/home/app/.aspnet/DataProtection-Keys` | ASP.NET Core data-protection keys |
+
+PostgreSQL 18 uses a version-specific data directory below `/var/lib/postgresql`. An existing PostgreSQL 17 volume cannot be upgraded by changing the image tag alone. Back up and restore the database or use `pg_upgrade` before starting PostgreSQL 18 with existing data.
+
+Update a pinned installation by changing `MIREYA_VERSION` and running:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+`docker compose down` removes containers and the network but keeps the named volumes. `docker compose down --volumes` permanently deletes the database, uploaded media, and keys; use it only when intentionally resetting the installation.
+
+## Docker image releases and tags
+
+The `Publish Docker image` GitHub Actions workflow smoke-tests the image with PostgreSQL, then publishes one multi-platform manifest for `linux/amd64` and `linux/arm64` to Docker Hub.
+
+The project uses Semantic Versioning:
+
+| Release                          | Published tags                                    |
+| -------------------------------- | ------------------------------------------------- |
+| Stable `v1.4.2`                  | `1.4.2`, `1.4`, `1`, `latest`, and `sha-<commit>` |
+| Pre-release `v1.5.0-rc.1`        | `1.5.0-rc.1` and `sha-<commit>`                   |
+| Manual version without promotion | Exact version and `sha-<commit>`                  |
+
+Exact versions and SHA tags are immutable deployment references. `1.4`, `1`, and `latest` are convenience channels that move when a newer stable release is promoted. Production deployments should normally pin the exact version; use the SHA tag when commit-level reproducibility is required.
+
+To publish automatically, push a Semantic Version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow can also be run manually with a version such as `1.0.1` or `1.1.0-rc.1`. Enable `publish_latest` only when that manual stable build is the current supported release; doing so also moves the matching major and minor tags.
+
+Configure these GitHub repository settings before the first publish:
+
+- Actions variable `DOCKERHUB_USERNAME`: the Docker Hub account name (`moritzreis`).
+- Actions secret `DOCKERHUB_TOKEN`: a Docker Hub access token with permission to push to `moritzreis/mireya-digital-signage`.
+
+The published image includes OCI source, revision, version, documentation, and license metadata as well as build provenance and an SBOM.
 
 ## Aspire
 
@@ -107,11 +169,11 @@ Use Aspire for a local production-like topology with service defaults, health ch
 
 The service defaults and API expose operational endpoints:
 
-| Endpoint | Purpose |
-| --- | --- |
+| Endpoint        | Purpose                                                                 |
+| --------------- | ----------------------------------------------------------------------- |
 | `GET /api/info` | Public Mireya server identity. Clients use it to confirm a backend URL. |
-| `GET /alive` | Liveness check. |
-| `GET /health` | Readiness check, including database connectivity. |
+| `GET /alive`    | Liveness check.                                                         |
+| `GET /health`   | Readiness check, including database connectivity.                       |
 
 OpenAPI and Swagger UI are enabled in the Development environment.
 
