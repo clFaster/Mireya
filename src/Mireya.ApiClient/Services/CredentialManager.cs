@@ -6,13 +6,14 @@ namespace Mireya.ApiClient.Services;
 
 public interface ICredentialManager
 {
-    Task SaveCredentialsAsync(
+    Task SaveRegistrationAsync(Guid backendInstanceId, string username, string password);
+    Task SaveTokensAsync(
         Guid backendInstanceId,
-        string username,
         string accessToken,
         string? refreshToken = null,
         DateTime? expiresAt = null
     );
+    Task<bool> TryMigrateLegacyCredentialsAsync(string username, string password);
 
     Task<BackendCredential?> GetCredentialsAsync(Guid backendInstanceId);
     Task<BackendCredential?> GetCurrentCredentialsAsync();
@@ -39,16 +40,14 @@ public class CredentialManager : ICredentialManager
         _logger = logger;
     }
 
-    public async Task SaveCredentialsAsync(
+    public async Task SaveRegistrationAsync(
         Guid backendInstanceId,
         string username,
-        string accessToken,
-        string? refreshToken = null,
-        DateTime? expiresAt = null
+        string password
     )
     {
         _logger.LogInformation(
-            "Saving credentials for backend {BackendId}, username: {Username}",
+            "Saving registration credentials for backend {BackendId}, username: {Username}",
             backendInstanceId,
             username
         );
@@ -61,27 +60,74 @@ public class CredentialManager : ICredentialManager
             {
                 BackendInstanceId = backendInstanceId,
                 Username = username,
-                AccessToken = accessToken, // Automatically encrypted via property setter
-                RefreshToken = refreshToken,
-                TokenExpiresAt = expiresAt,
+                Password = password,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
             };
             _db.BackendCredentials.Add(credential);
-            _logger.LogDebug("Created new credential record");
+            _logger.LogDebug("Created new backend registration");
         }
         else
         {
             credential.Username = username;
-            credential.AccessToken = accessToken;
-            credential.RefreshToken = refreshToken;
-            credential.TokenExpiresAt = expiresAt;
+            credential.Password = password;
+            credential.AccessToken = null;
+            credential.RefreshToken = null;
+            credential.TokenExpiresAt = null;
             credential.UpdatedAt = DateTime.UtcNow;
-            _logger.LogDebug("Updated existing credential record");
+            _logger.LogDebug("Replaced backend registration");
         }
 
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Credentials saved successfully (encrypted)");
+        _logger.LogInformation("Registration credentials saved successfully (encrypted)");
+    }
+
+    public async Task SaveTokensAsync(
+        Guid backendInstanceId,
+        string accessToken,
+        string? refreshToken = null,
+        DateTime? expiresAt = null
+    )
+    {
+        var credential =
+            await _db.BackendCredentials.FindAsync(backendInstanceId)
+            ?? throw new InvalidOperationException(
+                $"Cannot save tokens before backend {backendInstanceId} is registered."
+            );
+
+        credential.AccessToken = accessToken;
+        credential.RefreshToken = refreshToken;
+        credential.TokenExpiresAt = expiresAt;
+        credential.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        _logger.LogInformation(
+            "Authentication tokens saved for backend {BackendId}",
+            backendInstanceId
+        );
+    }
+
+    public async Task<bool> TryMigrateLegacyCredentialsAsync(string username, string password)
+    {
+        var credential = await _db.BackendCredentials.FirstOrDefaultAsync(c =>
+            c.Username == username
+        );
+
+        if (credential == null)
+            return false;
+
+        if (string.IsNullOrEmpty(credential.Password))
+        {
+            credential.Password = password;
+            credential.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            _logger.LogInformation(
+                "Migrated legacy password to backend {BackendId}",
+                credential.BackendInstanceId
+            );
+        }
+
+        return true;
     }
 
     public async Task<BackendCredential?> GetCredentialsAsync(Guid backendInstanceId)

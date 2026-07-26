@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Avalonia.Media.Imaging;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -160,16 +160,20 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         _logger.LogInformation("ContentDisplayViewModel initialized");
 
         // Start authentication and connection in background
-        _ = InitializeAsync().ContinueWith(
-            t => _logger.LogError(t.Exception, "Background initialization failed"),
-            TaskContinuationOptions.OnlyOnFaulted);
+        _ = InitializeAsync()
+            .ContinueWith(
+                t => _logger.LogError(t.Exception, "Background initialization failed"),
+                TaskContinuationOptions.OnlyOnFaulted
+            );
 
         // Auto-hide the status overlay once content starts playing (independent of AutoStart)
         if (appSettings.HideScreenInfo)
         {
-            _ = AutoHideOverlayAsync().ContinueWith(
-                t => _logger.LogError(t.Exception, "Auto-hide overlay faulted"),
-                TaskContinuationOptions.OnlyOnFaulted);
+            _ = AutoHideOverlayAsync()
+                .ContinueWith(
+                    t => _logger.LogError(t.Exception, "Auto-hide overlay faulted"),
+                    TaskContinuationOptions.OnlyOnFaulted
+                );
         }
     }
 
@@ -188,7 +192,8 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             if (state == AuthenticationState.Failed)
                 return;
 
-            await EnsureAuthenticatedAndConnectedAsync(state);
+            if (!await EnsureAuthenticatedAndConnectedAsync(state))
+                return;
 
             // First-run / approval gate (UA3): surface the pairing code and wait
             // for an administrator to approve this screen before expecting content.
@@ -217,7 +222,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         return await _authenticationService.GetAuthenticationStateAsync();
     }
 
-    private async Task EnsureAuthenticatedAndConnectedAsync(AuthenticationState state)
+    private async Task<bool> EnsureAuthenticatedAndConnectedAsync(AuthenticationState state)
     {
         if (state == AuthenticationState.NotAuthenticated)
         {
@@ -226,16 +231,18 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             if (!loginResult.Success)
             {
                 StatusText = $"Authentication failed: {loginResult.ErrorMessage}";
-                return;
+                ConnectionStatus = "Authentication failed ✗";
+                return false;
             }
         }
         else if (state == AuthenticationState.Authenticated)
         {
             await ConnectToSignalRAsync();
-            return;
+            return _hubService.IsConnected;
         }
 
         UpdateConnectionStatus();
+        return _hubService.IsConnected;
     }
 
     private async Task ConnectToSignalRAsync()
@@ -269,7 +276,10 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         ConnectionStatus = _hubService.IsConnected ? "Connected ✓" : "Disconnected ✗";
         ConnectionIndicatorColor = _hubService.IsConnected ? Brushes.LimeGreen : Brushes.OrangeRed;
         StatusText = _hubService.IsConnected ? "Waiting for content..." : "Not connected to server";
-        _logger.LogInformation("Authentication completed, SignalR connected: {IsConnected}", _hubService.IsConnected);
+        _logger.LogInformation(
+            "Authentication completed, SignalR connected: {IsConnected}",
+            _hubService.IsConnected
+        );
     }
 
     /// <summary>
@@ -291,8 +301,16 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                 continue;
             }
 
-            var approved = string.Equals(info.ApprovalStatus, "Approved", StringComparison.OrdinalIgnoreCase);
-            var rejected = string.Equals(info.ApprovalStatus, "Rejected", StringComparison.OrdinalIgnoreCase);
+            var approved = string.Equals(
+                info.ApprovalStatus,
+                "Approved",
+                StringComparison.OrdinalIgnoreCase
+            );
+            var rejected = string.Equals(
+                info.ApprovalStatus,
+                "Rejected",
+                StringComparison.OrdinalIgnoreCase
+            );
 
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -324,7 +342,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             {
                 _logger.LogInformation(
                     "Screen not yet approved (status: {Status}); showing pairing code {Code}",
-                    info.ApprovalStatus, info.ScreenIdentifier);
+                    info.ApprovalStatus,
+                    info.ScreenIdentifier
+                );
                 firstPass = false;
             }
 
@@ -450,9 +470,11 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                         ShowCurrentItem();
                     break;
                 case "identify":
-                    _ = FlashIdentifyAsync().ContinueWith(
-                        t => _logger.LogError(t.Exception, "Identify flash faulted"),
-                        TaskContinuationOptions.OnlyOnFaulted);
+                    _ = FlashIdentifyAsync()
+                        .ContinueWith(
+                            t => _logger.LogError(t.Exception, "Identify flash faulted"),
+                            TaskContinuationOptions.OnlyOnFaulted
+                        );
                     break;
                 case "next":
                     if (_playlist.Count > 0)
@@ -515,7 +537,8 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
     private PlaylistItem? TryCreatePlaylistItem(
         Mireya.ApiClient.Models.CampaignDetail campaign,
-        Mireya.ApiClient.Models.CampaignAssetItem asset)
+        Mireya.ApiClient.Models.CampaignAssetItem asset
+    )
     {
         var localPath = _assetSyncService.GetAssetLocalPath(asset.AssetId);
         var needsLocalFile = asset.AssetType != AssetType.Website;
@@ -567,9 +590,11 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
         // Orchestrate the dip-to-black crossfade. Fire-and-forget: the async flow marshals
         // back to the UI thread via Avalonia's synchronization context.
-        _ = RunTransitionAsync().ContinueWith(
-            t => _logger.LogError(t.Exception, "Asset transition faulted"),
-            TaskContinuationOptions.OnlyOnFaulted);
+        _ = RunTransitionAsync()
+            .ContinueWith(
+                t => _logger.LogError(t.Exception, "Asset transition faulted"),
+                TaskContinuationOptions.OnlyOnFaulted
+            );
     }
 
     /// <summary>
@@ -587,7 +612,11 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         // Re-showing the exact same website that is already loaded neither reloads nor
         // repaints it, so there is nothing to mask and no reveal signal will ever fire.
         // Just refresh the timer / now-playing without a pointless black dip.
-        if (_hasDisplayed && item.AssetId == _displayedAssetId && item.AssetType == AssetType.Website)
+        if (
+            _hasDisplayed
+            && item.AssetId == _displayedAssetId
+            && item.AssetType == AssetType.Website
+        )
         {
             ApplyCurrentItem(item);
             return;
@@ -762,12 +791,13 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         StartAdvanceTimer(item.DurationSeconds);
     }
 
-    private static Stretch MapStretch(ClientImageFit fit) => fit switch
-    {
-        ClientImageFit.Cover => Stretch.UniformToFill,
-        ClientImageFit.Fill => Stretch.Fill,
-        _ => Stretch.Uniform,
-    };
+    private static Stretch MapStretch(ClientImageFit fit) =>
+        fit switch
+        {
+            ClientImageFit.Cover => Stretch.UniformToFill,
+            ClientImageFit.Fill => Stretch.Fill,
+            _ => Stretch.Uniform,
+        };
 
     /// <summary>
     ///     Restarts the image opacity at zero and animates it back to full on the next UI tick,
@@ -955,7 +985,8 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
         Cleanup();
         GC.SuppressFinalize(this);

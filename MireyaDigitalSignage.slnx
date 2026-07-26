@@ -7,6 +7,7 @@
   <Project Path="src/MireyaDigitalSignage.AppHost/MireyaDigitalSignage.AppHost.csproj" />
   <Project Path="src/MireyaDigitalSignage.ServiceDefaults/MireyaDigitalSignage.ServiceDefaults.csproj" />
   <Folder Name="/Client/">
+    <Project Path="src/Mireya.ApiClient.Tests/Mireya.ApiClient.Tests.csproj" />
     <Project Path="src/Mireya.ApiClient.TestConsole/Mireya.ApiClient.TestConsole.csproj" />
     <Project Path="src/Mireya.ApiClient/Mireya.ApiClient.csproj" />
     <Project Path="src/Mireya.Client.Core/Mireya.Client.Core.csproj" />
