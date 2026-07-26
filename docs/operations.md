@@ -23,9 +23,9 @@ Alerting__Enabled=true
 
 The `provider` setting selects the EF Core provider:
 
-| Value | Provider project | Connection string |
-| --- | --- | --- |
-| `Sqlite` | `Mireya.Database.Sqlite` | `ConnectionStrings:Sqlite` |
+| Value      | Provider project           | Connection string            |
+| ---------- | -------------------------- | ---------------------------- |
+| `Sqlite`   | `Mireya.Database.Sqlite`   | `ConnectionStrings:Sqlite`   |
 | `Postgres` | `Mireya.Database.Postgres` | `ConnectionStrings:Postgres` |
 
 Development uses SQLite by default. Docker Compose and Aspire use PostgreSQL.
@@ -85,16 +85,16 @@ curl --fail http://localhost:8080/health
 
 Compose configuration:
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `MIREYA_IMAGE` | No | `moritzreis/mireya-digital-signage` | Image repository. Override with `mireya` for a local image. |
-| `MIREYA_VERSION` | No | `latest` | Image tag. Pin an exact version in production. |
-| `MIREYA_HTTP_PORT` | No | `8080` | Port exposed on the host. |
-| `POSTGRES_DB` | No | `mireya` | PostgreSQL database name. |
-| `POSTGRES_USER` | No | `mireya` | PostgreSQL user. |
-| `POSTGRES_PASSWORD` | Yes | None | PostgreSQL password. Avoid `;` because the value is inserted into a connection string. |
-| `MIREYA_ADMIN_EMAIL` | No | `admin@mireya.local` | Initial administrator email. |
-| `MIREYA_ADMIN_PASSWORD` | Yes | None | Initial administrator password; minimum nine characters and at least one digit. |
+| Variable                | Required | Default                             | Purpose                                                                                |
+| ----------------------- | -------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `MIREYA_IMAGE`          | No       | `moritzreis/mireya-digital-signage` | Image repository. Override with `mireya` for a local image.                            |
+| `MIREYA_VERSION`        | No       | `latest`                            | Image tag. Pin an exact version in production.                                         |
+| `MIREYA_HTTP_PORT`      | No       | `8080`                              | Port exposed on the host.                                                              |
+| `POSTGRES_DB`           | No       | `mireya`                            | PostgreSQL database name.                                                              |
+| `POSTGRES_USER`         | No       | `mireya`                            | PostgreSQL user.                                                                       |
+| `POSTGRES_PASSWORD`     | Yes      | None                                | PostgreSQL password. Avoid `;` because the value is inserted into a connection string. |
+| `MIREYA_ADMIN_EMAIL`    | No       | `admin@mireya.local`                | Initial administrator email.                                                           |
+| `MIREYA_ADMIN_PASSWORD` | Yes      | None                                | Initial administrator password; minimum nine characters and at least one digit.        |
 
 Validate the Compose configuration:
 
@@ -106,11 +106,11 @@ The API applies Entity Framework migrations and creates the initial admin accoun
 
 Three named volumes keep runtime state across container replacement:
 
-| Volume | Container path | Contents |
-| --- | --- | --- |
-| `mireya-db` | `/var/lib/postgresql` | PostgreSQL data |
-| `mireya-uploads` | `/app/uploads` | Uploaded assets and thumbnails |
-| `mireya-keys` | `/home/app/.aspnet/DataProtection-Keys` | ASP.NET Core data-protection keys |
+| Volume           | Container path                          | Contents                          |
+| ---------------- | --------------------------------------- | --------------------------------- |
+| `mireya-db`      | `/var/lib/postgresql`                   | PostgreSQL data                   |
+| `mireya-uploads` | `/app/uploads`                          | Uploaded assets and thumbnails    |
+| `mireya-keys`    | `/home/app/.aspnet/DataProtection-Keys` | ASP.NET Core data-protection keys |
 
 PostgreSQL 18 uses a version-specific data directory below `/var/lib/postgresql`. An existing PostgreSQL 17 volume cannot be upgraded by changing the image tag alone. Back up and restore the database or use `pg_upgrade` before starting PostgreSQL 18 with existing data.
 
@@ -129,11 +129,11 @@ The `Publish Docker image` GitHub Actions workflow smoke-tests the image with Po
 
 The project uses Semantic Versioning:
 
-| Release | Published tags |
-| --- | --- |
-| Stable `v1.4.2` | `1.4.2`, `1.4`, `1`, `latest`, and `sha-<commit>` |
-| Pre-release `v1.5.0-rc.1` | `1.5.0-rc.1` and `sha-<commit>` |
-| Manual version without promotion | Exact version and `sha-<commit>` |
+| Release                          | Published tags                                    |
+| -------------------------------- | ------------------------------------------------- |
+| Stable `v1.4.2`                  | `1.4.2`, `1.4`, `1`, `latest`, and `sha-<commit>` |
+| Pre-release `v1.5.0-rc.1`        | `1.5.0-rc.1` and `sha-<commit>`                   |
+| Manual version without promotion | Exact version and `sha-<commit>`                  |
 
 Exact versions and SHA tags are immutable deployment references. `1.4`, `1`, and `latest` are convenience channels that move when a newer stable release is promoted. Production deployments should normally pin the exact version; use the SHA tag when commit-level reproducibility is required.
 
@@ -169,11 +169,11 @@ Use Aspire for a local production-like topology with service defaults, health ch
 
 The service defaults and API expose operational endpoints:
 
-| Endpoint | Purpose |
-| --- | --- |
+| Endpoint        | Purpose                                                                 |
+| --------------- | ----------------------------------------------------------------------- |
 | `GET /api/info` | Public Mireya server identity. Clients use it to confirm a backend URL. |
-| `GET /alive` | Liveness check. |
-| `GET /health` | Readiness check, including database connectivity. |
+| `GET /alive`    | Liveness check.                                                         |
+| `GET /health`   | Readiness check, including database connectivity.                       |
 
 OpenAPI and Swagger UI are enabled in the Development environment.
 
