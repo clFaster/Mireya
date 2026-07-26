@@ -190,6 +190,8 @@ public class BackendCredential
 
     public byte[]? EncryptedRefreshToken { get; set; }
 
+    public byte[]? EncryptedPassword { get; set; }
+
     public DateTime? TokenExpiresAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -219,6 +221,17 @@ public class BackendCredential
         set =>
             EncryptedRefreshToken =
                 value != null ? EncryptData(Encoding.UTF8.GetBytes(value)) : null;
+    }
+
+    [NotMapped]
+    public string? Password
+    {
+        get =>
+            EncryptedPassword != null
+                ? Encoding.UTF8.GetString(DecryptData(EncryptedPassword))
+                : null;
+        set =>
+            EncryptedPassword = value != null ? EncryptData(Encoding.UTF8.GetBytes(value)) : null;
     }
 
     private static byte[] EncryptData(byte[] data)

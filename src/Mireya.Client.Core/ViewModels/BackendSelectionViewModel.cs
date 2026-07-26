@@ -159,17 +159,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
 
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var response = await client.GetAsync(
-                $"{item.Instance.BaseUrl.TrimEnd('/')}/api/screenmanagement/bonjour"
-            );
-
-            // Any recognised HTTP response means the Mireya API is up
-            item.IsOnline =
-                response.StatusCode
-                    is HttpStatusCode.Unauthorized
-                        or HttpStatusCode.Forbidden
-                        or HttpStatusCode.OK;
+            item.IsOnline = await VerifyMireyaServerAsync(item.Instance.BaseUrl);
         }
         catch
         {

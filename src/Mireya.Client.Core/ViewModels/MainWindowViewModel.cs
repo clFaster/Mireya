@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -41,10 +41,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         // Skip server selection and connect automatically if configured
         if (_appSettings.AutoStart)
         {
-            _ = TryAutoConnectAsync().ContinueWith(
-                t => _logger.LogError(t.Exception, "Auto-connect task faulted"),
-                TaskContinuationOptions.OnlyOnFaulted
-            );
+            _ = TryAutoConnectAsync()
+                .ContinueWith(
+                    t => _logger.LogError(t.Exception, "Auto-connect task faulted"),
+                    TaskContinuationOptions.OnlyOnFaulted
+                );
         }
     }
 
@@ -57,8 +58,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         var backendManager = _serviceProvider.GetRequiredService<IBackendManager>();
         var apiClientConfig = _serviceProvider.GetRequiredService<IApiClientConfiguration>();
-        var logger          = _serviceProvider.GetRequiredService<ILogger<BackendSelectionViewModel>>();
-        var appSettings     = _serviceProvider.GetRequiredService<AppSettings>();
+        var logger = _serviceProvider.GetRequiredService<ILogger<BackendSelectionViewModel>>();
+        var appSettings = _serviceProvider.GetRequiredService<AppSettings>();
 
         CurrentView = new BackendSelectionViewModel(
             backendManager,
@@ -115,13 +116,20 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             _logger.LogInformation("AutoStart: probing {Url}", target.BaseUrl);
 
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var response = await http.GetAsync(
-                $"{target.BaseUrl.TrimEnd('/')}/api/screenmanagement/bonjour"
-            );
-
-            var isOnline = response.StatusCode is HttpStatusCode.Unauthorized
-                                                or HttpStatusCode.Forbidden
-                                                or HttpStatusCode.OK;
+            var response = await http.GetAsync($"{target.BaseUrl.TrimEnd('/')}/api/info");
+            var isOnline = false;
+            if (response.IsSuccessStatusCode)
+            {
+                await using var stream = await response.Content.ReadAsStreamAsync();
+                using var info = await JsonDocument.ParseAsync(stream);
+                isOnline =
+                    info.RootElement.TryGetProperty("application", out var application)
+                    && string.Equals(
+                        application.GetString(),
+                        "Mireya",
+                        StringComparison.OrdinalIgnoreCase
+                    );
+            }
 
             if (!isOnline)
             {
@@ -157,7 +165,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
 
         _logger.LogInformation("Disposing MainWindowViewModel");

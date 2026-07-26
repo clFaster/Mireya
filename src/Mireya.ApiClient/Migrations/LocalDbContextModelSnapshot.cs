@@ -64,6 +64,9 @@ namespace Mireya.ApiClient.Migrations
                     b.Property<byte[]>("EncryptedAccessToken")
                         .HasColumnType("BLOB");
 
+                    b.Property<byte[]>("EncryptedPassword")
+                        .HasColumnType("BLOB");
+
                     b.Property<byte[]>("EncryptedRefreshToken")
                         .HasColumnType("BLOB");
 
