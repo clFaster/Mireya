@@ -214,7 +214,8 @@ app.MapHub<ScreenHub>("/hubs/screen");
 // Serve build-time static web assets, including the fingerprinted .NET 10
 // Blazor boot script. UseStaticFiles above remains responsible for runtime
 // uploads that aren't present in the build manifest.
-app.MapStaticAssets();
+if (!app.Environment.IsEnvironment("NSwag"))
+    app.MapStaticAssets();
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();

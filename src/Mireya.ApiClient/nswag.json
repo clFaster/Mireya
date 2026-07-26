@@ -13,7 +13,7 @@
       "msBuildOutputPath": null,
       "verbose": true,
       "workingDirectory": null,
-      "aspNetCoreEnvironment": "Development",
+      "aspNetCoreEnvironment": "NSwag",
       "output": null,
       "newLineBehavior": "Auto"
     }

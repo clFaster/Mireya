@@ -8,14 +8,16 @@ namespace Mireya.ApiClient.Services;
 /// </summary>
 public interface ICredentialRepository
 {
-    // Legacy file-based storage
-    Task<bool> HasLegacyCredentialsAsync();
-    Task SaveLegacyCredentialsAsync(Credentials credentials);
-    Task<Credentials?> GetLegacyCredentialsAsync();
+    Task MigrateLegacyCredentialsAsync();
 
     // Database-backed storage (per-backend)
-    Task SaveCredentialsAsync(Guid backendId, string username, string accessToken,
-        string? refreshToken, DateTime? expiresAt);
+    Task SaveRegistrationAsync(Guid backendId, string username, string password);
+    Task SaveTokensAsync(
+        Guid backendId,
+        string accessToken,
+        string? refreshToken,
+        DateTime? expiresAt
+    );
     Task<BackendCredential?> GetCredentialsAsync(Guid backendId);
     Task<bool> HasValidCredentialsAsync(Guid backendId);
     Task DeleteCredentialsAsync(Guid backendId);
@@ -24,22 +26,38 @@ public interface ICredentialRepository
     string? GetAccessToken();
 }
 
-public class CredentialRepository(
-    ICredentialStorage storage,
-    ICredentialManager manager
-) : ICredentialRepository
+public class CredentialRepository(ICredentialStorage storage, ICredentialManager manager)
+    : ICredentialRepository
 {
-    // Legacy
-    public Task<bool> HasLegacyCredentialsAsync() => storage.HasCredentialsAsync();
-    public Task SaveLegacyCredentialsAsync(Credentials credentials) => storage.SaveCredentialsAsync(credentials);
-    public Task<Credentials?> GetLegacyCredentialsAsync() => storage.GetCredentialsAsync();
+    public async Task MigrateLegacyCredentialsAsync()
+    {
+        var legacy = await storage.GetCredentialsAsync();
+        if (legacy == null)
+            return;
+
+        // Only migrate when the legacy username matches an existing backend registration.
+        // This prevents credentials from one server being applied to a newly added server.
+        if (await manager.TryMigrateLegacyCredentialsAsync(legacy.Username, legacy.Password))
+            await storage.DeleteCredentialsAsync();
+    }
 
     // Database
-    public Task SaveCredentialsAsync(Guid backendId, string username, string accessToken,
-        string? refreshToken, DateTime? expiresAt) =>
-        manager.SaveCredentialsAsync(backendId, username, accessToken, refreshToken, expiresAt);
-    public Task<BackendCredential?> GetCredentialsAsync(Guid backendId) => manager.GetCredentialsAsync(backendId);
-    public Task<bool> HasValidCredentialsAsync(Guid backendId) => manager.HasValidCredentialsAsync(backendId);
+    public Task SaveRegistrationAsync(Guid backendId, string username, string password) =>
+        manager.SaveRegistrationAsync(backendId, username, password);
+
+    public Task SaveTokensAsync(
+        Guid backendId,
+        string accessToken,
+        string? refreshToken,
+        DateTime? expiresAt
+    ) => manager.SaveTokensAsync(backendId, accessToken, refreshToken, expiresAt);
+
+    public Task<BackendCredential?> GetCredentialsAsync(Guid backendId) =>
+        manager.GetCredentialsAsync(backendId);
+
+    public Task<bool> HasValidCredentialsAsync(Guid backendId) =>
+        manager.HasValidCredentialsAsync(backendId);
+
     public Task DeleteCredentialsAsync(Guid backendId) => manager.DeleteCredentialsAsync(backendId);
 
     // Token
