@@ -54,10 +54,20 @@ dotnet run --project src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
 Run the API with PostgreSQL through Docker Compose:
 
 ```bash
-docker compose up --build
+cp .env.example .env
+# Edit .env and replace both example passwords.
+docker compose up -d
 ```
 
-The API is published on `http://localhost:8080`.
+Compose pulls `moritzreis/mireya-digital-signage:latest`, creates the PostgreSQL
+database, applies migrations automatically, and persists the database, uploaded
+media, and data-protection keys in named volumes. The admin UI is published on
+`http://localhost:8080/login`.
+
+For reproducible deployments, set `MIREYA_VERSION` in `.env` to an exact release
+such as `1.0.0` instead of `latest`. See the
+[operations guide](https://mireya.moritzreis.dev/#/operations) for all settings,
+health checks, image tags, upgrades, and initial-admin behavior.
 
 ## Common commands
 
