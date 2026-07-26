@@ -211,6 +211,11 @@ app.MapGroup("/auth").MapLoginEndpoints(); // Cookie login/logout for Blazor adm
 app.MapCarter();
 app.MapHub<ScreenHub>("/hubs/screen");
 
+// Serve build-time static web assets, including the fingerprinted .NET 10
+// Blazor boot script. UseStaticFiles above remains responsible for runtime
+// uploads that aren't present in the build manifest.
+app.MapStaticAssets();
+
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
 

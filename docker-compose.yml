@@ -25,6 +25,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: ${MIREYA_FORWARDED_HEADERS_ENABLED:-true}
       provider: Postgres
       ConnectionStrings__Postgres: "Host=db;Database=${POSTGRES_DB:-mireya};Username=${POSTGRES_USER:-mireya};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}"
       DefaultAdminUser__Email: ${MIREYA_ADMIN_EMAIL:-admin@mireya.local}

@@ -8,7 +8,7 @@ The Mireya display client uses a shared Avalonia core with platform-specific hea
 | `Mireya.Client.Desktop` | Implemented | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage. |
 | `Mireya.Client.Android` | Implemented | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior. |
 
-Packaging installers and store-ready artifacts are still roadmap work. The current repo supports building and running the platform heads from source.
+The Windows desktop head has repeatable Microsoft Store MSIX packaging. Other installers and store artifacts remain roadmap work.
 
 ## Desktop
 
@@ -24,6 +24,20 @@ Publish a Windows build:
 dotnet publish src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release -r win-x64 -o ./publish
 ```
 
+Create a Store-ready x64 MSIX from a Developer PowerShell on Windows with Visual Studio's MSIX Packaging Tools installed:
+
+```powershell
+msbuild src/Mireya.Client.Desktop.Package/Mireya.Client.Desktop.Package.wapproj `
+  /restore `
+  /p:Configuration=Release `
+  /p:Platform=x64 `
+  /p:RuntimeIdentifier=win-x64 `
+  /p:AppxBundle=Never `
+  /p:AppxPackageSigningEnabled=false
+```
+
+The packaging project contains the manifest and Store artwork and references the desktop client through its `win-x64` publish profile. See [Microsoft Store Release](microsoft-store-release.md) for Partner Center identity setup, release automation, certification, and listing content.
+
 Publish a Linux build:
 
 ```bash
@@ -34,7 +48,8 @@ For Raspberry Pi-style targets, use a Linux ARM runtime such as `linux-arm64` af
 
 ### Desktop packaging gaps
 
-- Windows MSIX/Microsoft Store packaging has not been added yet.
+- The Microsoft Store package currently targets x64 Windows devices; x86 and Arm64 bundles have not been added.
+- Clean-device playback validation and the first Partner Center certification must be completed for each public release.
 - The current desktop website renderer uses WebView2. That is appropriate for Windows, but Linux kiosk packaging needs a Linux-specific website renderer such as WebKitGTK or CEF.
 - The desktop project references Windows libVLC native packaging. Linux packaging needs the correct native libVLC dependency strategy for the target distribution.
 
@@ -109,7 +124,7 @@ Use the current desktop and Android heads as the pattern:
 
 ## Roadmap
 
-- Windows installer/MSIX packaging.
+- Additional Windows installer formats and MSIX architectures.
 - Linux kiosk packaging with a Linux-native website renderer.
 - Raspberry Pi packaging and service setup.
 - Android release signing and APK/AAB distribution workflow.
