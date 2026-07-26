@@ -57,7 +57,7 @@ In Docker, uploads are mounted at `/app/uploads` and persisted in the `mireya-up
 
 `docker-compose.yml` runs:
 
-- `db`: PostgreSQL 17 Alpine with a named volume and health check.
+- `db`: PostgreSQL 18 Alpine with a named volume and health check.
 - `api`: `moritzreis/mireya-digital-signage`, configured for PostgreSQL with a readiness health check.
 
 Create the local configuration file, replace both example passwords, and start the stack:
@@ -108,9 +108,11 @@ Three named volumes keep runtime state across container replacement:
 
 | Volume | Container path | Contents |
 | --- | --- | --- |
-| `mireya-db` | `/var/lib/postgresql/data` | PostgreSQL data |
+| `mireya-db` | `/var/lib/postgresql` | PostgreSQL data |
 | `mireya-uploads` | `/app/uploads` | Uploaded assets and thumbnails |
 | `mireya-keys` | `/home/app/.aspnet/DataProtection-Keys` | ASP.NET Core data-protection keys |
+
+PostgreSQL 18 uses a version-specific data directory below `/var/lib/postgresql`. An existing PostgreSQL 17 volume cannot be upgraded by changing the image tag alone. Back up and restore the database or use `pg_upgrade` before starting PostgreSQL 18 with existing data.
 
 Update a pinned installation by changing `MIREYA_VERSION` and running:
 
