@@ -2,7 +2,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder
     .AddPostgres("postgres-server")
-    .WithDataVolume("mireya-db")
+    // Keep major-version upgrades explicit: PostgreSQL data directories cannot
+    // be upgraded safely by changing the container image alone.
+    .WithImageTag("18")
+    .WithDataVolume("mireya-db-18")
     .AddDatabase("Postgres");
 
 builder
