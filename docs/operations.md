@@ -85,16 +85,17 @@ curl --fail http://localhost:8080/health
 
 Compose configuration:
 
-| Variable                | Required | Default                             | Purpose                                                                                |
-| ----------------------- | -------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| `MIREYA_IMAGE`          | No       | `moritzreis/mireya-digital-signage` | Image repository. Override with `mireya` for a local image.                            |
-| `MIREYA_VERSION`        | No       | `latest`                            | Image tag. Pin an exact version in production.                                         |
-| `MIREYA_HTTP_PORT`      | No       | `8080`                              | Port exposed on the host.                                                              |
-| `POSTGRES_DB`           | No       | `mireya`                            | PostgreSQL database name.                                                              |
-| `POSTGRES_USER`         | No       | `mireya`                            | PostgreSQL user.                                                                       |
-| `POSTGRES_PASSWORD`     | Yes      | None                                | PostgreSQL password. Avoid `;` because the value is inserted into a connection string. |
-| `MIREYA_ADMIN_EMAIL`    | No       | `admin@mireya.local`                | Initial administrator email.                                                           |
-| `MIREYA_ADMIN_PASSWORD` | Yes      | None                                | Initial administrator password; minimum nine characters and at least one digit.        |
+| Variable                           | Required | Default                             | Purpose                                                                                |
+| ---------------------------------- | -------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `MIREYA_IMAGE`                     | No       | `moritzreis/mireya-digital-signage` | Image repository. Override with `mireya` for a local image.                            |
+| `MIREYA_VERSION`                   | No       | `latest`                            | Image tag. Pin an exact version in production.                                         |
+| `MIREYA_HTTP_PORT`                 | No       | `8080`                              | Port exposed on the host.                                                              |
+| `MIREYA_FORWARDED_HEADERS_ENABLED` | No       | `true`                              | Process proxy-provided client IP and original HTTPS scheme.                            |
+| `POSTGRES_DB`                      | No       | `mireya`                            | PostgreSQL database name.                                                              |
+| `POSTGRES_USER`                    | No       | `mireya`                            | PostgreSQL user.                                                                       |
+| `POSTGRES_PASSWORD`                | Yes      | None                                | PostgreSQL password. Avoid `;` because the value is inserted into a connection string. |
+| `MIREYA_ADMIN_EMAIL`               | No       | `admin@mireya.local`                | Initial administrator email.                                                           |
+| `MIREYA_ADMIN_PASSWORD`            | Yes      | None                                | Initial administrator password; minimum nine characters and at least one digit.        |
 
 Validate the Compose configuration:
 
@@ -122,6 +123,22 @@ docker compose up -d
 ```
 
 `docker compose down` removes containers and the network but keeps the named volumes. `docker compose down --volumes` permanently deletes the database, uploaded media, and keys; use it only when intentionally resetting the installation.
+
+## Reverse proxies, Coolify, and Cloudflare
+
+The Compose deployment enables ASP.NET Core forwarded-header processing so the application sees the original HTTPS scheme when TLS terminates at Coolify, Traefik, Cloudflare Tunnel, or another reverse proxy. Only expose the application port to a trusted proxy when this setting is enabled. Set `MIREYA_FORWARDED_HEADERS_ENABLED=false` when the application receives client traffic directly and doesn't use forwarded headers.
+
+The proxy must support WebSocket upgrades for the Blazor endpoint at `/_blazor`. Coolify/Traefik and Cloudflare Tunnel normally support WebSockets without a special Mireya setting.
+
+Do not apply a Cloudflare “Cache Everything” rule to Mireya's HTML, authentication, API, health, or SignalR paths. Bypass edge caching for at least:
+
+- `/_blazor*`
+- `/api/*`
+- `/auth/*`
+- `/health`
+- `/alive`
+
+Static assets such as `/_framework/*`, CSS, icons, and uploaded media can be cached according to their origin response headers. After replacing a deployment that returned a cached 404 for a framework asset, purge the Cloudflare cache so the corrected asset is fetched from the new container.
 
 ## Docker image releases and tags
 

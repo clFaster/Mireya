@@ -111,6 +111,8 @@ jobs:
         run: |
           docker compose up --detach --wait --wait-timeout 180
           curl --fail --silent --show-error "http://localhost:${MIREYA_HTTP_PORT}/health"
+          curl --fail --silent --show-error \
+            "http://localhost:${MIREYA_HTTP_PORT}/_framework/blazor.web.js" > /dev/null
           admin_count="$(docker compose exec -T db \
             psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
             --tuples-only --no-align \

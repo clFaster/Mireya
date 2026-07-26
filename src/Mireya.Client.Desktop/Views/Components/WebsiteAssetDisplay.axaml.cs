@@ -213,10 +213,15 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
                 return;
             }
 
+            // MSIX installs the application under a read-only package directory.
+            // Keep the WebView2 profile with Mireya's other per-user data instead
+            // of attempting to write beside the executable.
             var userDataFolder = System.IO.Path.Combine(
-                AppContext.BaseDirectory,
-                "WebView2Data"
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Mireya",
+                "WebView2"
             );
+            System.IO.Directory.CreateDirectory(userDataFolder);
 
             _webViewEnvironment = await CoreWebView2Environment.CreateAsync(
                 null, userDataFolder
