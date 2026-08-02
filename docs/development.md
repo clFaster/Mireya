@@ -18,21 +18,21 @@ dotnet tool restore
 
 ## Project structure
 
-| Project | Purpose |
-| --- | --- |
-| `src/Mireya.Api` | ASP.NET Core API, Blazor Server admin UI, Identity, SignalR hub, OpenAPI, static uploads, and startup wiring. |
-| `src/Mireya.Application` | Business services for assets, campaigns, scheduling, screens, zones, audit, playback reporting, alerting, and synchronization. |
-| `src/Mireya.Database` | Shared EF Core models and `MireyaDbContext`. |
-| `src/Mireya.Database.Sqlite` | SQLite provider and migrations for local development. |
-| `src/Mireya.Database.Postgres` | PostgreSQL provider and migrations for Docker/production-like runs. |
-| `src/Mireya.ApiClient` | Generated NSwag API client plus client-side services, auth, SignalR, local SQLite store, backend management, and asset sync. |
-| `src/Mireya.ApiClient.TestConsole` | Small console harness for manual API-client checks. |
-| `src/Mireya.Client.Core` | Shared Avalonia display-client UI, view models, settings, converters, and platform abstractions. |
-| `src/Mireya.Client.Desktop` | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage. |
-| `src/Mireya.Client.Android` | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior. |
-| `src/Mireya.Application.Tests` | xUnit tests for application services using in-memory SQLite and NSubstitute. |
-| `src/MireyaDigitalSignage.AppHost` | .NET Aspire orchestration for the API plus PostgreSQL. |
-| `src/MireyaDigitalSignage.ServiceDefaults` | Shared Aspire service defaults, health endpoints, telemetry, resilience, and service discovery. |
+| Project                                    | Purpose                                                                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `src/Mireya.Api`                           | ASP.NET Core API, Blazor Server admin UI, Identity, SignalR hub, OpenAPI, static uploads, and startup wiring.                  |
+| `src/Mireya.Application`                   | Business services for assets, campaigns, scheduling, screens, zones, audit, playback reporting, alerting, and synchronization. |
+| `src/Mireya.Database`                      | Shared EF Core models and `MireyaDbContext`.                                                                                   |
+| `src/Mireya.Database.Sqlite`               | SQLite provider and migrations for local development.                                                                          |
+| `src/Mireya.Database.Postgres`             | PostgreSQL provider and migrations for Docker/production-like runs.                                                            |
+| `src/Mireya.ApiClient`                     | Generated NSwag API client plus client-side services, auth, SignalR, local SQLite store, backend management, and asset sync.   |
+| `src/Mireya.ApiClient.TestConsole`         | Small console harness for manual API-client checks.                                                                            |
+| `src/Mireya.Client.Core`                   | Shared Avalonia display-client UI, view models, settings, converters, and platform abstractions.                               |
+| `src/Mireya.Client.Desktop`                | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage.            |
+| `src/Mireya.Client.Android`                | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior.            |
+| `src/Mireya.Application.Tests`             | xUnit tests for application services using in-memory SQLite and NSubstitute.                                                   |
+| `src/MireyaDigitalSignage.AppHost`         | .NET Aspire orchestration for the API plus PostgreSQL.                                                                         |
+| `src/MireyaDigitalSignage.ServiceDefaults` | Shared Aspire service defaults, health endpoints, telemetry, resilience, and service discovery.                                |
 
 ## Run locally
 

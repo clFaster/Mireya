@@ -2,9 +2,9 @@
 
 The Mireya display client uses a shared Avalonia core with platform-specific heads. The shared core owns the signage shell, backend-selection UI, playback view models, settings, and renderer interfaces. Each platform head provides its own composition root and concrete website/video renderers.
 
-| Project | Status | Role |
-| --- | --- | --- |
-| `Mireya.Client.Core` | Implemented | Shared Avalonia UI, view models, converters, settings, and platform abstractions. |
+| Project                 | Status      | Role                                                                                                                |
+| ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| `Mireya.Client.Core`    | Implemented | Shared Avalonia UI, view models, converters, settings, and platform abstractions.                                   |
 | `Mireya.Client.Desktop` | Implemented | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage. |
 | `Mireya.Client.Android` | Implemented | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior. |
 
