@@ -2,13 +2,13 @@
 
 The Mireya display client uses a shared Avalonia core with platform-specific heads. The shared core owns the signage shell, backend-selection UI, playback view models, settings, and renderer interfaces. Each platform head provides its own composition root and concrete website/video renderers.
 
-| Project | Status | Role |
-| --- | --- | --- |
-| `Mireya.Client.Core` | Implemented | Shared Avalonia UI, view models, converters, settings, and platform abstractions. |
+| Project                 | Status      | Role                                                                                                                |
+| ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| `Mireya.Client.Core`    | Implemented | Shared Avalonia UI, view models, converters, settings, and platform abstractions.                                   |
 | `Mireya.Client.Desktop` | Implemented | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage. |
 | `Mireya.Client.Android` | Implemented | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior. |
 
-The Windows desktop head has repeatable Microsoft Store MSIX packaging. Other installers and store artifacts remain roadmap work.
+The Windows desktop head has repeatable Microsoft Store MSIX packaging, and the Android TV head has a signed Google Play App Bundle release workflow. Other installers remain roadmap work.
 
 ## Desktop
 
@@ -55,7 +55,7 @@ For Raspberry Pi-style targets, use a Linux ARM runtime such as `linux-arm64` af
 
 ## Android TV
 
-The Android TV head is implemented in `src/Mireya.Client.Android` and targets `net10.0-android` with application id `com.mireya.signage.tv`.
+The Android TV head is implemented in `src/Mireya.Client.Android` and targets `net10.0-android` with application id `dev.moritzreis.mireya`.
 
 It provides:
 
@@ -84,6 +84,8 @@ On Windows, Android SDK tools commonly live under `%LOCALAPPDATA%\Android\Sdk`.
 dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj
 ```
 
+Stable releases are built, signed, retained as GitHub Actions artifacts, and optionally submitted to Google Play. See [Google Play Release](google-play-release.md) for the required repository variables and secrets, upload-key handling, Play API setup, and release behavior.
+
 ### Run on emulator or device
 
 Start the API and the emulator/device first. From the Android emulator, the host machine is reachable at `http://10.0.2.2:5000`; `localhost` points to the emulator itself.
@@ -92,8 +94,8 @@ Build a standalone APK with assemblies embedded and install it manually:
 
 ```bash
 dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -p:EmbedAssembliesIntoApk=true -p:AndroidFastDeploymentType=None
-adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/com.mireya.signage.tv-Signed.apk
-adb shell monkey -p com.mireya.signage.tv -c android.intent.category.LAUNCHER 1
+adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/dev.moritzreis.mireya-Signed.apk
+adb shell monkey -p dev.moritzreis.mireya -c android.intent.category.LAUNCHER 1
 ```
 
 The embedded-assemblies path avoids a common manual-install crash where a plain Debug APK expects Fast Deployment assemblies to have been pushed separately by the IDE.
@@ -107,7 +109,7 @@ dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -t:Run
 Useful diagnostics:
 
 ```bash
-adb logcat --pid=$(adb shell pidof com.mireya.signage.tv)
+adb logcat --pid=$(adb shell pidof dev.moritzreis.mireya)
 adb exec-out screencap -p > screen.png
 ```
 
@@ -127,4 +129,3 @@ Use the current desktop and Android heads as the pattern:
 - Additional Windows installer formats and MSIX architectures.
 - Linux kiosk packaging with a Linux-native website renderer.
 - Raspberry Pi packaging and service setup.
-- Android release signing and APK/AAB distribution workflow.
