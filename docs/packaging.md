@@ -6,7 +6,7 @@ The Mireya display client uses a shared Avalonia core with platform-specific hea
 | ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------- |
 | `Mireya.Client.Core`    | Implemented | Shared Avalonia UI, view models, converters, settings, and platform abstractions.                                   |
 | `Mireya.Client.Desktop` | Implemented | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage. |
-| `Mireya.Client.Android` | Implemented | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior. |
+| `Mireya.Client.Android` | Implemented | Android TV head with native Android WebView, Media3/ExoPlayer, Leanback launcher metadata, and immersive fullscreen behavior. |
 
 The Windows desktop head has repeatable Microsoft Store MSIX packaging, and the Android TV head has a signed Google Play App Bundle release workflow. Other installers remain roadmap work.
 
@@ -62,7 +62,7 @@ It provides:
 - Android TV launcher metadata.
 - Immersive fullscreen display behavior.
 - Native Android `WebView` for website assets.
-- LibVLC-backed video rendering.
+- Jetpack Media3/ExoPlayer video rendering backed by Android's platform codecs.
 - Shared client registration, pairing, approval, sync, cache, playback, and remote-command behavior from `Mireya.Client.Core` and `Mireya.ApiClient`.
 
 ### Prerequisites
@@ -74,7 +74,7 @@ dotnet workload install android
 dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
 ```
 
-Use an Android TV emulator or real Android TV device. The app ships ARM32, ARM64, x86, and x64 native libraries; Google Play splits the AAB by ABI so each device downloads only its compatible libraries.
+Use an Android TV emulator or real Android TV device. The app supports ARM32, ARM64, x86, and x64 runtimes; Google Play splits the AAB by ABI so each device downloads only its compatible runtime.
 
 On Windows, Android SDK tools commonly live under `%LOCALAPPDATA%\Android\Sdk`.
 

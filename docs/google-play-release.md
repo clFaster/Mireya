@@ -77,7 +77,7 @@ For the safest rollout, keep `GOOGLE_PLAY_TRACK` set to `internal` until the int
 
 Play can show a warning that no deobfuscation file is associated with the bundle. Mireya does not currently run the R8/ProGuard Java code shrinker, so there is no `mapping.txt` to upload and this warning is not actionable. Do not enable R8 only to hide the warning; if R8 is enabled later, preserve the build's generated mapping file because it must match that exact release.
 
-Play also detects the native `.so` libraries supplied by .NET, SkiaSharp, LibVLC, and SQLite. The workflow uploads `mireya-android-<version>-native-debug-symbols.zip` with automated submissions. For a manual AAB submission, upload the matching ZIP from the workflow artifact alongside that release. Some third-party NuGet libraries are already stripped by their publishers, so their private function names and source lines cannot be reconstructed locally; the archive still supplies every symbol present in the exact released binaries.
+Play also detects the native `.so` libraries supplied by .NET, SkiaSharp, and SQLite. The workflow uploads `mireya-android-<version>-native-debug-symbols.zip` with automated submissions. For a manual AAB submission, upload the matching ZIP from the workflow artifact alongside that release. Some third-party NuGet libraries are already stripped by their publishers, so their private function names and source lines cannot be reconstructed locally; the archive still supplies every symbol present in the exact released binaries.
 
 ## Before the first submitted release
 

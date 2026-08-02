@@ -34,7 +34,7 @@ public partial class ContentDisplayView : UserControl
     private void CreatePlatformRenderers()
     {
         // Website and video rendering is platform specific (WebView2 / LibVLC on
-        // desktop, native components elsewhere). The active platform head supplies an
+        // desktop, Android WebView / Media3 on Android). The active platform head supplies an
         // IAssetViewFactory through dependency injection; resolve it and host the
         // resulting controls inside the placeholders declared in XAML.
         var factory = App.Services?.GetService<IAssetViewFactory>();
@@ -160,7 +160,7 @@ public partial class ContentDisplayView : UserControl
         parentWindow.SizeChanged     += (_, _) => UpdateFloatingWindowPositions();
 
         // The transition curtain lives in its own top-most transparent window for the same
-        // "airspace" reason as the overlay: it must cover the native WebView2 / LibVLC
+        // "airspace" reason as the overlay: it must cover the native website/video
         // surfaces while an asset is swapped underneath it. It is created above the overlay
         // window so the dip-to-black masks everything during a transition.
         _curtainWindow = new Window

@@ -7,7 +7,7 @@ namespace Mireya.Client.Avalonia.AndroidTv;
 /// <summary>
 ///     Composition root for the Android TV head. Wires the shared services from
 ///     <c>Mireya.Client.Core</c> together with the Android-specific implementations
-///     (System WebView / libVLC asset renderers) and reuses the platform-neutral
+///     (System WebView / Media3 asset renderers) and reuses the platform-neutral
 ///     credential/settings storage and the local SQLite store from Core.
 /// </summary>
 public static class AndroidServices

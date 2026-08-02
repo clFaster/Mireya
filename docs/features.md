@@ -88,7 +88,7 @@ The display client uses shared Avalonia UI and platform-specific renderers.
 Implemented platform heads:
 
 - **Desktop**: Windows/Linux project using WebView2 for website assets and LibVLC for video.
-- **Android TV**: Android project using native Android WebView and LibVLC.
+- **Android TV**: Android project using native Android WebView and Jetpack Media3/ExoPlayer.
 
 Client capabilities include:
 
