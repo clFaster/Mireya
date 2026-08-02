@@ -6,7 +6,7 @@ namespace Mireya.Client.Avalonia.Platform;
 ///     Creates the platform-specific asset renderer controls. Each platform head
 ///     (Desktop, Android, …) registers an implementation in the dependency-injection
 ///     container so the shared <c>ContentDisplayView</c> can host the right controls
-///     without referencing platform-only packages (WebView2, LibVLC, …).
+///     without referencing platform-only packages (WebView2, LibVLC, Media3, …).
 /// </summary>
 public interface IAssetViewFactory
 {

@@ -6,7 +6,7 @@ namespace Mireya.Client.Avalonia.AndroidTv.Platform;
 
 /// <summary>
 ///     Android implementation of <see cref="IAssetViewFactory" />. Provides the
-///     System WebView-based website renderer and the libVLC-based video renderer used
+///     System WebView-based website renderer and the Media3-based video renderer used
 ///     on Android TV. Both controls are <see cref="NativeControlHost" />s that embed a
 ///     native Android <c>View</c> into the Avalonia visual tree.
 /// </summary>

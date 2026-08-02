@@ -29,7 +29,7 @@ dotnet tool restore
 | `src/Mireya.ApiClient.TestConsole`         | Small console harness for manual API-client checks.                                                                            |
 | `src/Mireya.Client.Core`                   | Shared Avalonia display-client UI, view models, settings, converters, and platform abstractions.                               |
 | `src/Mireya.Client.Desktop`                | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage.            |
-| `src/Mireya.Client.Android`                | Android TV head with native Android WebView, LibVLC, Leanback launcher metadata, and immersive fullscreen behavior.            |
+| `src/Mireya.Client.Android`                | Android TV head with native Android WebView, Media3/ExoPlayer, Leanback launcher metadata, and immersive fullscreen behavior.   |
 | `src/Mireya.Application.Tests`             | xUnit tests for application services using in-memory SQLite and NSubstitute.                                                   |
 | `src/MireyaDigitalSignage.AppHost`         | .NET Aspire orchestration for the API plus PostgreSQL.                                                                         |
 | `src/MireyaDigitalSignage.ServiceDefaults` | Shared Aspire service defaults, health endpoints, telemetry, resilience, and service discovery.                                |
@@ -190,7 +190,7 @@ The display client is split into a shared Avalonia core and platform heads:
 
 - `Mireya.Client.Core` owns the shared shell, views, view models, playback flow, backend-selection UI, local settings UI, and interfaces for website/video renderers.
 - `Mireya.Client.Desktop` wires desktop services, WebView2, LibVLC, and desktop credential storage.
-- `Mireya.Client.Android` wires Android services, native Android WebView, LibVLC, and Android TV entry points.
+- `Mireya.Client.Android` wires Android services, native Android WebView, Media3/ExoPlayer, and Android TV entry points.
 
 The client workflow is:
 
@@ -266,4 +266,4 @@ The API listens on `http://localhost:8080`. Uploaded media and PostgreSQL data a
 - **PostgreSQL migration uses SQLite**: set `provider=Postgres` in the same shell command/session that runs EF.
 - **Android emulator cannot reach backend**: use `http://10.0.2.2:5000` instead of `localhost`.
 - **Android APK crashes after manual install**: build with `EmbedAssembliesIntoApk=true` and `AndroidFastDeploymentType=None`, or deploy with `-t:Run`.
-- **Video/website rendering differs by platform**: desktop uses WebView2 and LibVLC; Android uses native Android WebView and LibVLC.
+- **Video/website rendering differs by platform**: desktop uses WebView2 and LibVLC; Android uses native Android WebView and Media3/ExoPlayer.

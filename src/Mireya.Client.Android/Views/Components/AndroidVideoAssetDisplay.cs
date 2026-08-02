@@ -2,102 +2,80 @@ using System;
 using Avalonia.Android;
 using Avalonia.Controls;
 using Avalonia.Platform;
-using LibVLCSharp.Shared;
+using Avalonia.Threading;
+using AndroidX.Media3.Common;
+using AndroidX.Media3.ExoPlayer;
+using AndroidX.Media3.UI;
 using Mireya.Client.Avalonia.Platform;
-using VlcVideoView = LibVLCSharp.Platforms.Android.VideoView;
 
 namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
 
 /// <summary>
-///     Android implementation of <see cref="IVideoRenderer" />. Hosts the native libVLC
-///     <see cref="VlcVideoView" /> through Avalonia's <see cref="NativeControlHost" /> so
-///     playback uses the same libVLC engine as the desktop head (parity), with hardware
-///     decoding provided by the bundled <c>VideoLAN.LibVLC.Android</c> binaries.
+///     Android video renderer backed by Jetpack Media3/ExoPlayer. Media3 delegates
+///     decoding to Android's platform codecs, so the Android client does not need to
+///     bundle LibVLC and its native C++ runtime.
 /// </summary>
 public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
 {
-    /// <summary>Raised once the first frame of the current video has rendered (see <see cref="IVideoRenderer" />).</summary>
     public event Action? FirstFrameReady;
 
-    private VlcVideoView? _videoView;
-    private LibVLC? _libVlc;
-    private MediaPlayer? _mediaPlayer;
-    private Media? _currentMedia;
-
-    // Track desired mute state and the pending play request issued before the native
-    // control was created (the renderer can be driven before it is attached).
-    private bool _isMuted;
+    private PlayerView? _playerView;
+    private IExoPlayer? _player;
+    private DispatcherTimer? _firstFrameTimer;
     private (string Path, bool Muted)? _pendingPlay;
-
-    // Guards FirstFrameReady so it is raised only once per Play() call
     private bool _firstFrameSignaled;
 
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
         var context = global::Android.App.Application.Context;
 
-        try
+        var player = new ExoPlayerBuilder(context).Build()
+            ?? throw new InvalidOperationException("Media3 failed to create an ExoPlayer instance.");
+        _player = player;
+
+        _playerView = new PlayerView(context)
         {
-            Core.Initialize();
-        }
-        catch (Exception ex)
-        {
-            // On Android the native libraries are bundled in the APK, so this is normally a
-            // no-op; never let initialization failure crash the render thread.
-            Console.WriteLine($"LibVLC Core.Initialize failed: {ex.Message}");
-        }
-
-        _libVlc = new LibVLC();
-        _mediaPlayer = new MediaPlayer(_libVlc);
-
-        _videoView = new VlcVideoView(context) { MediaPlayer = _mediaPlayer };
-
-        // Enforce mute when playback state changes (some sources reset volume).
-        _mediaPlayer.Playing += (_, _) => ApplyMute();
-        _mediaPlayer.Opening += (_, _) => ApplyMute();
-
-        // TimeChanged fires once playback actually progresses, i.e. the first frame has
-        // been decoded and presented. Use it as a "first frame ready" signal so the
-        // transition layer can reveal the video without a black first-frame flash.
-        _mediaPlayer.TimeChanged += (_, _) =>
-        {
-            if (_firstFrameSignaled)
-                return;
-            _firstFrameSignaled = true;
-            FirstFrameReady?.Invoke();
+            Player = player,
+            UseController = false,
+            KeepScreenOn = true,
         };
 
-        // Apply any play request that arrived before the native control existed.
         if (_pendingPlay is { } pending)
         {
             _pendingPlay = null;
             PlayInternal(pending.Path, pending.Muted);
         }
 
-        return new AndroidViewControlHandle(_videoView);
+        return new AndroidViewControlHandle(_playerView);
     }
 
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
         try
         {
-            Stop();
+            _pendingPlay = null;
+            StopFirstFramePolling();
 
-            if (_videoView != null)
+            if (_playerView != null)
+                _playerView.Player = null;
+
+            if (_player != null)
             {
-                _videoView.MediaPlayer = null;
-                _videoView.Dispose();
-                _videoView = null;
+                _player.Stop();
+                _player.Release();
+                _player.Dispose();
+                _player = null;
             }
 
-            _mediaPlayer?.Dispose();
-            _mediaPlayer = null;
-            _libVlc?.Dispose();
-            _libVlc = null;
+            if (_playerView != null)
+            {
+                _playerView.Dispose();
+                _playerView = null;
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to dispose libVLC resources: {ex.Message}");
+            Console.WriteLine($"Failed to dispose Media3 resources: {ex.Message}");
         }
 
         base.DestroyNativeControlCore(control);
@@ -105,9 +83,8 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
 
     public void Play(string path, bool muted)
     {
-        if (_mediaPlayer == null || _libVlc == null)
+        if (_player == null)
         {
-            // Native control not created yet — remember the request and apply on creation.
             _pendingPlay = (path, muted);
             return;
         }
@@ -118,55 +95,88 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
     public void Stop()
     {
         _pendingPlay = null;
-        _mediaPlayer?.Stop();
-        _currentMedia?.Dispose();
-        _currentMedia = null;
+        StopFirstFramePolling();
+
+        try
+        {
+            _player?.Stop();
+            _player?.ClearMediaItems();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to stop Media3 playback: {ex.Message}");
+        }
     }
 
     private void PlayInternal(string videoPath, bool muted)
     {
-        if (_mediaPlayer == null || _libVlc == null || string.IsNullOrEmpty(videoPath))
+        if (_player == null || string.IsNullOrWhiteSpace(videoPath))
             return;
 
         try
         {
-            _currentMedia?.Dispose();
-            _currentMedia = new Media(_libVlc, videoPath, FromType.FromPath);
+            using var file = new Java.IO.File(videoPath);
+            using var fileUri = global::Android.Net.Uri.FromFile(file);
+            using var mediaItem = MediaItem.FromUri(fileUri!);
 
-            _isMuted = muted;
-
-            // New media: allow the next first-frame signal to fire.
             _firstFrameSignaled = false;
-
-            // Hint initial volume through media options to prevent loud blips on start
-            // (libVLC expects 0-512; 0 is muted) and disable audio entirely when muted.
-            _currentMedia.AddOption($":volume={(muted ? 0 : 256)}");
-            if (muted)
-                _currentMedia.AddOption(":no-audio");
-
-            ApplyMute();
-
-            _mediaPlayer.Play(_currentMedia);
+            _player.Volume = muted ? 0f : 1f;
+            _player.SetMediaItem(mediaItem);
+            _player.Prepare();
+            _player.Play();
+            StartFirstFramePolling();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to play video: {ex.Message}");
+            Console.WriteLine($"Failed to play video with Media3: {ex.Message}");
         }
     }
 
-    private void ApplyMute()
+    private void SignalFirstFrame()
     {
-        if (_mediaPlayer == null)
+        if (_firstFrameSignaled)
             return;
 
+        _firstFrameSignaled = true;
+        StopFirstFramePolling();
+        FirstFrameReady?.Invoke();
+    }
+
+    private void StartFirstFramePolling()
+    {
+        if (_firstFrameTimer == null)
+        {
+            _firstFrameTimer = new DispatcherTimer(DispatcherPriority.Default, Dispatcher.UIThread)
+            {
+                Interval = TimeSpan.FromMilliseconds(50),
+            };
+            _firstFrameTimer.Tick += OnFirstFrameTimerTick;
+        }
+
+        _firstFrameTimer.Stop();
+        _firstFrameTimer.Start();
+    }
+
+    private void StopFirstFramePolling() => _firstFrameTimer?.Stop();
+
+    private void OnFirstFrameTimerTick(object? sender, EventArgs e)
+    {
         try
         {
-            _mediaPlayer.Mute = _isMuted;
-            _mediaPlayer.Volume = _isMuted ? 0 : 100;
+            // The .NET binding generates native stubs for every Java default method on
+            // Player.Listener. A partial C# implementation therefore crashes with an
+            // AbstractMethodError as soon as Media3 invokes another callback. Polling the
+            // playback clock avoids that binding issue; once it advances, ExoPlayer has
+            // started presenting the prepared video.
+            if (_player == null || _firstFrameSignaled)
+                StopFirstFramePolling();
+            else if (_player.CurrentPosition > 0)
+                SignalFirstFrame();
         }
-        catch
+        catch (Exception ex)
         {
-            /* ignore — volume control can be unavailable between media transitions */
+            StopFirstFramePolling();
+            Console.WriteLine($"Failed while waiting for the first Media3 frame: {ex.Message}");
         }
     }
 }
