@@ -8,10 +8,10 @@ Create the app in Google Play Console with package name `dev.moritzreis.mireya`,
 
 Set these GitHub repository variables under **Settings > Secrets and variables > Actions > Variables**:
 
-| Repository variable | Required | Value |
-| --- | --- | --- |
-| `GOOGLE_PLAY_PACKAGE_NAME` | Yes | `dev.moritzreis.mireya` |
-| `GOOGLE_PLAY_TRACK` | No | Play release track; defaults to `internal`. Use `alpha`, `beta`, `production`, or a custom track name only after that track is configured in Play Console. |
+| Repository variable        | Required | Value                                                                                                                                                      |
+| -------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_PLAY_PACKAGE_NAME` | Yes      | `dev.moritzreis.mireya`                                                                                                                                    |
+| `GOOGLE_PLAY_TRACK`        | No       | Play release track; defaults to `internal`. Use `alpha`, `beta`, `production`, or a custom track name only after that track is configured in Play Console. |
 
 ### Create the upload key
 
@@ -36,12 +36,12 @@ Encode the complete keystore file as a single Base64 value. In PowerShell:
 
 Add these GitHub repository secrets:
 
-| Repository secret | Required for | Value |
-| --- | --- | --- |
-| `ANDROID_SIGNING_KEYSTORE_BASE64` | Every build | Base64-encoded contents of `mireya-upload.jks` |
-| `ANDROID_SIGNING_KEY_ALIAS` | Every build | Upload-key alias, for example `mireya-upload` |
-| `ANDROID_SIGNING_KEY_PASSWORD` | Every build | Password for the key alias |
-| `ANDROID_SIGNING_STORE_PASSWORD` | Every build | Password for the keystore |
+| Repository secret                  | Required for          | Value                                                           |
+| ---------------------------------- | --------------------- | --------------------------------------------------------------- |
+| `ANDROID_SIGNING_KEYSTORE_BASE64`  | Every build           | Base64-encoded contents of `mireya-upload.jks`                  |
+| `ANDROID_SIGNING_KEY_ALIAS`        | Every build           | Upload-key alias, for example `mireya-upload`                   |
+| `ANDROID_SIGNING_KEY_PASSWORD`     | Every build           | Password for the key alias                                      |
+| `ANDROID_SIGNING_STORE_PASSWORD`   | Every build           | Password for the keystore                                       |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Store submission only | Entire JSON key downloaded for the Google Cloud service account |
 
 Do not use the debug keystore. Once the first artifact is uploaded, future updates must use the same upload key unless the key is reset through Play Console.
