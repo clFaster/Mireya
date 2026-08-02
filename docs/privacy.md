@@ -131,14 +131,6 @@ To exercise rights concerning this documentation website or direct communication
 
 For deployment data, contact the operator of the Mireya backend. That operator, rather than the open-source project, controls those records.
 
-You also have the right to lodge a complaint with a supervisory authority, in particular in the EU Member State of your habitual residence, place of work, or the alleged infringement. In Austria, the competent authority is:
-
-**Austrian Data Protection Authority (Österreichische Datenschutzbehörde)**<br>
-Barichgasse 40–42<br>
-1030 Vienna, Austria<br>
-Email: [dsb@dsb.gv.at](mailto:dsb@dsb.gv.at)<br>
-[Complaint information](https://dsb.gv.at/eingabe-an-die-dsb/beschwerde)
-
 ## 11. Changes to this notice
 
 This notice will be updated when Mireya's data flows, hosting providers, or legal requirements materially change. The current version and its update date are always published on this page.
