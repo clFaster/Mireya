@@ -74,7 +74,7 @@ dotnet workload install android
 dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
 ```
 
-Use a 64-bit Android TV emulator or real Android TV device. The app ships 64-bit native libraries only, so a 32-bit `x86` system image fails with `INSTALL_FAILED_NO_MATCHING_ABIS`.
+Use an Android TV emulator or real Android TV device. The app ships ARM32, ARM64, x86, and x64 native libraries; Google Play splits the AAB by ABI so each device downloads only its compatible libraries.
 
 On Windows, Android SDK tools commonly live under `%LOCALAPPDATA%\Android\Sdk`.
 

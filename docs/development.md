@@ -212,7 +212,7 @@ dotnet workload install android
 dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
 ```
 
-Use a 64-bit Android TV emulator or device. The APK includes 64-bit native libraries, so 32-bit `x86` images fail with `INSTALL_FAILED_NO_MATCHING_ABIS`.
+Use an Android TV emulator or device. The app includes ARM32, ARM64, x86, and x64 native libraries so both 32-bit and 64-bit system images are supported.
 
 Build:
 
