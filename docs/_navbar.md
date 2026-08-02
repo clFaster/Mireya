@@ -5,4 +5,5 @@
 - [API](api.md)
 - [Packaging](packaging.md)
 - [Microsoft Store Release](microsoft-store-release.md)
+- [Google Play Release](google-play-release.md)
 - [Privacy](privacy.md)

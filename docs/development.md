@@ -226,8 +226,8 @@ Build and install a standalone Debug APK with embedded assemblies:
 
 ```bash
 dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -p:EmbedAssembliesIntoApk=true -p:AndroidFastDeploymentType=None
-adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/com.mireya.signage.tv-Signed.apk
-adb shell monkey -p com.mireya.signage.tv -c android.intent.category.LAUNCHER 1
+adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/dev.moritzreis.mireya-Signed.apk
+adb shell monkey -p dev.moritzreis.mireya -c android.intent.category.LAUNCHER 1
 ```
 
 Alternatively, let MSBuild deploy to the selected device:
@@ -239,7 +239,7 @@ dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -t:Run
 Useful diagnostics:
 
 ```bash
-adb logcat --pid=$(adb shell pidof com.mireya.signage.tv)
+adb logcat --pid=$(adb shell pidof dev.moritzreis.mireya)
 adb exec-out screencap -p > screen.png
 ```
 

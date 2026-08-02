@@ -35,3 +35,4 @@ Display clients connect to a Mireya backend, register themselves, wait for appro
 - [Operations](operations.md): configuration, Docker, Aspire, health checks, alerting, and runtime notes.
 - [API](api.md): endpoint groups, auth roles, SignalR hub behavior, and generated client workflow.
 - [Packaging](packaging.md): current client platform status and packaging notes.
+- [Google Play Release](google-play-release.md): Android signing, Play Console setup, and automated release publishing.
