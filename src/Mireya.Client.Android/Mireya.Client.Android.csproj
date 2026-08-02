@@ -3,6 +3,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-android</TargetFramework>
     <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <!-- Include 32-bit ARM for Android TV devices whose OS user space is still
+         armeabi-v7a. Google Play splits the AAB by ABI, so each TV receives only
+         the native libraries it needs. -->
+    <RuntimeIdentifiers>android-arm;android-arm64;android-x86;android-x64</RuntimeIdentifiers>
     <Nullable>enable</Nullable>
     <!-- Keep the historical root namespace so shared code and XAML need no churn. -->
     <RootNamespace>Mireya.Client.Avalonia</RootNamespace>

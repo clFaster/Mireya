@@ -229,7 +229,8 @@ jobs:
             "$ANDROID_SIGNING_KEY_ALIAS"
           jarsigner -verify "$artifact_path"
 
-          # Play accepts the ABI directory tree (arm64-v8a/*.so, x86_64/*.so)
+          # Play accepts the ABI directory tree (armeabi-v7a, arm64-v8a, x86,
+          # and x86_64 directories containing their matching *.so files)
           # as a native debug-symbol archive. Extracting it from the final AAB
           # guarantees that the symbols correspond exactly to the uploaded build.
           symbols_stage="$(mktemp -d)"

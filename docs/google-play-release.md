@@ -84,5 +84,5 @@ Play also detects the native `.so` libraries supplied by .NET, SkiaSharp, LibVLC
 - Confirm that the Play Console app package is exactly `dev.moritzreis.mireya`.
 - Complete the TV app listing, privacy policy, data-safety declaration, content rating, target-audience declaration, and all other required Play forms.
 - Upload a TV banner and screenshots captured without real credentials or customer content.
-- Verify backend selection, registration and approval, asset synchronization, image/video/website playback, offline cache behavior, and remote commands on a supported 64-bit Android TV device.
+- Verify backend selection, registration and approval, asset synchronization, image/video/website playback, offline cache behavior, and remote commands on representative 32-bit and 64-bit Android TV devices.
 - Keep an offline backup of the upload keystore and both passwords.
