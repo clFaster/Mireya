@@ -7,7 +7,7 @@
     <!-- Keep the historical root namespace so shared code and XAML need no churn. -->
     <RootNamespace>Mireya.Client.Avalonia</RootNamespace>
     <AssemblyName>Mireya.Client.Android</AssemblyName>
-    <ApplicationId>com.mireya.signage.tv</ApplicationId>
+    <ApplicationId>dev.moritzreis.mireya</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
@@ -24,7 +24,10 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Android" Version="12.1.0" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
-    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.2.0.3" />
+    <!-- Keep this aligned with the AndroidX family pulled by Avalonia.Android.
+         1.2.0.3 mixes Core 1.19 with Avalonia's Core.Ktx 1.17 and causes
+         duplicate Java classes during D8 packaging. -->
+    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.2.0.2" />
     <!-- LibVLCSharp core ships the native Android VideoView; VideoLAN.LibVLC.Android
          supplies the libvlc .so binaries bundled into the APK. The Avalonia VideoView
          package is desktop-only (net8.0/netstandard2.0) so it is intentionally not used. -->

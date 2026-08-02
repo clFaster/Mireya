@@ -1,0 +1,271 @@
+name: Publish Google Play
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Stable semantic version to package (for example 1.0.0)"
+        required: true
+        type: string
+      submit_to_store:
+        description: "Submit the signed app bundle to Google Play"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-google-play
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+  AVALONIA_TELEMETRY_OPTOUT: true
+  PLAY_PACKAGE_NAME: ${{ vars.GOOGLE_PLAY_PACKAGE_NAME }}
+  PLAY_TRACK: ${{ vars.GOOGLE_PLAY_TRACK || 'internal' }}
+
+jobs:
+  package-and-publish:
+    name: Package, sign, and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+        run: |
+          version="${REQUESTED_VERSION#v}"
+
+          if [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            major=$((10#${BASH_REMATCH[1]}))
+            minor=$((10#${BASH_REMATCH[2]}))
+            patch=$((10#${BASH_REMATCH[3]}))
+
+            if (( major > 2099 || minor > 999 || patch > 999 )); then
+              echo "::error::Version '$version' cannot be represented as a Google Play version code. Major must be at most 2099; minor and patch must be at most 999."
+              exit 1
+            fi
+
+            # Google Play requires a positive, monotonically increasing integer.
+            # Mireya 0.2.0 becomes 2001 and Mireya 1.0.0 becomes 1000001.
+            version_code=$((major * 1000000 + minor * 1000 + patch + 1))
+            if (( version_code > 2100000000 )); then
+              echo "::error::Version code '$version_code' exceeds Google Play's limit."
+              exit 1
+            fi
+
+            echo "eligible=true" >> "$GITHUB_OUTPUT"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)- ]]; then
+            echo "::notice::Google Play submission is skipped for pre-release version '$version'."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "::error::Version '$version' is not a supported Semantic Version."
+          exit 1
+
+      - name: Validate package and signing configuration
+        if: steps.version.outputs.eligible == 'true'
+        shell: bash
+        env:
+          ANDROID_SIGNING_KEYSTORE_BASE64: ${{ secrets.ANDROID_SIGNING_KEYSTORE_BASE64 }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+        run: |
+          if [[ -z "$PLAY_PACKAGE_NAME" ]]; then
+            echo "::error::Repository variable 'GOOGLE_PLAY_PACKAGE_NAME' is required."
+            exit 1
+          fi
+
+          if [[ "$PLAY_PACKAGE_NAME" != "dev.moritzreis.mireya" ]]; then
+            echo "::error::GOOGLE_PLAY_PACKAGE_NAME must match the Android project's ApplicationId 'dev.moritzreis.mireya'."
+            exit 1
+          fi
+
+          required_secrets=(
+            ANDROID_SIGNING_KEYSTORE_BASE64
+            ANDROID_SIGNING_KEY_ALIAS
+            ANDROID_SIGNING_KEY_PASSWORD
+            ANDROID_SIGNING_STORE_PASSWORD
+          )
+          for secret_name in "${required_secrets[@]}"; do
+            if [[ -z "${!secret_name}" ]]; then
+              echo "::error::Repository secret '$secret_name' is required."
+              exit 1
+            fi
+          done
+
+      - name: Validate Google Play publishing configuration
+        if: steps.version.outputs.eligible == 'true' && (github.event_name == 'push' || inputs.submit_to_store)
+        shell: bash
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [[ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
+            echo "::error::Repository secret 'GOOGLE_PLAY_SERVICE_ACCOUNT_JSON' is required for Store submission."
+            exit 1
+          fi
+          if [[ -z "$PLAY_TRACK" ]]; then
+            echo "::error::Repository variable 'GOOGLE_PLAY_TRACK' must not be empty when configured."
+            exit 1
+          fi
+
+      - name: Set up .NET
+        if: steps.version.outputs.eligible == 'true'
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            **/packages.lock.json
+            **/*.csproj
+
+      - name: Set up Java
+        if: steps.version.outputs.eligible == 'true'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install .NET Android workload
+        if: steps.version.outputs.eligible == 'true'
+        run: dotnet workload install android
+
+      - name: Restore .NET tools and projects
+        if: steps.version.outputs.eligible == 'true'
+        shell: bash
+        run: |
+          dotnet tool restore
+          dotnet restore ./src/Mireya.Client.Android/Mireya.Client.Android.csproj --disable-parallel /m:1
+
+      - name: Restore and verify upload keystore
+        if: steps.version.outputs.eligible == 'true'
+        id: keystore
+        shell: bash
+        env:
+          ANDROID_SIGNING_KEYSTORE_BASE64: ${{ secrets.ANDROID_SIGNING_KEYSTORE_BASE64 }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+        run: |
+          keystore_path="$RUNNER_TEMP/mireya-upload.keystore"
+          printf '%s' "$ANDROID_SIGNING_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          chmod 600 "$keystore_path"
+
+          keytool -list \
+            -keystore "$keystore_path" \
+            -storepass "$ANDROID_SIGNING_STORE_PASSWORD" \
+            -alias "$ANDROID_SIGNING_KEY_ALIAS" > /dev/null
+
+          echo "path=$keystore_path" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed Android App Bundle
+        if: steps.version.outputs.eligible == 'true'
+        id: package
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+          KEYSTORE_PATH: ${{ steps.keystore.outputs.path }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+        run: |
+          project="./src/Mireya.Client.Android/Mireya.Client.Android.csproj"
+          artifact_directory="$GITHUB_WORKSPACE/artifacts/google-play"
+          artifact_path="$artifact_directory/mireya-android-$RELEASE_VERSION.aab"
+          mkdir -p "$artifact_directory"
+
+          dotnet publish "$project" \
+            --configuration Release \
+            --framework net10.0-android \
+            --no-restore \
+            --disable-build-servers \
+            -m:1 \
+            -p:BuildInParallel=false \
+            -p:SkipNSwag=true \
+            -p:RunAOTCompilation=false \
+            -p:AndroidPackageFormat=aab \
+            -p:AndroidPackageFormats=aab \
+            -p:AndroidKeyStore=false \
+            -p:ApplicationVersion="$VERSION_CODE" \
+            -p:ApplicationDisplayVersion="$RELEASE_VERSION" \
+            -p:Version="$RELEASE_VERSION"
+
+          mapfile -t bundles < <(
+            find ./src/Mireya.Client.Android/bin/Release/net10.0-android \
+              -type f -name "$PLAY_PACKAGE_NAME.aab" -print
+          )
+          if (( ${#bundles[@]} != 1 )); then
+            echo "::error::Expected exactly one unsigned AAB, found ${#bundles[@]}."
+            exit 1
+          fi
+
+          cp "${bundles[0]}" "$artifact_path"
+          jarsigner \
+            -sigalg SHA256withRSA \
+            -digestalg SHA-256 \
+            -keystore "$KEYSTORE_PATH" \
+            -storepass "$ANDROID_SIGNING_STORE_PASSWORD" \
+            -keypass "$ANDROID_SIGNING_KEY_PASSWORD" \
+            "$artifact_path" \
+            "$ANDROID_SIGNING_KEY_ALIAS"
+          jarsigner -verify "$artifact_path"
+
+          # Play accepts the ABI directory tree (arm64-v8a/*.so, x86_64/*.so)
+          # as a native debug-symbol archive. Extracting it from the final AAB
+          # guarantees that the symbols correspond exactly to the uploaded build.
+          symbols_stage="$(mktemp -d)"
+          symbols_path="$artifact_directory/mireya-android-$RELEASE_VERSION-native-debug-symbols.zip"
+          unzip -q "$artifact_path" 'base/lib/*/*.so' -d "$symbols_stage"
+          if ! find "$symbols_stage/base/lib" -type f -name '*.so' -print -quit | grep -q .; then
+            echo "::error::No native libraries were found in the completed AAB."
+            exit 1
+          fi
+          (
+            cd "$symbols_stage/base/lib"
+            zip -q -r "$symbols_path" . -i '*.so'
+          )
+
+          echo "aab_path=$artifact_path" >> "$GITHUB_OUTPUT"
+          echo "debug_symbols_path=$symbols_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload signed app bundle
+        if: always() && steps.version.outputs.eligible == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mireya-google-play-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/google-play/*.aab
+            artifacts/google-play/*-native-debug-symbols.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish app bundle to Google Play
+        if: steps.version.outputs.eligible == 'true' && (github.event_name == 'push' || inputs.submit_to_store)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.PLAY_PACKAGE_NAME }}
+          releaseFiles: ${{ steps.package.outputs.aab_path }}
+          debugSymbols: ${{ steps.package.outputs.debug_symbols_path }}
+          tracks: ${{ env.PLAY_TRACK }}
+          status: completed
+          releaseName: Mireya ${{ steps.version.outputs.version }}
