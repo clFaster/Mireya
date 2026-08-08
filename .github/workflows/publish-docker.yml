@@ -40,7 +40,6 @@ jobs:
         shell: bash
         env:
           REQUESTED_VERSION: ${{ inputs.version }}
-          PROMOTE_STABLE: ${{ inputs.publish_latest }}
         run: |
           version="${REQUESTED_VERSION#v}"
           semver_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
@@ -83,10 +82,10 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
 
       - name: Build smoke-test image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         with:
           context: .
           file: ./Dockerfile
@@ -120,14 +119,12 @@ jobs:
         run: docker compose down --volumes
 
       - name: Log in to Docker Hub
-        if: inputs.submit_to_docker_hub
         uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Generate image tags and labels
-        if: inputs.submit_to_docker_hub
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -146,13 +143,11 @@ jobs:
             org.opencontainers.image.licenses=GPL-3.0-only
 
       - name: Set up QEMU
-        if: inputs.submit_to_docker_hub
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8
 
       - name: Build and push multi-platform image
-        if: inputs.submit_to_docker_hub
         id: push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
         with:
           context: .
           file: ./Dockerfile

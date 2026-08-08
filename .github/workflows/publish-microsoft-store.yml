@@ -67,7 +67,7 @@ jobs:
             **/*.csproj
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57
 
       - name: Restore .NET tools
         run: dotnet tool restore
@@ -150,11 +150,9 @@ jobs:
           retention-days: 30
 
       - name: Set up Microsoft Store Developer CLI
-        if: inputs.submit_to_store
-        uses: microsoft/setup-msstore-cli@v1.4
+        uses: microsoft/setup-msstore-cli@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0
 
       - name: Configure Microsoft Store Developer CLI
-        if: inputs.submit_to_store
         shell: pwsh
         env:
           AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
@@ -169,7 +167,6 @@ jobs:
             --clientSecret $env:AZURE_AD_APP_REGISTRATION_CLIENT_SECRET
 
       - name: Publish package to Microsoft Store
-        if: inputs.submit_to_store
         shell: pwsh
         env:
           MSIX_PATH: ${{ steps.package.outputs.msix_path }}
