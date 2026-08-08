@@ -3,10 +3,23 @@ name: Release Mireya
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Semantic version to publish (for example 1.0.0 or 1.0.0-rc.1)"
+      # Versioning
+      skip-update:
+        type: boolean
+        description: "Skip the version update step"
         required: true
-        type: string
+        default: false
+      release-type:
+        type: choice
+        description: Which type of release to create?
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      
+      # Docker
       publish_docker:
         description: "Build and smoke-test the Docker image"
         required: true
@@ -22,6 +35,8 @@ on:
         required: true
         default: false
         type: boolean
+
+      # Google Play
       publish_google_play:
         description: "Build the Android app bundle"
         required: true
@@ -32,6 +47,8 @@ on:
         required: true
         default: false
         type: boolean
+
+      # Microsoft Store
       publish_microsoft_store:
         description: "Build the Microsoft Store package"
         required: true
@@ -51,86 +68,128 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Validate release
+  update-version:
+    name: "Update Mireya Version"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    outputs:
+      new_version: ${{ steps.bump_version.outputs.new_version }}
     steps:
-      - name: Validate release request
-        shell: bash
-        env:
-          VERSION: ${{ inputs.version }}
-          PUBLISH_DOCKER: ${{ inputs.publish_docker }}
-          SUBMIT_TO_DOCKER_HUB: ${{ inputs.submit_to_docker_hub }}
-          PUBLISH_LATEST: ${{ inputs.publish_latest }}
-          PUBLISH_GOOGLE_PLAY: ${{ inputs.publish_google_play }}
-          SUBMIT_GOOGLE_PLAY: ${{ inputs.submit_google_play }}
-          PUBLISH_MICROSOFT_STORE: ${{ inputs.publish_microsoft_store }}
-          SUBMIT_MICROSOFT_STORE: ${{ inputs.submit_microsoft_store }}
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Ensure branch is main
+        if: github.ref != 'refs/heads/main'
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "::error::Releases can only be started from the main branch."
-            exit 1
-          fi
+          text="Publish a new version of Mireya can only be done from the main branch."
+          echo "::error title=Wrong Branch::$text"
+          exit 1
 
-          version="${VERSION#v}"
-          semver_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
-          if [[ ! "$version" =~ $semver_pattern ]]; then
-            echo "::error::Version '$VERSION' is not a supported Semantic Version."
-            exit 1
-          fi
+      - name: Read current version
+        run: |
+          echo "Current version: ${{ vars.VERSION }}"
 
-          if [[ "$PUBLISH_DOCKER" != "true" && "$PUBLISH_GOOGLE_PLAY" != "true" && "$PUBLISH_MICROSOFT_STORE" != "true" ]]; then
-            echo "::error::Select at least one release target."
-            exit 1
+      - name: Bump version
+        id: bump_version
+        if: ${{ github.event.inputs.skip-update == 'false' }}
+        run: |
+          # Retrieve the increment type from the GitHub Actions input
+          increment="${{ inputs.release-type }}"
+          
+          # Split the VERSION variable into its major, minor, and patch components
+          IFS='.' read -r -a parts <<< "${{ vars.VERSION }}"
+          
+          # Check if the VERSION variable was split correctly
+          if [ "${#parts[@]}" -ne 3 ]; then
+          echo "Invalid version format"
+          exit 1
           fi
+          
+          major=${parts[0]}
+          minor=${parts[1]}
+          patch=${parts[2]}
+          
+          # Increment the appropriate version component
+          if [ "$increment" = "major" ]; then
+          major=$((major + 1))
+          minor=0
+          patch=0
+          elif [ "$increment" = "minor" ]; then
+          minor=$((minor + 1))
+          patch=0
+          elif [ "$increment" = "patch" ]; then
+          patch=$((patch + 1))
+          else
+          echo "Invalid increment type"
+          exit 1
+          fi
+          
+          # Construct the new version string
+          new_version="$major.$minor.$patch"
+          
+          # Output the new version
+          echo "New version: $new_version"
+          
+          # Set the output variable for GitHub Actions
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
 
-          if [[ "$SUBMIT_GOOGLE_PLAY" == "true" && "$PUBLISH_GOOGLE_PLAY" != "true" ]]; then
-            echo "::error::Google Play submission requires the Google Play build option."
-            exit 1
-          fi
-
-          if [[ "$SUBMIT_TO_DOCKER_HUB" == "true" && "$PUBLISH_DOCKER" != "true" ]]; then
-            echo "::error::Docker Hub submission requires the Docker build option."
-            exit 1
-          fi
-
-          if [[ "$PUBLISH_LATEST" == "true" && "$SUBMIT_TO_DOCKER_HUB" != "true" ]]; then
-            echo "::error::Publishing floating Docker tags requires Docker Hub submission."
-            exit 1
-          fi
-
-          if [[ "$SUBMIT_MICROSOFT_STORE" == "true" && "$PUBLISH_MICROSOFT_STORE" != "true" ]]; then
-            echo "::error::Microsoft Store submission requires the Microsoft Store build option."
-            exit 1
-          fi
+      - name: Update version var
+        id: write_version
+        if: ${{ github.event.inputs.skip-update == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.VAR_UPDATE_GITHUB }}
+        run: |
+          gh variable set VERSION --body "${{ steps.bump_version.outputs.new_version }}"
 
   docker:
     name: Docker
-    needs: validate
+    needs: update-version
     if: inputs.publish_docker
     uses: ./.github/workflows/publish-docker.yml
     with:
-      version: ${{ inputs.version }}
-      submit_to_docker_hub: ${{ inputs.submit_to_docker_hub }}
-      publish_latest: ${{ inputs.publish_latest }}
+      version: ${{ needs.update-version.outputs.new_version }}
     secrets: inherit
 
   google-play:
     name: Google Play
-    needs: validate
+    needs: update-version
     if: inputs.publish_google_play
     uses: ./.github/workflows/publish-google-play.yml
     with:
-      version: ${{ inputs.version }}
-      submit_to_store: ${{ inputs.submit_google_play }}
+      version: ${{ needs.update-version.outputs.new_version }}
     secrets: inherit
 
   microsoft-store:
     name: Microsoft Store
-    needs: validate
+    needs: update-version
     if: inputs.publish_microsoft_store
     uses: ./.github/workflows/publish-microsoft-store.yml
     with:
-      version: ${{ inputs.version }}
-      submit_to_store: ${{ inputs.submit_microsoft_store }}
+      version: ${{ needs.update-version.outputs.new_version }}
     secrets: inherit
+
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs:
+      - update-version
+    permissions:
+      contents: write
+
+    steps:
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: "v${{ needs.update-version.outputs.new_version }}"
+        shell: bash
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --generate-notes
+          fi
+
+          shopt -s nullglob
+
+          gh release upload "$RELEASE_TAG" --clobber

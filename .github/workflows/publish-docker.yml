@@ -7,14 +7,6 @@ on:
         description: "Semantic version to publish (for example 1.0.0 or 1.0.0-rc.1)"
         required: true
         type: string
-      submit_to_docker_hub:
-        description: "Submit the image to Docker Hub"
-        required: true
-        type: boolean
-      publish_latest:
-        description: "Promote this stable version to the 1, 1.0, and latest tags"
-        required: true
-        type: boolean
 
 permissions:
   contents: read
