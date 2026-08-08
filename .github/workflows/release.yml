@@ -55,7 +55,7 @@ jobs:
       contents: read
       actions: write
     outputs:
-      new_version: ${{ steps.bump_version.outputs.new_version }}
+      new_version: ${{ steps.resolve_version.outputs.new_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -71,49 +71,47 @@ jobs:
         run: |
           echo "Current version: ${{ vars.VERSION }}"
 
-      - name: Bump version
-        id: bump_version
-        if: ${{ github.event.inputs.skip-update == 'false' }}
+      - name: Resolve release version
+        id: resolve_version
+        env:
+          CURRENT_VERSION: ${{ vars.VERSION }}
+          INCREMENT: ${{ inputs.release-type }}
+          SKIP_UPDATE: ${{ inputs.skip-update }}
         run: |
-          # Retrieve the increment type from the GitHub Actions input
-          increment="${{ inputs.release-type }}"
-          
-          # Split the VERSION variable into its major, minor, and patch components
-          IFS='.' read -r -a parts <<< "${{ vars.VERSION }}"
-          
-          # Check if the VERSION variable was split correctly
-          if [ "${#parts[@]}" -ne 3 ]; then
-          echo "Invalid version format"
-          exit 1
+          if [[ ! "$CURRENT_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::VERSION '$CURRENT_VERSION' is not a valid semantic version."
+            exit 1
           fi
-          
-          major=${parts[0]}
-          minor=${parts[1]}
-          patch=${parts[2]}
-          
-          # Increment the appropriate version component
-          if [ "$increment" = "major" ]; then
-          major=$((major + 1))
-          minor=0
-          patch=0
-          elif [ "$increment" = "minor" ]; then
-          minor=$((minor + 1))
-          patch=0
-          elif [ "$increment" = "patch" ]; then
-          patch=$((patch + 1))
+
+          if [ "$SKIP_UPDATE" = "true" ]; then
+            new_version="$CURRENT_VERSION"
           else
-          echo "Invalid increment type"
-          exit 1
+            IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+
+            case "$INCREMENT" in
+              major)
+                major=$((major + 1))
+                minor=0
+                patch=0
+                ;;
+              minor)
+                minor=$((minor + 1))
+                patch=0
+                ;;
+              patch)
+                patch=$((patch + 1))
+                ;;
+              *)
+                echo "::error::Invalid release type '$INCREMENT'."
+                exit 1
+                ;;
+            esac
+
+            new_version="$major.$minor.$patch"
           fi
-          
-          # Construct the new version string
-          new_version="$major.$minor.$patch"
-          
-          # Output the new version
+
           echo "New version: $new_version"
-          
-          # Set the output variable for GitHub Actions
-          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "new_version=$new_version" >> "$GITHUB_OUTPUT"
 
       - name: Update version var
         id: write_version
@@ -121,7 +119,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.VAR_UPDATE_GITHUB }}
         run: |
-          gh variable set VERSION --body "${{ steps.bump_version.outputs.new_version }}"
+          gh variable set VERSION --body "${{ steps.resolve_version.outputs.new_version }}"
 
   docker:
     name: Docker
@@ -163,9 +161,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: "v${{ needs.update-version.outputs.new_version }}"
+          RELEASE_VERSION: ${{ needs.update-version.outputs.new_version }}
         shell: bash
         run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Refusing to create a release with invalid version '$RELEASE_VERSION'."
+            exit 1
+          fi
+
+          RELEASE_TAG="v$RELEASE_VERSION"
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --generate-notes
           fi
