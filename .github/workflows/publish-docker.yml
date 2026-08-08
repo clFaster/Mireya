@@ -1,26 +1,26 @@
 name: Publish Docker image
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
-  workflow_dispatch:
+  workflow_call:
     inputs:
       version:
         description: "Semantic version to publish (for example 1.0.0 or 1.0.0-rc.1)"
         required: true
         type: string
+      submit_to_docker_hub:
+        description: "Submit the image to Docker Hub"
+        required: true
+        type: boolean
       publish_latest:
         description: "Promote this stable version to the 1, 1.0, and latest tags"
         required: true
-        default: false
         type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: publish-docker-${{ github.ref }}
+  group: publish-docker-${{ inputs.version }}
   cancel-in-progress: false
 
 env:
@@ -47,8 +47,8 @@ jobs:
         id: version
         shell: bash
         env:
-          REQUESTED_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
-          PROMOTE_STABLE: ${{ github.event_name == 'push' || inputs.publish_latest }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+          PROMOTE_STABLE: ${{ inputs.publish_latest }}
         run: |
           version="${REQUESTED_VERSION#v}"
           semver_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
@@ -128,12 +128,14 @@ jobs:
         run: docker compose down --volumes
 
       - name: Log in to Docker Hub
+        if: inputs.submit_to_docker_hub
         uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Generate image tags and labels
+        if: inputs.submit_to_docker_hub
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -152,9 +154,11 @@ jobs:
             org.opencontainers.image.licenses=GPL-3.0-only
 
       - name: Set up QEMU
+        if: inputs.submit_to_docker_hub
         uses: docker/setup-qemu-action@v4
 
       - name: Build and push multi-platform image
+        if: inputs.submit_to_docker_hub
         id: push
         uses: docker/build-push-action@v7
         with:
