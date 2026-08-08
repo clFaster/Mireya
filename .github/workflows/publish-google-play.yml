@@ -7,10 +7,6 @@ on:
         description: "Stable semantic version to package (for example 1.0.0)"
         required: true
         type: string
-      submit_to_store:
-        description: "Submit the signed app bundle to Google Play"
-        required: true
-        type: boolean
 
 permissions:
   contents: read
