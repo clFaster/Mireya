@@ -172,6 +172,8 @@ jobs:
           MSIX_PATH: ${{ steps.package.outputs.msix_path }}
           STORE_APP_ID: ${{ secrets.STORE_APP_ID }}
         run: |
+          $inputDirectory = Split-Path -LiteralPath $env:MSIX_PATH -Parent
+
           msstore publish $env:GITHUB_WORKSPACE `
-            --inputFile $env:MSIX_PATH `
+            --inputDirectory $inputDirectory `
             --appId $env:STORE_APP_ID
