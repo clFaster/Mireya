@@ -25,16 +25,6 @@ on:
         required: true
         default: true
         type: boolean
-      submit_to_docker_hub:
-        description: "Submit the Docker image to Docker Hub"
-        required: true
-        default: false
-        type: boolean
-      publish_latest:
-        description: "Promote a submitted stable image to the major, minor, and latest tags"
-        required: true
-        default: false
-        type: boolean
 
       # Google Play
       publish_google_play:
@@ -42,22 +32,12 @@ on:
         required: true
         default: true
         type: boolean
-      submit_google_play:
-        description: "Submit the Android app bundle to Google Play"
-        required: true
-        default: false
-        type: boolean
 
       # Microsoft Store
       publish_microsoft_store:
         description: "Build the Microsoft Store package"
         required: true
         default: true
-        type: boolean
-      submit_microsoft_store:
-        description: "Submit the package to Microsoft Partner Center"
-        required: true
-        default: false
         type: boolean
 
 permissions:
