@@ -21,21 +21,21 @@ on:
       
       # Docker
       publish_docker:
-        description: "Build and smoke-test the Docker image"
+        description: "Release the Docker image"
         required: true
         default: true
         type: boolean
 
       # Google Play
       publish_google_play:
-        description: "Build the Android app bundle"
+        description: "Release the Android App"
         required: true
         default: true
         type: boolean
 
       # Microsoft Store
       publish_microsoft_store:
-        description: "Build the Microsoft Store package"
+        description: "Release the Microsoft Store package"
         required: true
         default: true
         type: boolean
