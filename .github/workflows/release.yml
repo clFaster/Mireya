@@ -1,0 +1,136 @@
+name: Release Mireya
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semantic version to publish (for example 1.0.0 or 1.0.0-rc.1)"
+        required: true
+        type: string
+      publish_docker:
+        description: "Build and smoke-test the Docker image"
+        required: true
+        default: true
+        type: boolean
+      submit_to_docker_hub:
+        description: "Submit the Docker image to Docker Hub"
+        required: true
+        default: false
+        type: boolean
+      publish_latest:
+        description: "Promote a submitted stable image to the major, minor, and latest tags"
+        required: true
+        default: false
+        type: boolean
+      publish_google_play:
+        description: "Build the Android app bundle"
+        required: true
+        default: true
+        type: boolean
+      submit_google_play:
+        description: "Submit the Android app bundle to Google Play"
+        required: true
+        default: false
+        type: boolean
+      publish_microsoft_store:
+        description: "Build the Microsoft Store package"
+        required: true
+        default: true
+        type: boolean
+      submit_microsoft_store:
+        description: "Submit the package to Microsoft Partner Center"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-mireya
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release request
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+          PUBLISH_DOCKER: ${{ inputs.publish_docker }}
+          SUBMIT_TO_DOCKER_HUB: ${{ inputs.submit_to_docker_hub }}
+          PUBLISH_LATEST: ${{ inputs.publish_latest }}
+          PUBLISH_GOOGLE_PLAY: ${{ inputs.publish_google_play }}
+          SUBMIT_GOOGLE_PLAY: ${{ inputs.submit_google_play }}
+          PUBLISH_MICROSOFT_STORE: ${{ inputs.publish_microsoft_store }}
+          SUBMIT_MICROSOFT_STORE: ${{ inputs.submit_microsoft_store }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Releases can only be started from the main branch."
+            exit 1
+          fi
+
+          version="${VERSION#v}"
+          semver_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+          if [[ ! "$version" =~ $semver_pattern ]]; then
+            echo "::error::Version '$VERSION' is not a supported Semantic Version."
+            exit 1
+          fi
+
+          if [[ "$PUBLISH_DOCKER" != "true" && "$PUBLISH_GOOGLE_PLAY" != "true" && "$PUBLISH_MICROSOFT_STORE" != "true" ]]; then
+            echo "::error::Select at least one release target."
+            exit 1
+          fi
+
+          if [[ "$SUBMIT_GOOGLE_PLAY" == "true" && "$PUBLISH_GOOGLE_PLAY" != "true" ]]; then
+            echo "::error::Google Play submission requires the Google Play build option."
+            exit 1
+          fi
+
+          if [[ "$SUBMIT_TO_DOCKER_HUB" == "true" && "$PUBLISH_DOCKER" != "true" ]]; then
+            echo "::error::Docker Hub submission requires the Docker build option."
+            exit 1
+          fi
+
+          if [[ "$PUBLISH_LATEST" == "true" && "$SUBMIT_TO_DOCKER_HUB" != "true" ]]; then
+            echo "::error::Publishing floating Docker tags requires Docker Hub submission."
+            exit 1
+          fi
+
+          if [[ "$SUBMIT_MICROSOFT_STORE" == "true" && "$PUBLISH_MICROSOFT_STORE" != "true" ]]; then
+            echo "::error::Microsoft Store submission requires the Microsoft Store build option."
+            exit 1
+          fi
+
+  docker:
+    name: Docker
+    needs: validate
+    if: inputs.publish_docker
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      version: ${{ inputs.version }}
+      submit_to_docker_hub: ${{ inputs.submit_to_docker_hub }}
+      publish_latest: ${{ inputs.publish_latest }}
+    secrets: inherit
+
+  google-play:
+    name: Google Play
+    needs: validate
+    if: inputs.publish_google_play
+    uses: ./.github/workflows/publish-google-play.yml
+    with:
+      version: ${{ inputs.version }}
+      submit_to_store: ${{ inputs.submit_google_play }}
+    secrets: inherit
+
+  microsoft-store:
+    name: Microsoft Store
+    needs: validate
+    if: inputs.publish_microsoft_store
+    uses: ./.github/workflows/publish-microsoft-store.yml
+    with:
+      version: ${{ inputs.version }}
+      submit_to_store: ${{ inputs.submit_microsoft_store }}
+    secrets: inherit

@@ -1,10 +1,7 @@
 name: Publish Google Play
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
-  workflow_dispatch:
+  workflow_call:
     inputs:
       version:
         description: "Stable semantic version to package (for example 1.0.0)"
@@ -13,7 +10,6 @@ on:
       submit_to_store:
         description: "Submit the signed app bundle to Google Play"
         required: true
-        default: false
         type: boolean
 
 permissions:
@@ -44,7 +40,7 @@ jobs:
         id: version
         shell: bash
         env:
-          REQUESTED_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           version="${REQUESTED_VERSION#v}"
 
@@ -114,7 +110,7 @@ jobs:
           done
 
       - name: Validate Google Play publishing configuration
-        if: steps.version.outputs.eligible == 'true' && (github.event_name == 'push' || inputs.submit_to_store)
+        if: steps.version.outputs.eligible == 'true' && inputs.submit_to_store
         shell: bash
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -260,7 +256,7 @@ jobs:
           retention-days: 30
 
       - name: Publish app bundle to Google Play
-        if: steps.version.outputs.eligible == 'true' && (github.event_name == 'push' || inputs.submit_to_store)
+        if: steps.version.outputs.eligible == 'true' && inputs.submit_to_store
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}

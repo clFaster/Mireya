@@ -1,11 +1,7 @@
 name: Publish Microsoft Store
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
-      - "!v*.*.*-*"
-  workflow_dispatch:
+  workflow_call:
     inputs:
       version:
         description: "Stable semantic version to package (for example 1.0.0)"
@@ -14,7 +10,6 @@ on:
       submit_to_store:
         description: "Submit the validated package to Partner Center"
         required: true
-        default: false
         type: boolean
 
 permissions:
@@ -44,7 +39,7 @@ jobs:
         id: version
         shell: pwsh
         env:
-          REQUESTED_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           $version = $env:REQUESTED_VERSION -replace '^v', ''
 
@@ -159,11 +154,11 @@ jobs:
           retention-days: 30
 
       - name: Set up Microsoft Store Developer CLI
-        if: github.event_name == 'push' || inputs.submit_to_store
+        if: inputs.submit_to_store
         uses: microsoft/setup-msstore-cli@v1.4
 
       - name: Configure Microsoft Store Developer CLI
-        if: github.event_name == 'push' || inputs.submit_to_store
+        if: inputs.submit_to_store
         shell: pwsh
         env:
           AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
@@ -178,7 +173,7 @@ jobs:
             --clientSecret $env:AZURE_AD_APP_REGISTRATION_CLIENT_SECRET
 
       - name: Publish package to Microsoft Store
-        if: github.event_name == 'push' || inputs.submit_to_store
+        if: inputs.submit_to_store
         shell: pwsh
         env:
           MSIX_PATH: ${{ steps.package.outputs.msix_path }}
