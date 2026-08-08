@@ -5,16 +5,14 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
 
-  <!-- The release workflow replaces these development identity values with
-       the Product identity values configured in the GitHub repository. -->
   <Identity
-    Name="Mireya.Store.Development"
-    Publisher="CN=Mireya Development"
+    Name="3978MoritzReis.Mireya"
+    Publisher="CN=6CC9D2F4-7FD0-4B42-84CA-53C113FA4D55"
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>Mireya Digital Signage</DisplayName>
-    <PublisherDisplayName>Mireya</PublisherDisplayName>
+    <DisplayName>Mireya</DisplayName>
+    <PublisherDisplayName>Moritz Reis</PublisherDisplayName>
     <Description>Mireya Digital Signage display client</Description>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -36,7 +34,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Mireya Digital Signage"
+        DisplayName="Mireya"
         Description="Mireya Digital Signage display client"
         BackgroundColor="transparent"
         Square44x44Logo="Images\Square44x44Logo.png"
