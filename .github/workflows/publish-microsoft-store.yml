@@ -71,7 +71,7 @@ jobs:
       - name: Restore .NET tools
         run: dotnet tool restore
 
-      - name: Build Store-ready MSIX
+      - name: Build Store-ready MSIX bundle
         id: package
         shell: pwsh
         env:
@@ -82,7 +82,11 @@ jobs:
           $packageManifest = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop.Package\Package.appxmanifest'
           $desktopProject = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop\Mireya.Client.Desktop.csproj'
           $packageDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts\microsoft-store\package'
+          $bundleArtifactsDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts\microsoft-store\bundle-artifacts'
           New-Item -ItemType Directory -Path $packageDirectory -Force | Out-Null
+          New-Item -ItemType Directory -Path $bundleArtifactsDirectory -Force | Out-Null
+
+          $bundlePlatforms = 'x64|ARM64'
 
           # The WAP targets use the Identity version from Package.appxmanifest;
           # AppxPackageVersion alone does not replace the embedded value.
@@ -95,56 +99,65 @@ jobs:
           $identity.SetAttribute('Version', $env:PACKAGE_VERSION)
           $manifest.Save($packageManifest)
 
-          # Restore the packaging project first, then restore the application
-          # explicitly for the RID used by its publish profile.
-          msbuild $packageProject `
-            /t:Restore `
-            /m:1 `
-            /p:BuildInParallel=false `
-            /p:Configuration=Release `
-            /p:Platform=x64
+          $restoreArguments = @(
+            $packageProject
+            '/t:Restore'
+            '/m:1'
+            '/p:BuildInParallel=false'
+            '/p:BuildWindowsMsixBundle=true'
+            '/p:Configuration=Release'
+            '/p:Platform=x64'
+          )
+          & msbuild @restoreArguments
           if ($LASTEXITCODE -ne 0) {
             throw "Packaging project restore failed with exit code $LASTEXITCODE."
           }
 
-          dotnet restore $desktopProject `
-            --runtime win-x64 `
+          # RuntimeIdentifiers in the desktop project restores both runtime graphs.
+          & dotnet restore $desktopProject `
             --disable-parallel `
+            --property:BuildWindowsMsixBundle=true `
             --property:Configuration=Release
           if ($LASTEXITCODE -ne 0) {
             throw "Desktop runtime restore failed with exit code $LASTEXITCODE."
           }
 
-          msbuild $packageProject `
-            /m:1 `
-            /p:BuildInParallel=false `
-            /p:UseSharedCompilation=false `
-            /p:SkipNSwag=true `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:RuntimeIdentifier=win-x64 `
-            /p:AppxBundle=Never `
-            /p:AppxPackageSigningEnabled=false `
-            /p:AppxPackageDir="$packageDirectory\" `
-            /p:AppxPackageVersion=$env:PACKAGE_VERSION `
-            /p:Version=$env:RELEASE_VERSION `
-            /p:FileVersion=$env:PACKAGE_VERSION `
-            /p:AssemblyVersion=$env:PACKAGE_VERSION
+          # DesktopBridge orchestrates both platform builds and then creates one bundle.
+          $buildArguments = @(
+            $packageProject
+            '/m:1'
+            '/p:BuildInParallel=false'
+            '/p:BuildWindowsMsixBundle=true'
+            '/p:UseSharedCompilation=false'
+            '/p:SkipNSwag=true'
+            '/p:Configuration=Release'
+            '/p:Platform=x64'
+            '/p:AppxBundle=Always'
+            "/p:AppxBundlePlatforms=$bundlePlatforms"
+            '/p:AppxPackageSigningEnabled=false'
+            "/p:AppxPackageDir=$packageDirectory\"
+            "/p:PlatformSpecificBundleArtifactsListDir=$bundleArtifactsDirectory\"
+            "/p:AppxPackageVersion=$env:PACKAGE_VERSION"
+            "/p:Version=$env:RELEASE_VERSION"
+            "/p:FileVersion=$env:PACKAGE_VERSION"
+            "/p:AssemblyVersion=$env:PACKAGE_VERSION"
+          )
+          & msbuild @buildArguments
           if ($LASTEXITCODE -ne 0) {
             throw "MSBuild failed with exit code $LASTEXITCODE."
           }
 
-          $packages = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.msix' -File -Recurse)
-          if ($packages.Count -ne 1) {
-            throw "Expected exactly one MSIX package, found $($packages.Count)."
+          $bundles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.msixbundle' -File -Recurse)
+          if ($bundles.Count -ne 1) {
+            throw "Expected exactly one MSIX bundle, found $($bundles.Count)."
           }
 
           Add-Type -AssemblyName System.IO.Compression
-          $archive = [System.IO.Compression.ZipFile]::OpenRead($packages[0].FullName)
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($bundles[0].FullName)
           try {
-            $manifestEntry = $archive.GetEntry('AppxManifest.xml')
+            $manifestEntry = $archive.GetEntry('AppxMetadata/AppxBundleManifest.xml')
             if ($null -eq $manifestEntry) {
-              throw "The generated MSIX does not contain AppxManifest.xml."
+              throw "The generated MSIX bundle does not contain AppxBundleManifest.xml."
             }
 
             $reader = [System.IO.StreamReader]::new($manifestEntry.Open())
@@ -155,30 +168,51 @@ jobs:
               $reader.Dispose()
             }
 
-            $builtIdentity = $builtManifest.SelectSingleNode("/*[local-name()='Package']/*[local-name()='Identity']")
+            $builtIdentity = $builtManifest.SelectSingleNode("/*[local-name()='Bundle']/*[local-name()='Identity']")
             if ($null -eq $builtIdentity) {
-              throw "The generated MSIX manifest does not contain a package identity."
+              throw "The generated MSIX bundle manifest does not contain an identity."
             }
 
             $builtVersion = $builtIdentity.GetAttribute('Version')
             if ($builtVersion -ne $env:PACKAGE_VERSION) {
-              throw "Expected MSIX version '$env:PACKAGE_VERSION', found '$builtVersion'."
+              throw "Expected MSIX bundle version '$env:PACKAGE_VERSION', found '$builtVersion'."
             }
 
-            Write-Host "Verified MSIX package version $builtVersion."
+            $applicationPackages = @(
+              $builtManifest.SelectNodes("/*[local-name()='Bundle']/*[local-name()='Packages']/*[local-name()='Package']") |
+                Where-Object { $_.GetAttribute('Type').ToLowerInvariant() -eq 'application' }
+            )
+            $actualArchitectures = @(
+              $applicationPackages |
+                ForEach-Object { $_.GetAttribute('Architecture').ToLowerInvariant() } |
+                Sort-Object -Unique
+            )
+            $expectedArchitectures = @('arm64', 'x64')
+            if (($actualArchitectures -join ',') -ne ($expectedArchitectures -join ',')) {
+              throw "Expected application packages for '$($expectedArchitectures -join ', ')', found '$($actualArchitectures -join ', ')'."
+            }
+
+            foreach ($applicationPackage in $applicationPackages) {
+              $applicationPackageVersion = $applicationPackage.GetAttribute('Version')
+              if ($applicationPackageVersion -ne $env:PACKAGE_VERSION) {
+                throw "Expected $($applicationPackage.GetAttribute('Architecture')) package version '$env:PACKAGE_VERSION', found '$applicationPackageVersion'."
+              }
+            }
+
+            Write-Host "Verified MSIX bundle version $builtVersion with x64 and ARM64 application packages."
           }
           finally {
             $archive.Dispose()
           }
 
-          "msix_path=$($packages[0].FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "msixbundle_path=$($bundles[0].FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Upload Store package
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: mireya-microsoft-store-${{ steps.version.outputs.version }}
-          path: artifacts/microsoft-store/package/**/*.msix
+          path: artifacts/microsoft-store/package/**/*.msixbundle
           if-no-files-found: error
           retention-days: 30
 
@@ -202,7 +236,7 @@ jobs:
       - name: Publish package to Microsoft Store
         shell: pwsh
         env:
-          MSIX_PATH: ${{ steps.package.outputs.msix_path }}
+          MSIX_BUNDLE_PATH: ${{ steps.package.outputs.msixbundle_path }}
           STORE_APP_ID: ${{ secrets.STORE_APP_ID }}
         run: |
-          msstore publish "$env:GITHUB_WORKSPACE/artifacts/microsoft-store/package/**/*.msix" -id $env:STORE_APP_ID
+          msstore publish "$env:MSIX_BUNDLE_PATH" -id "$env:STORE_APP_ID"
