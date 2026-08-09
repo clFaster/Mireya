@@ -26,16 +26,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Android" Version="12.1.0" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Android" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
     <!-- Keep this aligned with the AndroidX family pulled by Avalonia.Android.
          1.2.0.3 mixes Core 1.19 with Avalonia's Core.Ktx 1.17 and causes
          duplicate Java classes during D8 packaging. -->
-    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.2.0.2" />
+    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.2.0.3" />
     <!-- Android uses the platform-native Media3/ExoPlayer stack. Desktop keeps LibVLC;
          the Android head does not need to ship VLC's native binaries. -->
-    <PackageReference Include="Xamarin.AndroidX.Media3.ExoPlayer" Version="1.9.2.1" />
-    <PackageReference Include="Xamarin.AndroidX.Media3.Ui" Version="1.9.2.1" />
+    <PackageReference Include="Xamarin.AndroidX.Media3.ExoPlayer" Version="1.10.1.1" />
+    <PackageReference Include="Xamarin.AndroidX.Media3.Ui" Version="1.10.1.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.10" />
     <PackageReference Include="Serilog" Version="4.4.0" />

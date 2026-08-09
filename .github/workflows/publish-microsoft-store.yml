@@ -81,14 +81,11 @@ jobs:
         run: |
           $packageProject = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop.Package\Mireya.Client.Desktop.Package.wapproj'
           $desktopProject = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop\Mireya.Client.Desktop.csproj'
-          $apiProject = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Api\Mireya.Api.csproj'
           $packageDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts\microsoft-store\package'
           New-Item -ItemType Directory -Path $packageDirectory -Force | Out-Null
 
           # Restore the packaging project first, then restore the application
-          # explicitly for the RID used by its publish profile. Restore the API
-          # separately because NSwag consumes it as an input rather than through
-          # a ProjectReference, so it isn't included in the WAP project graph.
+          # explicitly for the RID used by its publish profile.
           msbuild $packageProject `
             /t:Restore `
             /m:1 `
@@ -97,14 +94,6 @@ jobs:
             /p:Platform=x64
           if ($LASTEXITCODE -ne 0) {
             throw "Packaging project restore failed with exit code $LASTEXITCODE."
-          }
-
-          dotnet restore $apiProject `
-            --disable-parallel `
-            /m:1 `
-            --property:Configuration=Release
-          if ($LASTEXITCODE -ne 0) {
-            throw "API restore for NSwag failed with exit code $LASTEXITCODE."
           }
 
           dotnet restore $desktopProject `
@@ -119,6 +108,7 @@ jobs:
             /m:1 `
             /p:BuildInParallel=false `
             /p:UseSharedCompilation=false `
+            /p:SkipNSwag=true `
             /p:Configuration=Release `
             /p:Platform=x64 `
             /p:RuntimeIdentifier=win-x64 `
