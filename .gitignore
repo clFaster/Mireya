@@ -556,6 +556,7 @@ publish/
 # but database connection strings (with potential passwords) will be unencrypted
 *.pubxml
 !src/Mireya.Client.Desktop/Properties/PublishProfiles/win-x64.pubxml
+!src/Mireya.Client.Desktop/Properties/PublishProfiles/win-ARM64.pubxml
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
