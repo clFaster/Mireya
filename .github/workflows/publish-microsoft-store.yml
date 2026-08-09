@@ -41,14 +41,13 @@ jobs:
 
           if ($version -match '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
             $parts = $version.Split('.') | ForEach-Object { [int] $_ }
-            if ($parts[0] -gt 65534 -or $parts[1] -gt 65535 -or $parts[2] -gt 65535) {
+            if ($parts[0] -gt 65535 -or $parts[1] -gt 65535 -or $parts[2] -gt 65535) {
               Write-Host "::error::Version '$version' cannot be represented as a Microsoft Store package version."
               exit 1
             }
 
-            # The Store requires a non-zero first component and reserves the
-            # fourth component: Mireya 0.2.0 becomes package 1.2.0.0.
-            $packageVersion = '{0}.{1}.{2}.0' -f ($parts[0] + 1), $parts[1], $parts[2]
+            # Keep the fourth component at zero for Store assignment.
+            $packageVersion = '{0}.{1}.{2}.0' -f $parts[0], $parts[1], $parts[2]
             "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             "package_version=$packageVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
             exit 0
