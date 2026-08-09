@@ -80,9 +80,21 @@ jobs:
           PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
         run: |
           $packageProject = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop.Package\Mireya.Client.Desktop.Package.wapproj'
+          $packageManifest = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop.Package\Package.appxmanifest'
           $desktopProject = Join-Path $env:GITHUB_WORKSPACE 'src\Mireya.Client.Desktop\Mireya.Client.Desktop.csproj'
           $packageDirectory = Join-Path $env:GITHUB_WORKSPACE 'artifacts\microsoft-store\package'
           New-Item -ItemType Directory -Path $packageDirectory -Force | Out-Null
+
+          # The WAP targets use the Identity version from Package.appxmanifest;
+          # AppxPackageVersion alone does not replace the embedded value.
+          [xml] $manifest = Get-Content -LiteralPath $packageManifest -Raw
+          $identity = $manifest.SelectSingleNode("/*[local-name()='Package']/*[local-name()='Identity']")
+          if ($null -eq $identity) {
+            throw "Package identity was not found in '$packageManifest'."
+          }
+
+          $identity.SetAttribute('Version', $env:PACKAGE_VERSION)
+          $manifest.Save($packageManifest)
 
           # Restore the packaging project first, then restore the application
           # explicitly for the RID used by its publish profile.
@@ -128,6 +140,38 @@ jobs:
             throw "Expected exactly one MSIX package, found $($packages.Count)."
           }
 
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($packages[0].FullName)
+          try {
+            $manifestEntry = $archive.GetEntry('AppxManifest.xml')
+            if ($null -eq $manifestEntry) {
+              throw "The generated MSIX does not contain AppxManifest.xml."
+            }
+
+            $reader = [System.IO.StreamReader]::new($manifestEntry.Open())
+            try {
+              [xml] $builtManifest = $reader.ReadToEnd()
+            }
+            finally {
+              $reader.Dispose()
+            }
+
+            $builtIdentity = $builtManifest.SelectSingleNode("/*[local-name()='Package']/*[local-name()='Identity']")
+            if ($null -eq $builtIdentity) {
+              throw "The generated MSIX manifest does not contain a package identity."
+            }
+
+            $builtVersion = $builtIdentity.GetAttribute('Version')
+            if ($builtVersion -ne $env:PACKAGE_VERSION) {
+              throw "Expected MSIX version '$env:PACKAGE_VERSION', found '$builtVersion'."
+            }
+
+            Write-Host "Verified MSIX package version $builtVersion."
+          }
+          finally {
+            $archive.Dispose()
+          }
+
           "msix_path=$($packages[0].FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Upload Store package
@@ -162,8 +206,4 @@ jobs:
           MSIX_PATH: ${{ steps.package.outputs.msix_path }}
           STORE_APP_ID: ${{ secrets.STORE_APP_ID }}
         run: |
-          $inputDirectory = Split-Path -LiteralPath $env:MSIX_PATH -Parent
-
-          msstore publish $env:GITHUB_WORKSPACE `
-            --inputDirectory $inputDirectory `
-            --appId $env:STORE_APP_ID
+          msstore publish "$env:GITHUB_WORKSPACE/artifacts/microsoft-store/package/**/*.msix" -id $env:STORE_APP_ID
