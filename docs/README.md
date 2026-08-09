@@ -4,7 +4,7 @@ Mireya is an open digital-signage system for managing screens, content, schedule
 
 The project is in active development. The current implementation supports local development and evaluation, but still needs production hardening and packaging work before it should be treated as a finished product.
 
-![Mireya Admin Dashboard](img/mireya-admin-dashboard.png)
+![Mireya Admin Dashboard](img/Website/mireya-admin-dashboard.png)
 
 ## System overview
 
