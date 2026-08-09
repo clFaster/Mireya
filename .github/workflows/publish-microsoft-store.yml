@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Resolve release version
         id: version
@@ -58,7 +58,7 @@ jobs:
           exit 1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
           cache: true
@@ -142,7 +142,7 @@ jobs:
 
       - name: Upload Store package
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mireya-microsoft-store-${{ steps.version.outputs.version }}
           path: artifacts/microsoft-store/package/**/*.msix
