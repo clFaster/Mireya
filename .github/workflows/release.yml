@@ -28,7 +28,7 @@ on:
 
       # Google Play
       publish_google_play:
-        description: "Release the Android App"
+        description: "Build the signed Android App Bundle artifact"
         required: true
         default: true
         type: boolean
@@ -131,7 +131,7 @@ jobs:
     secrets: inherit
 
   google-play:
-    name: Google Play
+    name: Android App Bundle
     needs: update-version
     if: inputs.publish_google_play
     uses: ./.github/workflows/publish-google-play.yml

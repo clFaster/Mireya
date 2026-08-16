@@ -40,11 +40,14 @@ public class MainActivity : AvaloniaMainActivity
         // bars so signage content fills the whole TV screen. The modern WindowInsets API
         // is only available from API 30 (Android 11).
         Window?.AddFlags(WindowManagerFlags.KeepScreenOn);
-        var controller = Window?.InsetsController;
-        if (System.OperatingSystem.IsAndroidVersionAtLeast(30) && controller is not null)
+        if (System.OperatingSystem.IsAndroidVersionAtLeast(30))
         {
-            controller.Hide(WindowInsets.Type.SystemBars());
-            controller.SystemBarsBehavior = (int)WindowInsetsControllerBehavior.ShowTransientBarsBySwipe;
+            var controller = Window?.InsetsController;
+            if (controller is not null)
+            {
+                controller.Hide(WindowInsets.Type.SystemBars());
+                controller.SystemBarsBehavior = (int)WindowInsetsControllerBehavior.ShowTransientBarsBySwipe;
+            }
         }
     }
 }
