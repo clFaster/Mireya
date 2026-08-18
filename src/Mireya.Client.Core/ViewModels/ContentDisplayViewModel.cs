@@ -522,6 +522,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         {
             StatusText = "No content available";
             CurrentContentType = ContentType.None;
+            ClearCurrentImage();
         }
     }
 
@@ -766,25 +767,19 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         {
             if (File.Exists(item.LocalPath))
             {
-                var oldImage = CurrentImage;
-                CurrentImage = new Bitmap(item.LocalPath);
-                oldImage?.Dispose();
+                SetCurrentImage(new Bitmap(item.LocalPath));
                 FadeInImage();
             }
             else
             {
                 _logger.LogWarning("Image file not found: {Path}", item.LocalPath);
-                var oldImage = CurrentImage;
-                CurrentImage = null;
-                oldImage?.Dispose();
+                ClearCurrentImage();
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load image: {Path}", item.LocalPath);
-            var oldImage = CurrentImage;
-            CurrentImage = null;
-            oldImage?.Dispose();
+            ClearCurrentImage();
         }
 
         // Set timer to advance after duration
@@ -813,6 +808,31 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         Dispatcher.UIThread.Post(() => CurrentImageOpacity = 1, DispatcherPriority.Default);
     }
 
+    /// <summary>
+    ///     Binds a new bitmap to the image control and disposes the one it replaces.
+    ///     An Avalonia <see cref="Bitmap" /> owns native (Skia) pixel memory that is only
+    ///     released on disposal, so merely dropping the managed reference leaves a decoded
+    ///     frame alive until a finalizer eventually runs. A single 2400x1600 image already
+    ///     costs roughly 15 MiB, so on a memory-constrained device such as an Android TV box
+    ///     a looping campaign accumulates hundreds of MiB and gets killed by the
+    ///     low-memory killer. Every path that replaces or releases the current image must
+    ///     therefore go through this helper (or <see cref="ClearCurrentImage" />).
+    /// </summary>
+    private void SetCurrentImage(Bitmap? image)
+    {
+        var oldImage = CurrentImage;
+        if (ReferenceEquals(oldImage, image))
+            return;
+
+        // Unbind first so the control never draws a bitmap that is about to be disposed,
+        // then release the native memory of the evicted one exactly once.
+        CurrentImage = image;
+        oldImage?.Dispose();
+    }
+
+    /// <summary>Unbinds and disposes the image currently displayed, if any.</summary>
+    private void ClearCurrentImage() => SetCurrentImage(null);
+
     private void ShowVideo(PlaylistItem item)
     {
         _logger.LogDebug("Loading video: {Path}", item.LocalPath);
@@ -820,7 +840,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         CurrentContentType = ContentType.Video;
         CurrentVideoPath = item.LocalPath;
         CurrentVideoUri = TryCreateUri(item.LocalPath);
-        CurrentImage = null;
+        ClearCurrentImage();
         CurrentWebsiteUrl = null;
         CurrentWebsiteUri = null;
 
@@ -853,7 +873,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         CurrentWebsiteUri = TryCreateUri(item.Source);
 
         CurrentContentType = ContentType.Website;
-        CurrentImage = null;
+        ClearCurrentImage();
         CurrentVideoPath = null;
         CurrentVideoUri = null;
 
@@ -979,8 +999,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         _hubService.OnReconnecting -= OnHubReconnecting;
         _hubService.OnReconnected -= OnHubReconnected;
         _hubService.OnClosed -= OnHubClosed;
-        CurrentImage?.Dispose();
-        CurrentImage = null;
+        ClearCurrentImage();
     }
 
     public void Dispose()

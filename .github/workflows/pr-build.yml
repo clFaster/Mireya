@@ -35,6 +35,7 @@ jobs:
           dotnet restore ./src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj
           dotnet restore ./src/Mireya.ApiClient/Mireya.ApiClient.csproj
           dotnet restore ./src/Mireya.Application.Tests/Mireya.Application.Tests.csproj
+          dotnet restore ./src/Mireya.Client.Core.Tests/Mireya.Client.Core.Tests.csproj
 
       - name: Build backend API
         run: dotnet build ./src/Mireya.Api/Mireya.Api.csproj --configuration Release --no-restore
@@ -47,6 +48,9 @@ jobs:
 
       - name: Run tests
         run: dotnet test ./src/Mireya.Application.Tests/Mireya.Application.Tests.csproj --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+
+      - name: Run client tests
+        run: dotnet test ./src/Mireya.Client.Core.Tests/Mireya.Client.Core.Tests.csproj --configuration Release --logger "trx;LogFileName=client-test-results.trx" --results-directory ./TestResults
 
       - name: Upload test results
         if: always()
