@@ -767,7 +767,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         {
             if (File.Exists(item.LocalPath))
             {
-                SetCurrentImage(new Bitmap(item.LocalPath));
+                SetCurrentImage(this, new Bitmap(item.LocalPath));
                 FadeInImage();
             }
             else
@@ -818,20 +818,20 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     ///     low-memory killer. Every path that replaces or releases the current image must
     ///     therefore go through this helper (or <see cref="ClearCurrentImage" />).
     /// </summary>
-    private void SetCurrentImage(Bitmap? image)
+    private static void SetCurrentImage(ContentDisplayViewModel viewModel, Bitmap? image)
     {
-        var oldImage = CurrentImage;
+        var oldImage = viewModel.CurrentImage;
         if (ReferenceEquals(oldImage, image))
             return;
 
         // Unbind first so the control never draws a bitmap that is about to be disposed,
         // then release the native memory of the evicted one exactly once.
-        CurrentImage = image;
+        viewModel.CurrentImage = image;
         oldImage?.Dispose();
     }
 
     /// <summary>Unbinds and disposes the image currently displayed, if any.</summary>
-    private void ClearCurrentImage() => SetCurrentImage(null);
+    private void ClearCurrentImage() => SetCurrentImage(this, null);
 
     private void ShowVideo(PlaylistItem item)
     {

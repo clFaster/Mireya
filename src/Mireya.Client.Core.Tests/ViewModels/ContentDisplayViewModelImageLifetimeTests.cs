@@ -31,6 +31,39 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
         _session = session;
     }
 
+    public static TheoryData<string, PlaylistItem, string> TransitionsThatMustReleaseTheImage() =>
+        new()
+        {
+            {
+                "ShowVideo",
+                new PlaylistItem { AssetType = AssetType.Video },
+                "The image left behind by an image to video transition was not disposed."
+            },
+            {
+                "ShowWebsite",
+                new PlaylistItem
+                {
+                    AssetType = AssetType.Website,
+                    Source = "https://example.com/",
+                    DurationSeconds = 10,
+                },
+                "The image left behind by an image to website transition was not disposed."
+            },
+            {
+                "ShowImage",
+                new PlaylistItem
+                {
+                    AssetType = AssetType.Image,
+                    LocalPath = Path.Combine(
+                        Path.GetTempPath(),
+                        $"mireya-missing-{Guid.NewGuid():N}.png"
+                    ),
+                    DurationSeconds = 10,
+                },
+                "The image was not disposed after a failed image load."
+            },
+        };
+
     [Fact]
     public Task DisposedBitmapIsRecognisedAsDisposed() =>
         _session.RunAsync(() =>
@@ -46,62 +79,16 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
             Assert.True(IsDisposed(bitmap));
         });
 
-    [Fact]
-    public Task ShowVideoDisposesTheImageItReplaces() =>
+    [Theory]
+    [MemberData(nameof(TransitionsThatMustReleaseTheImage))]
+    public Task TransitionAwayFromAnImageDisposesIt(
+        string method,
+        PlaylistItem item,
+        string because
+    ) =>
         _session.RunAsync(() =>
-        {
-            var viewModel = CreateViewModel();
-            var image = CreateBitmap();
-            viewModel.CurrentImage = image;
-
-            Invoke(viewModel, "ShowVideo", new PlaylistItem { AssetType = AssetType.Video });
-
-            try
-            {
-                Assert.Null(viewModel.CurrentImage);
-                Assert.True(
-                    IsDisposed(image),
-                    "The image left behind by an image to video transition was not disposed."
-                );
-            }
-            finally
-            {
-                viewModel.Dispose();
-            }
-        });
-
-    [Fact]
-    public Task ShowWebsiteDisposesTheImageItReplaces() =>
-        _session.RunAsync(() =>
-        {
-            var viewModel = CreateViewModel();
-            var image = CreateBitmap();
-            viewModel.CurrentImage = image;
-
-            Invoke(
-                viewModel,
-                "ShowWebsite",
-                new PlaylistItem
-                {
-                    AssetType = AssetType.Website,
-                    Source = "https://example.com/",
-                    DurationSeconds = 10,
-                }
-            );
-
-            try
-            {
-                Assert.Null(viewModel.CurrentImage);
-                Assert.True(
-                    IsDisposed(image),
-                    "The image left behind by an image to website transition was not disposed."
-                );
-            }
-            finally
-            {
-                viewModel.Dispose();
-            }
-        });
+            AssertImageReleasedAfter(viewModel => InvokePrivate(viewModel, method, item), because)
+        );
 
     [Fact]
     public Task ShowImageDisposesThePreviousImageAndKeepsTheNewOne() =>
@@ -114,7 +101,7 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
 
             try
             {
-                Invoke(
+                InvokePrivate(
                     viewModel,
                     "ShowImage",
                     new PlaylistItem
@@ -138,54 +125,13 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
         });
 
     [Fact]
-    public Task ShowImageDisposesTheCurrentImageWhenTheFileIsMissing() =>
-        _session.RunAsync(() =>
-        {
-            var viewModel = CreateViewModel();
-            var image = CreateBitmap();
-            viewModel.CurrentImage = image;
-
-            Invoke(
-                viewModel,
-                "ShowImage",
-                new PlaylistItem
-                {
-                    AssetType = AssetType.Image,
-                    LocalPath = Path.Combine(
-                        Path.GetTempPath(),
-                        $"mireya-missing-{Guid.NewGuid():N}.png"
-                    ),
-                    DurationSeconds = 10,
-                }
-            );
-
-            try
-            {
-                Assert.Null(viewModel.CurrentImage);
-                Assert.True(
-                    IsDisposed(image),
-                    "The image was not disposed after a failed image load."
-                );
-            }
-            finally
-            {
-                viewModel.Dispose();
-            }
-        });
-
-    [Fact]
     public Task CleanupDisposesTheCurrentImage() =>
         _session.RunAsync(() =>
-        {
-            var viewModel = CreateViewModel();
-            var image = CreateBitmap();
-            viewModel.CurrentImage = image;
-
-            viewModel.Cleanup();
-
-            Assert.Null(viewModel.CurrentImage);
-            Assert.True(IsDisposed(image), "The image was not disposed during cleanup.");
-        });
+            AssertImageReleasedAfter(
+                viewModel => viewModel.Cleanup(),
+                "The image was not disposed during cleanup."
+            )
+        );
 
     [Fact]
     public Task ReassigningTheSameImageDoesNotDisposeIt() =>
@@ -197,7 +143,7 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
 
             try
             {
-                InvokeSetCurrentImage(viewModel, image);
+                InvokePrivate(viewModel, "SetCurrentImage", image);
 
                 Assert.Same(image, viewModel.CurrentImage);
                 Assert.False(
@@ -214,6 +160,27 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
     // ──────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────
+
+    private static void AssertImageReleasedAfter(
+        Action<ContentDisplayViewModel> act,
+        string because
+    )
+    {
+        var viewModel = CreateViewModel();
+        var image = CreateBitmap();
+        viewModel.CurrentImage = image;
+
+        try
+        {
+            act(viewModel);
+            Assert.Null(viewModel.CurrentImage);
+            Assert.True(IsDisposed(image), because);
+        }
+        finally
+        {
+            viewModel.Dispose();
+        }
+    }
 
     private static ContentDisplayViewModel CreateViewModel()
     {
@@ -262,28 +229,24 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
         }
     }
 
-    private static void Invoke(ContentDisplayViewModel viewModel, string method, PlaylistItem item)
+    private static void InvokePrivate(
+        ContentDisplayViewModel viewModel,
+        string method,
+        params object?[] arguments
+    )
     {
         var target =
             typeof(ContentDisplayViewModel).GetMethod(
                 method,
-                BindingFlags.Instance | BindingFlags.NonPublic
+                BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic
             ) ?? throw new InvalidOperationException($"{method} was not found on the view model.");
 
-        target.Invoke(viewModel, [item]);
-    }
+        if (target.IsStatic)
+        {
+            target.Invoke(null, [viewModel, .. arguments]);
+            return;
+        }
 
-    private static void InvokeSetCurrentImage(ContentDisplayViewModel viewModel, Bitmap? image)
-    {
-        var target =
-            typeof(ContentDisplayViewModel).GetMethod(
-                "SetCurrentImage",
-                BindingFlags.Instance | BindingFlags.NonPublic
-            )
-            ?? throw new InvalidOperationException(
-                "SetCurrentImage was not found on the view model."
-            );
-
-        target.Invoke(viewModel, [image]);
+        target.Invoke(viewModel, arguments);
     }
 }
