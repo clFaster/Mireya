@@ -29,7 +29,7 @@ dotnet tool restore
 | `src/Mireya.ApiClient.TestConsole`         | Small console harness for manual API-client checks.                                                                            |
 | `src/Mireya.Client.Core`                   | Shared Avalonia display-client UI, view models, settings, converters, and platform abstractions.                               |
 | `src/Mireya.Client.Desktop`                | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage.            |
-| `src/Mireya.Client.Android`                | Android TV head with native Android WebView, Media3/ExoPlayer, Leanback launcher metadata, and immersive fullscreen behavior.   |
+| `src/Mireya.Client.Android`                | Android TV head with native Android WebView, Media3/ExoPlayer, Leanback launcher metadata, and immersive fullscreen behavior.  |
 | `src/Mireya.Application.Tests`             | xUnit tests for application services using in-memory SQLite and NSubstitute.                                                   |
 | `src/Mireya.Client.Core.Tests`             | xUnit tests for the display-client view models, running on the headless Avalonia platform.                                     |
 | `src/MireyaDigitalSignage.AppHost`         | .NET Aspire orchestration for the API plus PostgreSQL.                                                                         |
