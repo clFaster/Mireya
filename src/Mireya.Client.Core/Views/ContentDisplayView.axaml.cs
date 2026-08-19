@@ -19,6 +19,10 @@ public partial class ContentDisplayView : UserControl
     private ContentDisplayViewModel? _viewModel;
     private IWebsiteRenderer? _websiteRenderer;
     private IVideoRenderer? _videoRenderer;
+    private ContentControl? _websiteHost;
+    private ContentControl? _videoHost;
+    private Control? _websiteControl;
+    private Control? _videoControl;
 
     public ContentDisplayView()
     {
@@ -41,20 +45,18 @@ public partial class ContentDisplayView : UserControl
         if (factory == null)
             return;
 
-        var websiteHost = this.FindControl<ContentControl>("WebsiteHost");
-        if (websiteHost != null)
+        _websiteHost = this.FindControl<ContentControl>("WebsiteHost");
+        if (_websiteHost != null)
         {
-            var websiteControl = factory.CreateWebsiteRenderer();
-            websiteHost.Content = websiteControl;
-            _websiteRenderer = websiteControl as IWebsiteRenderer;
+            _websiteControl = factory.CreateWebsiteRenderer();
+            _websiteRenderer = _websiteControl as IWebsiteRenderer;
         }
 
-        var videoHost = this.FindControl<ContentControl>("VideoHost");
-        if (videoHost != null)
+        _videoHost = this.FindControl<ContentControl>("VideoHost");
+        if (_videoHost != null)
         {
-            var videoControl = factory.CreateVideoRenderer();
-            videoHost.Content = videoControl;
-            _videoRenderer = videoControl as IVideoRenderer;
+            _videoControl = factory.CreateVideoRenderer();
+            _videoRenderer = _videoControl as IVideoRenderer;
         }
     }
 
@@ -101,6 +103,7 @@ public partial class ContentDisplayView : UserControl
 
         // Subscribe to VM changes that affect the overlay window visibility
         vm.PropertyChanged += OnViewModelPropertyChanged;
+        UpdatePlatformRendererHosts();
 
         // Create the floating overlay window once the parent Window is known.
         // If we're already in the visual tree, do it immediately; otherwise
@@ -200,8 +203,12 @@ public partial class ContentDisplayView : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ContentDisplayViewModel.CurrentContentType)
-                           or nameof(ContentDisplayViewModel.IsOverlayVisible)
+        if (e.PropertyName is nameof(ContentDisplayViewModel.CurrentContentType))
+        {
+            UpdatePlatformRendererHosts();
+            UpdateOverlayVisibility();
+        }
+        else if (e.PropertyName is nameof(ContentDisplayViewModel.IsOverlayVisible)
                            or nameof(ContentDisplayViewModel.IsIdentifying))
         {
             UpdateOverlayVisibility();
@@ -210,6 +217,26 @@ public partial class ContentDisplayView : UserControl
         {
             UpdateCurtainVisibility();
         }
+    }
+
+    private void UpdatePlatformRendererHosts()
+    {
+        if (_viewModel == null)
+            return;
+
+        // NativeControlHost creates the underlying WebView / media player as soon as it is
+        // attached to the visual tree, even when its Avalonia host is invisible. Attach only
+        // the renderer that is actively needed so image-only campaigns do not keep two
+        // hidden native surfaces and their composition loops alive.
+        if (_websiteHost != null)
+            _websiteHost.Content = _viewModel.CurrentContentType == ContentType.Website
+                ? _websiteControl
+                : null;
+
+        if (_videoHost != null)
+            _videoHost.Content = _viewModel.CurrentContentType == ContentType.Video
+                ? _videoControl
+                : null;
     }
 
     private void UpdateCurtainVisibility()
