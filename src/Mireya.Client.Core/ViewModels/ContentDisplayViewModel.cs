@@ -34,6 +34,16 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private const int CurtainFadeMs = 250;
     private const int ContentReadyTimeoutMs = 8000;
 
+    // Customer assets can be much larger than the display. Decoding them at their native
+    // resolution allocates width * height * 4 bytes in Skia's native heap on every playlist
+    // loop, which can make Android's low-memory killer terminate the client. Keep the decoded
+    // surface bounded independently of the uploaded file's dimensions.
+    private const int MaxDecodeWidth = 1920;
+    private const int MaxCachedImages = 5;
+
+    private readonly Dictionary<Guid, CachedImageEntry> _decodedImageCache = [];
+    private long _imageCacheUseCounter;
+
     // Incremented on every swap so an in-flight transition can detect it was superseded
     // (e.g. by a remote "next"/"previous" command) and abort cleanly.
     private int _transitionGeneration;
@@ -767,7 +777,8 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         {
             if (File.Exists(item.LocalPath))
             {
-                SetCurrentImage(this, new Bitmap(item.LocalPath));
+                SetCurrentImage(GetOrDecodeImage(item));
+                TrimImageCache();
                 FadeInImage();
             }
             else
@@ -784,6 +795,71 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
         // Set timer to advance after duration
         StartAdvanceTimer(item.DurationSeconds);
+    }
+
+    private Bitmap GetOrDecodeImage(PlaylistItem item)
+    {
+        var file = new FileInfo(item.LocalPath);
+        if (
+            _decodedImageCache.TryGetValue(item.AssetId, out var cached)
+            && cached.FileLength == file.Length
+            && cached.LastWriteTimeUtc == file.LastWriteTimeUtc
+        )
+        {
+            cached.LastAccess = ++_imageCacheUseCounter;
+            return cached.Bitmap;
+        }
+
+        // Decode before removing a stale entry so a transient file error does not destroy
+        // the last usable rendition. Once the new bitmap is cached, SetCurrentImage disposes
+        // a stale currently displayed bitmap because the cache no longer owns it.
+        var bitmap = DecodeForDisplay(item.LocalPath);
+        if (_decodedImageCache.Remove(item.AssetId, out var stale))
+        {
+            if (!ReferenceEquals(stale.Bitmap, CurrentImage))
+                stale.Bitmap.Dispose();
+        }
+
+        _decodedImageCache[item.AssetId] = new CachedImageEntry(
+            bitmap,
+            file.Length,
+            file.LastWriteTimeUtc,
+            ++_imageCacheUseCounter
+        );
+        return bitmap;
+    }
+
+    private Bitmap DecodeForDisplay(string path)
+    {
+        using var stream = File.OpenRead(path);
+        var bitmap = Bitmap.DecodeToWidth(
+            stream,
+            MaxDecodeWidth,
+            BitmapInterpolationMode.MediumQuality
+        );
+        _logger.LogDebug(
+            "Decoded image {Path} to {Width}x{Height}",
+            path,
+            bitmap.PixelSize.Width,
+            bitmap.PixelSize.Height
+        );
+        return bitmap;
+    }
+
+    private void TrimImageCache()
+    {
+        while (_decodedImageCache.Count > MaxCachedImages)
+        {
+            var candidate = _decodedImageCache
+                .Where(pair => !ReferenceEquals(pair.Value.Bitmap, CurrentImage))
+                .MinBy(pair => pair.Value.LastAccess);
+
+            if (candidate.Value is null)
+                return;
+
+            _decodedImageCache.Remove(candidate.Key);
+            candidate.Value.Bitmap.Dispose();
+        }
     }
 
     private static Stretch MapStretch(ClientImageFit fit) =>
@@ -818,20 +894,24 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     ///     low-memory killer. Every path that replaces or releases the current image must
     ///     therefore go through this helper (or <see cref="ClearCurrentImage" />).
     /// </summary>
-    private static void SetCurrentImage(ContentDisplayViewModel viewModel, Bitmap? image)
+    private void SetCurrentImage(Bitmap? image)
     {
-        var oldImage = viewModel.CurrentImage;
+        var oldImage = CurrentImage;
         if (ReferenceEquals(oldImage, image))
             return;
 
         // Unbind first so the control never draws a bitmap that is about to be disposed,
-        // then release the native memory of the evicted one exactly once.
-        viewModel.CurrentImage = image;
-        oldImage?.Dispose();
+        // then release the native memory of an image not retained by the bounded cache.
+        CurrentImage = image;
+        if (oldImage is not null && !IsCachedImage(oldImage))
+            oldImage.Dispose();
     }
 
     /// <summary>Unbinds and disposes the image currently displayed, if any.</summary>
-    private void ClearCurrentImage() => SetCurrentImage(this, null);
+    private void ClearCurrentImage() => SetCurrentImage(null);
+
+    private bool IsCachedImage(Bitmap image) =>
+        _decodedImageCache.Values.Any(entry => ReferenceEquals(entry.Bitmap, image));
 
     private void ShowVideo(PlaylistItem item)
     {
@@ -1000,6 +1080,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         _hubService.OnReconnected -= OnHubReconnected;
         _hubService.OnClosed -= OnHubClosed;
         ClearCurrentImage();
+        foreach (var cached in _decodedImageCache.Values)
+            cached.Bitmap.Dispose();
+        _decodedImageCache.Clear();
     }
 
     public void Dispose()
@@ -1021,6 +1104,19 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         {
             _logger.LogWarning(ex, "Failed to report now-playing to server");
         }
+    }
+
+    private sealed class CachedImageEntry(
+        Bitmap bitmap,
+        long fileLength,
+        DateTime lastWriteTimeUtc,
+        long lastAccess
+    )
+    {
+        public Bitmap Bitmap { get; } = bitmap;
+        public long FileLength { get; } = fileLength;
+        public DateTime LastWriteTimeUtc { get; } = lastWriteTimeUtc;
+        public long LastAccess { get; set; } = lastAccess;
     }
 }
 

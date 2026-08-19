@@ -24,6 +24,11 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
     private const string OnePixelPngBase64 =
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==";
 
+    // Valid 2048x2 PNG. Its small encoded size keeps the test fixture lightweight while its
+    // width still crosses the production decode limit.
+    private const string OversizedLandscapePngBase64 =
+        "iVBORw0KGgoAAAANSUhEUgAACAAAAAACCAYAAADMgDxcAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAnSURBVHhe7cExAQAAAMKg9U9tDB+gAAAAAAAAAAAAAAAAAAAAgL8BQAIAAa/d9EwAAAAASUVORK5CYII=";
+
     private readonly HeadlessSessionFixture _session;
 
     public ContentDisplayViewModelImageLifetimeTests(HeadlessSessionFixture session)
@@ -125,6 +130,68 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
         });
 
     [Fact]
+    public Task ShowImageBoundsTheDecodedPixelSize() =>
+        _session.RunAsync(() =>
+        {
+            var viewModel = CreateViewModel();
+            var path = WriteTempImage(OversizedLandscapePngBase64);
+
+            try
+            {
+                InvokePrivate(
+                    viewModel,
+                    "ShowImage",
+                    new PlaylistItem
+                    {
+                        AssetType = AssetType.Image,
+                        LocalPath = path,
+                        DurationSeconds = 10,
+                    }
+                );
+
+                Assert.NotNull(viewModel.CurrentImage);
+                Assert.Equal(1920, viewModel.CurrentImage!.PixelSize.Width);
+            }
+            finally
+            {
+                viewModel.Dispose();
+                File.Delete(path);
+            }
+        });
+
+    [Fact]
+    public Task ShowingTheSameAssetAgainReusesTheDecodedBitmap() =>
+        _session.RunAsync(() =>
+        {
+            var viewModel = CreateViewModel();
+            var path = WriteTempImage();
+            var item = new PlaylistItem
+            {
+                AssetId = Guid.NewGuid(),
+                AssetType = AssetType.Image,
+                LocalPath = path,
+                DurationSeconds = 10,
+            };
+
+            try
+            {
+                InvokePrivate(viewModel, "ShowImage", item);
+                var firstDecode = viewModel.CurrentImage;
+
+                InvokePrivate(viewModel, "ShowImage", item);
+
+                Assert.NotNull(firstDecode);
+                Assert.Same(firstDecode, viewModel.CurrentImage);
+                Assert.False(IsDisposed(firstDecode!));
+            }
+            finally
+            {
+                viewModel.Dispose();
+                File.Delete(path);
+            }
+        });
+
+    [Fact]
     public Task CleanupDisposesTheCurrentImage() =>
         _session.RunAsync(() =>
             AssertImageReleasedAfter(
@@ -205,10 +272,10 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
         return new Bitmap(stream);
     }
 
-    private static string WriteTempImage()
+    private static string WriteTempImage(string base64 = OnePixelPngBase64)
     {
         var path = Path.Combine(Path.GetTempPath(), $"mireya-image-{Guid.NewGuid():N}.png");
-        File.WriteAllBytes(path, Convert.FromBase64String(OnePixelPngBase64));
+        File.WriteAllBytes(path, Convert.FromBase64String(base64));
         return path;
     }
 
