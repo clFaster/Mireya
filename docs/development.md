@@ -29,8 +29,9 @@ dotnet tool restore
 | `src/Mireya.ApiClient.TestConsole`         | Small console harness for manual API-client checks.                                                                            |
 | `src/Mireya.Client.Core`                   | Shared Avalonia display-client UI, view models, settings, converters, and platform abstractions.                               |
 | `src/Mireya.Client.Desktop`                | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage.            |
-| `src/Mireya.Client.Android`                | Android TV head with native Android WebView, Media3/ExoPlayer, Leanback launcher metadata, and immersive fullscreen behavior.   |
+| `src/Mireya.Client.Android`                | Android TV head with native Android WebView, Media3/ExoPlayer, Leanback launcher metadata, and immersive fullscreen behavior.  |
 | `src/Mireya.Application.Tests`             | xUnit tests for application services using in-memory SQLite and NSubstitute.                                                   |
+| `src/Mireya.Client.Core.Tests`             | xUnit tests for the display-client view models, running on the headless Avalonia platform.                                     |
 | `src/MireyaDigitalSignage.AppHost`         | .NET Aspire orchestration for the API plus PostgreSQL.                                                                         |
 | `src/MireyaDigitalSignage.ServiceDefaults` | Shared Aspire service defaults, health endpoints, telemetry, resilience, and service discovery.                                |
 
@@ -156,9 +157,12 @@ dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release
 
 # Application tests
 dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj -c Release
+
+# Display-client tests
+dotnet test src/Mireya.Client.Core.Tests/Mireya.Client.Core.Tests.csproj -c Release
 ```
 
-The PR workflow restores local tools, restores/builds the API, API client, desktop client, and runs `Mireya.Application.Tests`.
+The PR workflow restores local tools, restores/builds the API, API client, desktop client, and runs `Mireya.Application.Tests` and `Mireya.Client.Core.Tests`.
 
 ## API client generation
 
