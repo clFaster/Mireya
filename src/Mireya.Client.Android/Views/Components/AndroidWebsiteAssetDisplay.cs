@@ -50,16 +50,33 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
 
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
-        if (_webView != null)
-        {
-            _webView.StopLoading();
-            _webView.SetWebViewClient(new WebViewClient());
-            _webView.Destroy();
-            _webView.Dispose();
-            _webView = null;
-        }
+        // Avalonia can dispose the JNI peer before this callback runs. Detach our
+        // reference first so repeated or re-entrant teardown never reuses that peer.
+        var webView = _webView;
+        _webView = null;
 
-        base.DestroyNativeControlCore(control);
+        try
+        {
+            try
+            {
+                if (webView?.PeerReference.IsValid == true)
+                {
+                    webView.StopLoading();
+                    webView.SetWebViewClient(new WebViewClient());
+                    webView.Destroy();
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // The native-control handle may already have disposed the managed
+                // wrapper. In that case there is no remaining WebView work to do.
+            }
+        }
+        finally
+        {
+            // AndroidViewControlHandle owns disposal of the wrapped Android View.
+            base.DestroyNativeControlCore(control);
+        }
     }
 
     public void Navigate(Uri? uri)
