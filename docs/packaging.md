@@ -8,7 +8,9 @@ The Mireya display client uses a shared Avalonia core with platform-specific hea
 | `Mireya.Client.Desktop` | Implemented | Windows/Linux desktop head with WebView2 website rendering, LibVLC video rendering, and desktop credential storage. |
 | `Mireya.Client.Android` | Implemented | Android TV head with native Android WebView, Media3/ExoPlayer, Leanback launcher metadata, and immersive fullscreen behavior. |
 
-The Windows desktop head has repeatable Microsoft Store MSIX packaging, and the Android TV head has a signed Google Play App Bundle release workflow. Other installers remain roadmap work.
+The Windows desktop head has x64/ARM64 Microsoft Store packaging, and the Android
+head has a signed Google Play App Bundle workflow. Other installers remain roadmap
+work.
 
 ## Desktop
 
@@ -24,19 +26,9 @@ Publish a Windows build:
 dotnet publish src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release -r win-x64 -o ./publish
 ```
 
-Create a Store-ready x64 MSIX from a Developer PowerShell on Windows with Visual Studio's MSIX Packaging Tools installed:
-
-```powershell
-msbuild src/Mireya.Client.Desktop.Package/Mireya.Client.Desktop.Package.wapproj `
-  /restore `
-  /p:Configuration=Release `
-  /p:Platform=x64 `
-  /p:RuntimeIdentifier=win-x64 `
-  /p:AppxBundle=Never `
-  /p:AppxPackageSigningEnabled=false
-```
-
-The packaging project contains the manifest and Store artwork and references the desktop client through its `win-x64` publish profile. See [Microsoft Store Release](microsoft-store-release.md) for Partner Center identity setup, release automation, certification, and listing content.
+The packaging project contains the Store manifest and artwork. See
+[Microsoft Store Release](microsoft-store-release.md) for the local package command,
+Partner Center setup, certification, and listing content.
 
 Publish a Linux build:
 
@@ -48,7 +40,6 @@ For Raspberry Pi-style targets, use a Linux ARM runtime such as `linux-arm64` af
 
 ### Desktop packaging gaps
 
-- The Microsoft Store package currently targets x64 Windows devices; x86 and Arm64 bundles have not been added.
 - Clean-device playback validation and the first Partner Center certification must be completed for each public release.
 - The current desktop website renderer uses WebView2. That is appropriate for Windows, but Linux kiosk packaging needs a Linux-specific website renderer such as WebKitGTK or CEF.
 - The desktop project references Windows libVLC native packaging. Linux packaging needs the correct native libVLC dependency strategy for the target distribution.
@@ -65,53 +56,10 @@ It provides:
 - Jetpack Media3/ExoPlayer video rendering backed by Android's platform codecs.
 - Shared client registration, pairing, approval, sync, cache, playback, and remote-command behavior from `Mireya.Client.Core` and `Mireya.ApiClient`.
 
-### Prerequisites
-
-Install or restore the .NET Android workload:
-
-```bash
-dotnet workload install android
-dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
-```
-
-Use an Android TV emulator or real Android TV device. The app supports ARM32, ARM64, x86, and x64 runtimes; Google Play splits the AAB by ABI so each device downloads only its compatible runtime.
-
-On Windows, Android SDK tools commonly live under `%LOCALAPPDATA%\Android\Sdk`.
-
-### Build
-
-```bash
-dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj
-```
-
-Stable releases are built, signed, retained as GitHub Actions artifacts, and optionally submitted to Google Play. See [Google Play Release](google-play-release.md) for the required repository variables and secrets, upload-key handling, Play API setup, and release behavior.
-
-### Run on emulator or device
-
-Start the API and the emulator/device first. From the Android emulator, the host machine is reachable at `http://10.0.2.2:5000`; `localhost` points to the emulator itself.
-
-Build a standalone APK with assemblies embedded and install it manually:
-
-```bash
-dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -p:EmbedAssembliesIntoApk=true -p:AndroidFastDeploymentType=None
-adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/dev.moritzreis.mireya-Signed.apk
-adb shell monkey -p dev.moritzreis.mireya -c android.intent.category.LAUNCHER 1
-```
-
-The embedded-assemblies path avoids a common manual-install crash where a plain Debug APK expects Fast Deployment assemblies to have been pushed separately by the IDE.
-
-Alternatively, deploy through MSBuild:
-
-```bash
-dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -t:Run
-```
-
-Useful diagnostics:
-
-```bash
-adb logcat --pid=$(adb shell pidof dev.moritzreis.mireya)
-adb exec-out screencap -p > screen.png
-```
+The app supports ARM32, ARM64, x86, and x64 runtimes. Google Play serves the
+device-specific split generated from a single AAB. See [Android
+debugging](debugging/android.md) for local build and deployment commands, and
+[Google Play Release](google-play-release.md) for signing and Play Console setup.
 
 ## Adding another client head
 
@@ -126,6 +74,6 @@ Use the current desktop and Android heads as the pattern:
 
 ## Roadmap
 
-- Additional Windows installer formats and MSIX architectures.
+- Additional Windows installer formats.
 - Linux kiosk packaging with a Linux-native website renderer.
 - Raspberry Pi packaging and service setup.

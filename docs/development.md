@@ -162,8 +162,6 @@ dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj -c Rele
 dotnet test src/Mireya.Client.Core.Tests/Mireya.Client.Core.Tests.csproj -c Release
 ```
 
-The PR workflow restores local tools, restores/builds the API, API client, desktop client, and runs `Mireya.Application.Tests` and `Mireya.Client.Core.Tests`.
-
 ## API client generation
 
 The generated client lives in `src/Mireya.ApiClient/Generated/MireyaApiClient.cs` and is produced from `src/Mireya.ApiClient/nswag.json`.
@@ -196,84 +194,18 @@ The display client is split into a shared Avalonia core and platform heads:
 - `Mireya.Client.Desktop` wires desktop services, WebView2, LibVLC, and desktop credential storage.
 - `Mireya.Client.Android` wires Android services, native Android WebView, Media3/ExoPlayer, and Android TV entry points.
 
-The client workflow is:
-
-1. Choose or receive a backend URL.
-2. Register with `/api/screenmanagement/register`.
-3. Show a pairing code while awaiting approval.
-4. Authenticate as a screen after approval.
-5. Connect to `/hubs/screen`.
-6. Receive configuration and asset-sync requests.
-7. Cache image/video assets locally and mark sync progress.
-8. Play the active playlist and report now-playing/proof-of-play events.
-
 ### Android TV
 
-For a repeatable device/emulator investigation workflow, including ABI selection,
-standalone APK deployment, logcat capture, crash triage, and Release verification, see
-[Android and Android TV debugging](debugging/android.md).
-For native-memory growth and soak testing, see the worked
-[Android memory debugging](debugging/android-memory.md) investigation.
+The Android project requires the .NET Android workload and an Android SDK. See
+[Android debugging](debugging/android.md) for device discovery, build modes,
+deployment, and diagnostics. Android emulators reach a host API at
+`http://10.0.2.2:5000`; `localhost` refers to the emulator.
 
-Install or restore the Android workload:
-
-```bash
-dotnet workload install android
-dotnet workload restore src/Mireya.Client.Android/Mireya.Client.Android.csproj
-```
-
-Use an Android TV emulator or device. The app includes ARM32, ARM64, x86, and x64 native libraries so both 32-bit and 64-bit system images are supported.
-
-Build:
-
-```bash
-dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj
-```
-
-For a local API running on the host machine, Android emulators reach the host at `http://10.0.2.2:5000`.
-
-Build and install a standalone Debug APK with embedded assemblies:
-
-```bash
-dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -p:EmbedAssembliesIntoApk=true -p:AndroidFastDeploymentType=None
-adb install -r src/Mireya.Client.Android/bin/Debug/net10.0-android/dev.moritzreis.mireya-Signed.apk
-adb shell monkey -p dev.moritzreis.mireya -c android.intent.category.LAUNCHER 1
-```
-
-Alternatively, let MSBuild deploy to the selected device:
-
-```bash
-dotnet build src/Mireya.Client.Android/Mireya.Client.Android.csproj -t:Run
-```
-
-Useful diagnostics:
-
-```bash
-adb logcat --pid=$(adb shell pidof dev.moritzreis.mireya)
-adb exec-out screencap -p > screen.png
-```
-
-## Docker development
-
-Docker Compose builds the API image and runs it with PostgreSQL:
-
-```bash
-docker compose up --build
-```
-
-The API listens on `http://localhost:8080`. Uploaded media and PostgreSQL data are stored in the `mireya-uploads` and `mireya-db` named volumes.
-
-## Operational endpoints
-
-- `GET /api/info`: public server identity used by clients to recognize a Mireya backend.
-- `GET /alive`: liveness check.
-- `GET /health`: readiness check including database connectivity. It is exposed by the service defaults and intended for development/infrastructure use.
-- OpenAPI/Swagger UI: enabled in the Development environment.
+For Docker configuration and health checks, see [Operations](operations.md). The
+[API guide](api.md) documents the public endpoints and client protocol.
 
 ## Troubleshooting
 
 - **Admin login fails**: confirm migrations ran and `DefaultAdminUser:Password` is configured for first startup.
 - **PostgreSQL migration uses SQLite**: set `provider=Postgres` in the same shell command/session that runs EF.
-- **Android emulator cannot reach backend**: use `http://10.0.2.2:5000` instead of `localhost`.
-- **Android APK crashes after manual install**: build with `EmbedAssembliesIntoApk=true` and `AndroidFastDeploymentType=None`, or deploy with `-t:Run`.
 - **Video/website rendering differs by platform**: desktop uses WebView2 and LibVLC; Android uses native Android WebView and Media3/ExoPlayer.

@@ -69,27 +69,7 @@ such as `1.0.0` instead of `latest`. See the
 [operations guide](https://mireya.moritzreis.dev/#/operations) for all settings,
 health checks, image tags, upgrades, and initial-admin behavior.
 
-## Common commands
-
-```bash
-# Build the backend API
-dotnet build src/Mireya.Api/Mireya.Api.csproj -c Release
-
-# Build the generated API client project
-dotnet build src/Mireya.ApiClient/Mireya.ApiClient.csproj -c Release
-
-# Build the desktop client
-dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release
-
-# Run application tests
-dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj -c Release
-```
-
 ## Contributing
 
-1. Fork the repository.
-2. Create a branch: `git checkout -b feature/your-feature`.
-3. Make changes and run the relevant build/test commands.
-4. Submit a pull request with a clear description.
-
-Please keep changes aligned with the existing .NET, Blazor, Avalonia, and EF Core patterns.
+See the [development guide](https://mireya.moritzreis.dev/#/development) for the
+project structure, database migrations, and relevant build and test commands.
