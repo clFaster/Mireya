@@ -4,17 +4,17 @@
 
 Mireya is an open digital-signage platform with a web admin backend and lightweight display clients. It manages screens, uploads and organizes content assets, schedules campaigns, pushes configuration to approved screens, caches media locally, and records proof-of-play activity.
 
-[Hosted documentation](https://mireya.moritzreis.dev/#/) | [Development guide](https://mireya.moritzreis.dev/#/development) | [Packaging notes](https://mireya.moritzreis.dev/#/packaging)
+[Hosted documentation](https://mireya.moritzreis.dev/#/)
 
 ## What is implemented
 
 - **Backend and admin UI**: ASP.NET Core, Carter minimal APIs, Blazor Server admin interface, ASP.NET Identity, OpenAPI via NSwag, and SignalR for live screen updates.
-- **Assets**: image, video, and website assets; drag-and-drop uploads; website asset creation; thumbnails and poster frames; tags; search/filtering; image fit modes.
-- **Campaigns**: ordered playlists, per-item durations, enable/disable state, priority, default fallback campaign, start/end dates, weekly recurrence, daily time windows, and time-zone-aware scheduling.
-- **Screens and zones**: first-run screen registration, admin approval/rejection, screen details, direct campaign assignment, zone membership, zone-level campaign assignment, online status, and shuffle playback.
+- **Assets**: image, video, and website assets
+- **Campaigns**: ordered playlists, per-item durations, enable/disable state
+- **Screens**: first-run screen registration, admin approval/rejection, screen details, direct campaign assignment, online status
 - **Display clients**: shared Avalonia client core with desktop and Android TV heads. Clients store backend configuration, register with the backend, reconnect automatically, sync campaign assets, cache media locally, and play scheduled content.
 - **Remote control**: restart, reload, identify, next, and previous commands are pushed to connected screens over SignalR.
-- **Monitoring and audit**: proof-of-play reporting, asset sync status, audit log, health endpoints, and optional webhook alerting for screens that remain offline beyond a configured threshold.
+- **Monitoring and audit**: proof-of-play reporting, asset sync status, audit log, health endpoints.
 - **Development and deployment support**: SQLite for local development, PostgreSQL for production-like runs, EF Core migrations per provider, Docker Compose, .NET Aspire AppHost, xUnit application tests, and generated API client code.
 
 ## Quickstart
@@ -84,19 +84,6 @@ dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release
 # Run application tests
 dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj -c Release
 ```
-
-## Documentation
-
-- [Feature guide](https://mireya.moritzreis.dev/#/features)
-- [Development guide](https://mireya.moritzreis.dev/#/development)
-- [Operations guide](https://mireya.moritzreis.dev/#/operations)
-- [API guide](https://mireya.moritzreis.dev/#/api)
-- [Client packaging](https://mireya.moritzreis.dev/#/packaging)
-
-## Roadmap
-
-- Completed: core API/admin workflow, screen registration and approval, campaign assignment, local client sync/cache, scheduling, zones, audit, proof of play, desktop client, and Android TV client head.
-- In progress / planned: production hardening, installer packaging, richer Linux/Raspberry Pi kiosk packaging, broader operational docs, and additional client targets.
 
 ## Contributing
 
