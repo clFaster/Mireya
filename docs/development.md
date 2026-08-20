@@ -209,6 +209,12 @@ The client workflow is:
 
 ### Android TV
 
+For a repeatable device/emulator investigation workflow, including ABI selection,
+standalone APK deployment, logcat capture, crash triage, and Release verification, see
+[Android and Android TV debugging](debugging/android.md).
+For native-memory growth and soak testing, see the worked
+[Android memory debugging](debugging/android-memory.md) investigation.
+
 Install or restore the Android workload:
 
 ```bash

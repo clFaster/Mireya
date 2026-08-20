@@ -1,6 +1,7 @@
 - [Home](/)
 - [Features](features.md)
 - [Development](development.md)
+- [Android Debugging](debugging/android.md)
 - [Operations](operations.md)
 - [API](api.md)
 - [Packaging](packaging.md)
