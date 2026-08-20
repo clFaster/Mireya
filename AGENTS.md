@@ -9,8 +9,6 @@ put detailed procedures in `docs/` and link to them from here.
 - Read `docs/development.md` before changing an unfamiliar project.
 - For Android work, read `docs/debugging/android.md` and
   `src/Mireya.Client.Android/AGENTS.md` before building or debugging.
-- For Android native-memory investigations, also read
-  `docs/debugging/android-memory.md`.
 - Inspect `git status --short` before editing. Preserve unrelated and pre-existing
   changes; never discard them to make a task easier.
 

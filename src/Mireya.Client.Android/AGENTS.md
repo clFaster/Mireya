@@ -43,5 +43,4 @@ These instructions supplement the repository-level `AGENTS.md` for work under
   native crashes, process death, and low-memory kills.
 - Run `Mireya.Client.Core.Tests` when shared client behavior changes.
 - For memory or lifecycle fixes, verify a stable PID and bounded memory over a timed
-  soak. Use `../../docs/debugging/android-memory.md` for the established memory
-  procedure and acceptance criteria.
+  Release soak.

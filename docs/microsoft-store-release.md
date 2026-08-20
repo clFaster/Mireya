@@ -1,12 +1,14 @@
 # Microsoft Store Release
 
-Stable Mireya tags are packaged as a self-contained x64 MSIX and submitted to Partner Center by `.github/workflows/publish-microsoft-store.yml`. The workflow targets the `stable` GitHub environment, which must have required reviewers configured to gate each release. Pre-release tags continue through the other release workflows but are intentionally not submitted to the public Store.
+The main **Release Mireya** workflow can build an x64/ARM64 MSIX bundle and submit it
+to Partner Center. Store publishing uses the `stable` GitHub environment.
 
 ## One-time Partner Center setup
 
 Reserve **Mireya** in Partner Center. Its Product identity is committed to `src/Mireya.Client.Desktop.Package/Package.appxmanifest`, so every build uses the same Store identity.
 
-In **Settings → Environments → stable**, add the reviewer or reviewers who must approve a Store release. The repository's environment currently has no protection rule, so this one-time configuration is required for the workflow's environment reference to act as an approval gate.
+In **Settings → Environments → stable**, add the reviewers who must approve a Store
+release. An environment reference alone does not create an approval gate.
 
 Create a Microsoft Entra application, associate it with Partner Center, and grant it the **Manager** role. Add these GitHub repository secrets:
 
@@ -20,20 +22,12 @@ Create a Microsoft Entra application, associate it with Partner Center, and gran
 
 The Store CLI currently supports automated updates for free products. The product must already exist in Partner Center, and the listing must be completed there before the first committed submission can pass certification.
 
-## Release behavior
+## Publish a release
 
-A stable tag such as `v0.2.0` starts the Docker and Microsoft Store workflows independently. The Store workflow:
-
-1. Builds `Mireya.Client.Desktop.Package.wapproj`, which publishes the desktop client as a self-contained `win-x64` application and creates the MSIX.
-2. Uses the committed package manifest and Store artwork from the packaging project.
-3. Uploads the MSIX as a workflow artifact.
-4. Submits and commits the package through the Microsoft Store Developer CLI.
-
-Microsoft Store package versions have three usable numeric components and require a non-zero first component. Mireya therefore maps `major.minor.patch` to `(major + 1).minor.patch.0`; for example, Mireya `0.2.0` becomes Store package `1.2.0.0`. This preserves version ordering through the pre-1.0 period.
-
-Because `v0.1.0` predates this workflow, publish it by manually running **Publish Microsoft Store** with version `0.1.0` and `submit_to_store` enabled.
-
-Run the workflow manually with `submit_to_store` disabled to build a package without changing Partner Center.
+Run **Release Mireya** from `main` and enable **Release the Microsoft Store package**.
+The generated bundle is retained as a workflow artifact and submitted to the Store.
+The workflow itself is the source of truth for package architectures, version mapping,
+validation, and artifact paths.
 
 ## Local package build
 
@@ -51,7 +45,10 @@ msbuild src/Mireya.Client.Desktop.Package/Mireya.Client.Desktop.Package.wapproj 
   /p:AppxPackageSigningEnabled=false
 ```
 
-The unsigned package is written below `src/Mireya.Client.Desktop.Package/AppPackages`. The release workflow redirects it to `artifacts/microsoft-store/package`. Microsoft signs the production package after certification; a private code-signing certificate is not required for Store-only distribution.
+The unsigned package is written below
+`src/Mireya.Client.Desktop.Package/AppPackages`. Microsoft signs the production
+package after certification; a private code-signing certificate is not required for
+Store-only distribution.
 
 For a manual readiness run, sign the package with a test certificate whose subject exactly matches the manifest publisher, trust that certificate on the test machine, and run:
 

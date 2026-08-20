@@ -140,35 +140,18 @@ Do not apply a Cloudflare “Cache Everything” rule to Mireya's HTML, authenti
 
 Static assets such as `/_framework/*`, CSS, icons, and uploaded media can be cached according to their origin response headers. After replacing a deployment that returned a cached 404 for a framework asset, purge the Cloudflare cache so the corrected asset is fetched from the new container.
 
-## Docker image releases and tags
+## Publishing Docker images
 
-The `Publish Docker image` GitHub Actions workflow smoke-tests the image with PostgreSQL, then publishes one multi-platform manifest for `linux/amd64` and `linux/arm64` to Docker Hub.
-
-The project uses Semantic Versioning:
-
-| Release                          | Published tags                                    |
-| -------------------------------- | ------------------------------------------------- |
-| Stable `v1.4.2`                  | `1.4.2`, `1.4`, `1`, `latest`, and `sha-<commit>` |
-| Pre-release `v1.5.0-rc.1`        | `1.5.0-rc.1` and `sha-<commit>`                   |
-| Manual version without promotion | Exact version and `sha-<commit>`                  |
-
-Exact versions and SHA tags are immutable deployment references. `1.4`, `1`, and `latest` are convenience channels that move when a newer stable release is promoted. Production deployments should normally pin the exact version; use the SHA tag when commit-level reproducibility is required.
-
-To publish automatically, push a Semantic Version tag:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-The workflow can also be run manually with a version such as `1.0.1` or `1.1.0-rc.1`. Enable `publish_latest` only when that manual stable build is the current supported release; doing so also moves the matching major and minor tags.
+Enable **Release the Docker image** when running the **Release Mireya** workflow. It
+publishes a multi-platform `linux/amd64` and `linux/arm64` image. The workflow is the
+source of truth for validation, smoke tests, tags, and image metadata. Production
+deployments should pin an exact version or commit-specific tag rather than a moving
+channel.
 
 Configure these GitHub repository settings before the first publish:
 
 - Actions variable `DOCKERHUB_USERNAME`: the Docker Hub account name (`moritzreis`).
 - Actions secret `DOCKERHUB_TOKEN`: a Docker Hub access token with permission to push to `moritzreis/mireya-digital-signage`.
-
-The published image includes OCI source, revision, version, documentation, and license metadata as well as build provenance and an SBOM.
 
 ## Aspire
 
