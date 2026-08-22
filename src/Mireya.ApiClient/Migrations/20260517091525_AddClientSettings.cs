@@ -15,19 +15,19 @@ namespace Mireya.ApiClient.Migrations
                 columns: table => new
                 {
                     Key = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Value = table.Column<string>(type: "TEXT", nullable: false)
+                    Value = table.Column<string>(type: "TEXT", nullable: false),
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClientSettings", x => x.Key);
-                });
+                }
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "ClientSettings");
+            migrationBuilder.DropTable(name: "ClientSettings");
         }
     }
 }

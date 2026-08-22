@@ -9,5 +9,6 @@
     android:drawable="@drawable/icon"
     android:width="120dp"
     android:height="120dp"
-    android:gravity="center" />
+    android:gravity="center"
+  />
 </layer-list>

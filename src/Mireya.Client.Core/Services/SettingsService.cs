@@ -3,7 +3,6 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-
 using Mireya.ApiClient.Services;
 
 namespace Mireya.Client.Avalonia.Services;

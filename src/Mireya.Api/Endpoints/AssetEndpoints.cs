@@ -21,7 +21,8 @@ public class AssetEndpoints : ICarterModule
 
     private static async Task<IResult> HandleUploadAsync(
         [FromForm] UploadFilesRequest request,
-        IAssetService assetService)
+        IAssetService assetService
+    )
     {
         try
         {
@@ -38,13 +39,17 @@ public class AssetEndpoints : ICarterModule
         [property: FromQuery] int Page = 1,
         [property: FromQuery] int PageSize = 10,
         [property: FromQuery] AssetType? Type = null,
-        [property: FromQuery] string SortBy = "name");
+        [property: FromQuery] string SortBy = "name"
+    );
 
     private static async Task<IResult> HandleGetAssetsAsync(
         IAssetService assetService,
-        [AsParameters] GetAssetsQuery query)
+        [AsParameters] GetAssetsQuery query
+    )
     {
-        var result = await assetService.GetAssetsAsync(new AssetFilter(query.Page, query.PageSize, query.Type, query.SortBy));
+        var result = await assetService.GetAssetsAsync(
+            new AssetFilter(query.Page, query.PageSize, query.Type, query.SortBy)
+        );
         return Results.Ok(result);
     }
 
@@ -68,7 +73,8 @@ public class AssetEndpoints : ICarterModule
     private static async Task<IResult> HandleUpdateMetadataAsync(
         Guid id,
         [FromBody] UpdateAssetMetadataRequest request,
-        IAssetService assetService)
+        IAssetService assetService
+    )
     {
         try
         {
@@ -87,11 +93,16 @@ public class AssetEndpoints : ICarterModule
 
     private static async Task<IResult> HandleCreateWebsiteAssetAsync(
         [FromBody] CreateWebsiteAssetRequest request,
-        IAssetService assetService)
+        IAssetService assetService
+    )
     {
         try
         {
-            var result = await assetService.CreateWebsiteAssetAsync(request.Url, request.Name, request.Description);
+            var result = await assetService.CreateWebsiteAssetAsync(
+                request.Url,
+                request.Name,
+                request.Description
+            );
             return Results.Ok(result);
         }
         catch (ArgumentException ex)

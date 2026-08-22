@@ -9,21 +9,23 @@ namespace Mireya.Application.Tests;
 
 public class CampaignServiceTests
 {
-    private static Asset NewAsset(string name = "Asset") => new()
-    {
-        Name = name,
-        Type = AssetType.Image,
-        Source = "/uploads/x.png",
-    };
+    private static Asset NewAsset(string name = "Asset") =>
+        new()
+        {
+            Name = name,
+            Type = AssetType.Image,
+            Source = "/uploads/x.png",
+        };
 
-    private static Display NewDisplay(string name = "Screen") => new()
-    {
-        Name = name,
-        Location = "Lobby",
-        ScreenIdentifier = Guid.NewGuid().ToString("N")[..10],
-        UserId = Guid.NewGuid().ToString("N"),
-        ApprovalStatus = ApprovalStatus.Approved,
-    };
+    private static Display NewDisplay(string name = "Screen") =>
+        new()
+        {
+            Name = name,
+            Location = "Lobby",
+            ScreenIdentifier = Guid.NewGuid().ToString("N")[..10],
+            UserId = Guid.NewGuid().ToString("N"),
+            ApprovalStatus = ApprovalStatus.Approved,
+        };
 
     [Fact]
     public async Task UpdateCampaign_WithNullDisplayIds_PreservesExistingAssignments()
@@ -38,20 +40,30 @@ public class CampaignServiceTests
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
-            "Campaign A", null,
-            [new CampaignAssetDto(asset.Id, 1, 5)],
-            [display.Id]));
+        var created = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "Campaign A",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [display.Id]
+            )
+        );
 
         // Update content only, passing null DisplayIds (campaign editor behaviour)
-        await service.UpdateCampaignAsync(created.Id, new UpdateCampaignRequest(
-            "Campaign A renamed", "desc",
-            [new CampaignAssetDto(asset.Id, 1, 9)],
-            null));
+        await service.UpdateCampaignAsync(
+            created.Id,
+            new UpdateCampaignRequest(
+                "Campaign A renamed",
+                "desc",
+                [new CampaignAssetDto(asset.Id, 1, 9)],
+                null
+            )
+        );
 
         await using var verify = db.NewContext();
-        var assignments = await verify.CampaignAssignments
-            .Where(ca => ca.CampaignId == created.Id).ToListAsync();
+        var assignments = await verify
+            .CampaignAssignments.Where(ca => ca.CampaignId == created.Id)
+            .ToListAsync();
 
         Assert.Single(assignments);
         Assert.Equal(display.Id, assignments[0].DisplayId);
@@ -70,19 +82,27 @@ public class CampaignServiceTests
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
-            "Campaign B", null,
-            [new CampaignAssetDto(asset.Id, 1, 5)],
-            [display.Id]));
+        var created = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "Campaign B",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [display.Id]
+            )
+        );
 
-        await service.UpdateCampaignAsync(created.Id, new UpdateCampaignRequest(
-            "Campaign B", null,
-            [new CampaignAssetDto(asset.Id, 1, 5)],
-            []));
+        await service.UpdateCampaignAsync(
+            created.Id,
+            new UpdateCampaignRequest(
+                "Campaign B",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                []
+            )
+        );
 
         await using var verify = db.NewContext();
-        var count = await verify.CampaignAssignments
-            .CountAsync(ca => ca.CampaignId == created.Id);
+        var count = await verify.CampaignAssignments.CountAsync(ca => ca.CampaignId == created.Id);
 
         Assert.Equal(0, count);
     }
@@ -101,22 +121,34 @@ public class CampaignServiceTests
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
-            "Campaign C", null,
-            [new CampaignAssetDto(asset.Id, 1, 5)],
-            [oldDisplay.Id]));
+        var created = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "Campaign C",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [oldDisplay.Id]
+            )
+        );
 
         sync.ClearReceivedCalls();
 
-        await service.UpdateCampaignAsync(created.Id, new UpdateCampaignRequest(
-            "Campaign C", null,
-            [new CampaignAssetDto(asset.Id, 1, 5)],
-            [newDisplay.Id]));
+        await service.UpdateCampaignAsync(
+            created.Id,
+            new UpdateCampaignRequest(
+                "Campaign C",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [newDisplay.Id]
+            )
+        );
 
         // Both old (removed) and new (added) screens must be re-synced
-        await sync.Received(1).SyncScreensAsync(
-            Arg.Is<IEnumerable<Guid>>(ids =>
-                ids.Contains(oldDisplay.Id) && ids.Contains(newDisplay.Id)));
+        await sync.Received(1)
+            .SyncScreensAsync(
+                Arg.Is<IEnumerable<Guid>>(ids =>
+                    ids.Contains(oldDisplay.Id) && ids.Contains(newDisplay.Id)
+                )
+            );
     }
 
     [Fact]
@@ -131,11 +163,25 @@ public class CampaignServiceTests
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
 
-        var first = await service.CreateCampaignAsync(new CreateCampaignRequest(
-            "First Default", null, [new CampaignAssetDto(asset.Id, 1, 5)], [], IsDefault: true));
+        var first = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "First Default",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [],
+                IsDefault: true
+            )
+        );
 
-        var second = await service.CreateCampaignAsync(new CreateCampaignRequest(
-            "Second Default", null, [new CampaignAssetDto(asset.Id, 1, 5)], [], IsDefault: true));
+        var second = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "Second Default",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [],
+                IsDefault: true
+            )
+        );
 
         await using var verify = db.NewContext();
         var firstReloaded = await verify.Campaigns.FindAsync(first.Id);

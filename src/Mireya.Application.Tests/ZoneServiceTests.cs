@@ -9,14 +9,15 @@ namespace Mireya.Application.Tests;
 
 public class ZoneServiceTests
 {
-    private static Display NewDisplay(string name = "Screen") => new()
-    {
-        Name = name,
-        Location = "Lobby",
-        ScreenIdentifier = Guid.NewGuid().ToString("N")[..10],
-        UserId = Guid.NewGuid().ToString("N"),
-        ApprovalStatus = ApprovalStatus.Approved,
-    };
+    private static Display NewDisplay(string name = "Screen") =>
+        new()
+        {
+            Name = name,
+            Location = "Lobby",
+            ScreenIdentifier = Guid.NewGuid().ToString("N")[..10],
+            UserId = Guid.NewGuid().ToString("N"),
+            ApprovalStatus = ApprovalStatus.Approved,
+        };
 
     private static ZoneService CreateService(TestDatabase db, IScreenSynchronizationService sync) =>
         new(db.Context, sync, Substitute.For<IAuditService>());
@@ -32,14 +33,17 @@ public class ZoneServiceTests
 
         var service = CreateService(db, sync);
         var detail = await service.CreateZoneAsync(
-            new CreateZoneRequest("Lobby", "Front desk screens", [campaign.Id]));
+            new CreateZoneRequest("Lobby", "Front desk screens", [campaign.Id])
+        );
 
         Assert.Equal("Lobby", detail.Name);
         Assert.Single(detail.Campaigns);
         Assert.Equal(campaign.Id, detail.Campaigns[0].Id);
 
         await using var verify = db.NewContext();
-        var zoneCampaigns = await verify.ZoneCampaigns.Where(zc => zc.ZoneId == detail.Id).ToListAsync();
+        var zoneCampaigns = await verify
+            .ZoneCampaigns.Where(zc => zc.ZoneId == detail.Id)
+            .ToListAsync();
         Assert.Single(zoneCampaigns);
     }
 
@@ -50,7 +54,8 @@ public class ZoneServiceTests
         var service = CreateService(db, Substitute.For<IScreenSynchronizationService>());
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.CreateZoneAsync(new CreateZoneRequest("Lobby", null, [Guid.NewGuid()])));
+            service.CreateZoneAsync(new CreateZoneRequest("Lobby", null, [Guid.NewGuid()]))
+        );
     }
 
     [Fact]
@@ -72,13 +77,16 @@ public class ZoneServiceTests
         display.ZoneId = zone.Id;
         await db.Context.SaveChangesAsync();
 
-        var updated = await service.UpdateZoneAsync(zone.Id,
-            new UpdateZoneRequest("Zone", null, [second.Id]));
+        var updated = await service.UpdateZoneAsync(
+            zone.Id,
+            new UpdateZoneRequest("Zone", null, [second.Id])
+        );
 
         Assert.Single(updated.Campaigns);
         Assert.Equal(second.Id, updated.Campaigns[0].Id);
 
-        await sync.Received().SyncScreensAsync(Arg.Is<IEnumerable<Guid>>(ids => ids.Contains(display.Id)));
+        await sync.Received()
+            .SyncScreensAsync(Arg.Is<IEnumerable<Guid>>(ids => ids.Contains(display.Id)));
     }
 
     [Fact]
@@ -103,6 +111,7 @@ public class ZoneServiceTests
         Assert.NotNull(refreshed);
         Assert.Null(refreshed!.ZoneId);
         Assert.False(await verify.Zones.AnyAsync(z => z.Id == zone.Id));
-        await sync.Received().SyncScreensAsync(Arg.Is<IEnumerable<Guid>>(ids => ids.Contains(display.Id)));
+        await sync.Received()
+            .SyncScreensAsync(Arg.Is<IEnumerable<Guid>>(ids => ids.Contains(display.Id)));
     }
 }

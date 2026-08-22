@@ -7,7 +7,10 @@ namespace Mireya.Application.Services.AssetSync;
 public interface IAssetSyncService
 {
     Task InitializeSyncStatusForDisplayAsync(Guid displayId, List<Guid> assetIds);
-    Task<AssetSyncUpdateResult> UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request);
+    Task<AssetSyncUpdateResult> UpdateAssetSyncStatusAsync(
+        Guid displayId,
+        UpdateAssetSyncRequest request
+    );
     Task<List<AssetSyncStatusDto>> GetSyncStatusForDisplayAsync(Guid displayId);
     Task<List<CampaignSyncInfo>> GetCampaignsToSyncAsync(Guid displayId);
     Task CleanupSyncStatusAsync(Guid displayId, List<Guid> currentAssetIds);
@@ -35,8 +38,10 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
         var distinctAssetIds = assetIds.Distinct().ToList();
 
         // Batch-query all existing sync statuses for this display upfront
-        var existingAssetIdsList = await db.AssetSyncStatuses
-            .Where(ass => ass.DisplayId == displayId && distinctAssetIds.Contains(ass.AssetId))
+        var existingAssetIdsList = await db
+            .AssetSyncStatuses.Where(ass =>
+                ass.DisplayId == displayId && distinctAssetIds.Contains(ass.AssetId)
+            )
             .Select(ass => ass.AssetId)
             .ToListAsync();
         var existingAssetIds = existingAssetIdsList.ToHashSet();
@@ -61,7 +66,10 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
         }
     }
 
-    public async Task<AssetSyncUpdateResult> UpdateAssetSyncStatusAsync(Guid displayId, UpdateAssetSyncRequest request)
+    public async Task<AssetSyncUpdateResult> UpdateAssetSyncStatusAsync(
+        Guid displayId,
+        UpdateAssetSyncRequest request
+    )
     {
         logger.LogDebug(
             "Updating sync status for display {DisplayId}, asset {AssetId}: {State} ({Progress}%)",

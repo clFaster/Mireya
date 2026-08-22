@@ -15,36 +15,33 @@ namespace Mireya.Database.Postgres.Migrations
                 name: "EndDateUtc",
                 table: "Campaigns",
                 type: "timestamp with time zone",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsEnabled",
                 table: "Campaigns",
                 type: "boolean",
                 nullable: false,
-                defaultValue: true);
+                defaultValue: true
+            );
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "StartDateUtc",
                 table: "Campaigns",
                 type: "timestamp with time zone",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "EndDateUtc",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "EndDateUtc", table: "Campaigns");
 
-            migrationBuilder.DropColumn(
-                name: "IsEnabled",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "IsEnabled", table: "Campaigns");
 
-            migrationBuilder.DropColumn(
-                name: "StartDateUtc",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "StartDateUtc", table: "Campaigns");
         }
     }
 }

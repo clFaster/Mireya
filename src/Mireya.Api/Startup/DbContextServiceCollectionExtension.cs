@@ -23,8 +23,10 @@ public static class DbContextServiceCollectionExtension
             var npgsqlBuilder = new NpgsqlConnectionStringBuilder(connectionString);
 
             // Only override SSL mode if not already specified in the connection string
-            if (!connectionString.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase)
-                && !connectionString.Contains("SslMode", StringComparison.OrdinalIgnoreCase))
+            if (
+                !connectionString.Contains("SSL Mode", StringComparison.OrdinalIgnoreCase)
+                && !connectionString.Contains("SslMode", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 npgsqlBuilder.SslMode = SslMode.Prefer;
             }
@@ -39,7 +41,8 @@ public static class DbContextServiceCollectionExtension
         else
         {
             throw new InvalidOperationException(
-                $"Unsupported database provider: '{provider}'. Supported providers: '{Provider.Sqlite.Name}', '{Provider.Postgres.Name}'.");
+                $"Unsupported database provider: '{provider}'. Supported providers: '{Provider.Sqlite.Name}', '{Provider.Postgres.Name}'."
+            );
         }
     }
 }

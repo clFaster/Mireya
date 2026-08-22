@@ -15,15 +15,14 @@ namespace Mireya.Database.Sqlite.Migrations
                 name: "OfflineAlertedAt",
                 table: "Displays",
                 type: "TEXT",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "OfflineAlertedAt",
-                table: "Displays");
+            migrationBuilder.DropColumn(name: "OfflineAlertedAt", table: "Displays");
         }
     }
 }

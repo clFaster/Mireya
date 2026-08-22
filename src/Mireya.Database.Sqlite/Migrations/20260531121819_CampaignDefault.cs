@@ -15,15 +15,14 @@ namespace Mireya.Database.Sqlite.Migrations
                 table: "Campaigns",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "IsDefault",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "IsDefault", table: "Campaigns");
         }
     }
 }

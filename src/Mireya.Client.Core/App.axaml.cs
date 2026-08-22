@@ -77,9 +77,7 @@ public class App : Application
             // fullscreen without a restart.  The callback is always invoked from the
             // UI thread (RelayCommand preserves the Avalonia SynchronizationContext).
             appSettings.ApplyFullscreen = fullscreen =>
-                mainWindow.WindowState = fullscreen
-                    ? WindowState.FullScreen
-                    : WindowState.Normal;
+                mainWindow.WindowState = fullscreen ? WindowState.FullScreen : WindowState.Normal;
 
             // Gracefully shut down services when the application exits:
             // 1. Disconnect SignalR (stops auto-reconnect background threads)
@@ -93,8 +91,7 @@ public class App : Application
                     // Disconnect SignalR first to stop auto-reconnect threads.
                     // Use a timeout to prevent hanging on unresponsive connections.
                     var hubService = serviceProvider.GetRequiredService<IScreenHubService>();
-                    hubService.DisconnectAsync()
-                        .Wait(TimeSpan.FromSeconds(3));
+                    hubService.DisconnectAsync().Wait(TimeSpan.FromSeconds(3));
                 }
                 catch (Exception ex)
                 {
@@ -106,8 +103,7 @@ public class App : Application
                     // Dispose the service provider with a timeout to prevent hanging
                     if (serviceProvider is IAsyncDisposable asyncDisposable)
                     {
-                        asyncDisposable.DisposeAsync().AsTask()
-                            .Wait(TimeSpan.FromSeconds(3));
+                        asyncDisposable.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(3));
                     }
                     else if (serviceProvider is IDisposable disposable)
                     {
@@ -147,14 +143,20 @@ public class App : Application
     ///     Returns the service provider together with the loaded settings and the root
     ///     ViewModel so each lifetime branch can present it appropriately.
     /// </summary>
-    private static (IServiceProvider Services, AppSettings Settings, MainWindowViewModel ViewModel) InitializeCore()
+    private static (
+        IServiceProvider Services,
+        AppSettings Settings,
+        MainWindowViewModel ViewModel
+    ) InitializeCore()
     {
         // Setup dependency injection (AppSettings singleton registered inside).
         // The platform head provides the composition root so that platform-only
         // implementations (credential storage, asset renderers, …) are wired in.
-        var serviceProvider = ServiceProviderFactory?.Invoke()
+        var serviceProvider =
+            ServiceProviderFactory?.Invoke()
             ?? throw new InvalidOperationException(
-                "App.ServiceProviderFactory must be set by the platform head before startup.");
+                "App.ServiceProviderFactory must be set by the platform head before startup."
+            );
         Services = serviceProvider;
 
         // Apply database migrations and load settings in the same startup scope
@@ -170,7 +172,9 @@ public class App : Application
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    "Failed to apply database migrations. See inner exception for details.", ex);
+                    "Failed to apply database migrations. See inner exception for details.",
+                    ex
+                );
             }
         }
 
@@ -181,7 +185,9 @@ public class App : Application
         appSettings.LoadAsync().GetAwaiter().GetResult();
         Log.Information(
             "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}, HideScreenInfo={HideScreenInfo}",
-            appSettings.Fullscreen, appSettings.AutoStart, appSettings.HideScreenInfo
+            appSettings.Fullscreen,
+            appSettings.AutoStart,
+            appSettings.HideScreenInfo
         );
 
         var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();

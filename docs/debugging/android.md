@@ -124,6 +124,35 @@ values before sharing them. Do not commit investigation artifacts.
 | ANR | Full logcat, activity dump, synchronous main-thread work |
 | Memory growth | Stable PID, timed `dumpsys meminfo` samples, Release comparison |
 
+## Verify video orientation
+
+Some phone and editing-tool exports leave the encoded pixels unrotated and store the
+intended orientation in an MP4/MOV display matrix. Media3 passes that rotation to the
+platform decoder, but some older Android TV codecs do not apply it reliably. Mireya
+therefore transcodes only newly uploaded videos with non-zero rotation, rotates the
+pixels with FFmpeg, and clears the output rotation metadata. Existing assets must be
+uploaded again to pass through normalization.
+
+Build a regression playlist with visually labelled 0, 90, 180 and 270 degree MP4
+assets. For each source and the corresponding stored upload, inspect both legacy tags
+and display-matrix side data:
+
+```powershell
+ffprobe -v error -select_streams v:0 `
+    -show_entries stream=width,height:stream_tags=rotate:stream_side_data `
+    -of json <video-path>
+```
+
+The rotated sources should report their display rotation. Every stored upload should
+report upright dimensions and no non-zero rotation. Play the complete matrix on at
+least one older Android TV/API and one current Android version, and confirm that each
+label is upright, aspect ratio is preserved, and a 0-degree asset was not transcoded.
+
+The activity's landscape lock controls the fixed signage canvas, not per-video
+orientation. Android TV hardware commonly has no accelerometer because the display is
+stationary; a reverse-landscape physical mounting therefore needs separate device or
+activity configuration and is not inferred from video metadata.
+
 Desktop and Android use different native renderers: desktop uses WebView2 and LibVLC;
 Android uses Android WebView and Media3/ExoPlayer. Keep platform-specific fixes in the
 Android project unless the verified cause is shared behavior.

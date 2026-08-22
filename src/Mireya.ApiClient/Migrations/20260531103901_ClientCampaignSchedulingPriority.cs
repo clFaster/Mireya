@@ -15,47 +15,43 @@ namespace Mireya.ApiClient.Migrations
                 name: "EndDateUtc",
                 table: "Campaigns",
                 type: "TEXT",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsEnabled",
                 table: "Campaigns",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: true);
+                defaultValue: true
+            );
 
             migrationBuilder.AddColumn<int>(
                 name: "Priority",
                 table: "Campaigns",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: 0
+            );
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "StartDateUtc",
                 table: "Campaigns",
                 type: "TEXT",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "EndDateUtc",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "EndDateUtc", table: "Campaigns");
 
-            migrationBuilder.DropColumn(
-                name: "IsEnabled",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "IsEnabled", table: "Campaigns");
 
-            migrationBuilder.DropColumn(
-                name: "Priority",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "Priority", table: "Campaigns");
 
-            migrationBuilder.DropColumn(
-                name: "StartDateUtc",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "StartDateUtc", table: "Campaigns");
         }
     }
 }

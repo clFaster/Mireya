@@ -51,6 +51,7 @@ public class BrowserIFormFile(IBrowserFile file) : IFormFile
     {
         if (file.Size > MaxFileSize)
             throw new InvalidOperationException(
-                $"File '{file.Name}' size ({file.Size} bytes) exceeds the maximum allowed size ({MaxFileSize} bytes).");
+                $"File '{file.Name}' size ({file.Size} bytes) exceeds the maximum allowed size ({MaxFileSize} bytes)."
+            );
     }
 }

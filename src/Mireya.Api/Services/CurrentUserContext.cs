@@ -38,6 +38,8 @@ public class CurrentUserContext(
     }
 
     private static (string?, string?) Extract(ClaimsPrincipal user) =>
-        (user.FindFirstValue(ClaimTypes.NameIdentifier),
-            user.Identity?.Name ?? user.FindFirstValue(ClaimTypes.Email));
+        (
+            user.FindFirstValue(ClaimTypes.NameIdentifier),
+            user.Identity?.Name ?? user.FindFirstValue(ClaimTypes.Email)
+        );
 }

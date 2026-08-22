@@ -1,11 +1,11 @@
 using System;
+using AndroidX.Media3.Common;
+using AndroidX.Media3.ExoPlayer;
+using AndroidX.Media3.UI;
 using Avalonia.Android;
 using Avalonia.Controls;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using AndroidX.Media3.Common;
-using AndroidX.Media3.ExoPlayer;
-using AndroidX.Media3.UI;
 using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
@@ -29,8 +29,11 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
     {
         var context = global::Android.App.Application.Context;
 
-        var player = new ExoPlayerBuilder(context).Build()
-            ?? throw new InvalidOperationException("Media3 failed to create an ExoPlayer instance.");
+        var player =
+            new ExoPlayerBuilder(context).Build()
+            ?? throw new InvalidOperationException(
+                "Media3 failed to create an ExoPlayer instance."
+            );
         _player = player;
 
         _playerView = new PlayerView(context)

@@ -105,7 +105,10 @@ public class Campaign
         try
         {
             var tz = TimeZoneInfo.FindSystemTimeZoneById(RecurrenceTimeZoneId);
-            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utcNow, DateTimeKind.Utc), tz);
+            return TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.SpecifyKind(utcNow, DateTimeKind.Utc),
+                tz
+            );
         }
         catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
         {

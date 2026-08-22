@@ -69,7 +69,11 @@ public interface IScreenManagementService
     /// <summary>
     ///     Updates screen details and campaign assignments
     /// </summary>
-    Task UpdateScreenWithCampaignsAsync(Guid id, UpdateScreenRequest request, List<Guid> campaignIds);
+    Task UpdateScreenWithCampaignsAsync(
+        Guid id,
+        UpdateScreenRequest request,
+        List<Guid> campaignIds
+    );
 
     /// <summary>
     ///     Gets all approved screens, optionally filtering by active status
@@ -215,16 +219,21 @@ public class ScreenManagementService(
         };
     }
 
-    private static readonly Dictionary<string, Func<IQueryable<Display>, IQueryable<Display>>> SortFunctions =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["name"] = q => q.OrderBy(d => d.Name),
-            ["location"] = q => q.OrderBy(d => d.Location),
-            ["status"] = q => q.OrderBy(d => d.ApprovalStatus).ThenBy(d => d.Name),
-            ["lastseen"] = q => q.OrderByDescending(d => d.LastSeenAt),
-        };
+    private static readonly Dictionary<
+        string,
+        Func<IQueryable<Display>, IQueryable<Display>>
+    > SortFunctions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["name"] = q => q.OrderBy(d => d.Name),
+        ["location"] = q => q.OrderBy(d => d.Location),
+        ["status"] = q => q.OrderBy(d => d.ApprovalStatus).ThenBy(d => d.Name),
+        ["lastseen"] = q => q.OrderByDescending(d => d.LastSeenAt),
+    };
 
-    private static IQueryable<Display> ApplyScreenSorting(IQueryable<Display> query, string? sortBy) =>
+    private static IQueryable<Display> ApplyScreenSorting(
+        IQueryable<Display> query,
+        string? sortBy
+    ) =>
         sortBy != null && SortFunctions.TryGetValue(sortBy, out var sort)
             ? sort(query)
             : query.OrderByDescending(d => d.CreatedAt);
@@ -305,7 +314,12 @@ public class ScreenManagementService(
         // Notify screen of approval
         await syncService.SyncScreenAsync(display.Id);
 
-        await audit.LogAsync("Approved", "Screen", display.Id.ToString(), $"Approved screen '{display.Name}'");
+        await audit.LogAsync(
+            "Approved",
+            "Screen",
+            display.Id.ToString(),
+            $"Approved screen '{display.Name}'"
+        );
 
         return new ApproveScreenResponse { Screen = MapToDetailsResponse(display) };
     }
@@ -324,7 +338,12 @@ public class ScreenManagementService(
 
         logger.LogInformation("Screen {DisplayId} rejected", display.Id);
 
-        await audit.LogAsync("Rejected", "Screen", display.Id.ToString(), $"Rejected screen '{display.Name}'");
+        await audit.LogAsync(
+            "Rejected",
+            "Screen",
+            display.Id.ToString(),
+            $"Rejected screen '{display.Name}'"
+        );
 
         return MapToDetailsResponse(display);
     }
@@ -334,7 +353,10 @@ public class ScreenManagementService(
         var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
         if (display == null)
         {
-            logger.LogWarning("No display found for user {UserId} when setting active state", userId);
+            logger.LogWarning(
+                "No display found for user {UserId} when setting active state",
+                userId
+            );
             return;
         }
 
@@ -343,7 +365,11 @@ public class ScreenManagementService(
         display.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
-        logger.LogInformation("Updated IsActive={IsActive} for screen {DisplayId}", isActive, display.Id);
+        logger.LogInformation(
+            "Updated IsActive={IsActive} for screen {DisplayId}",
+            isActive,
+            display.Id
+        );
     }
 
     public async Task<int> GetScreenCountByStatusAsync(ApprovalStatus status)
@@ -353,17 +379,18 @@ public class ScreenManagementService(
 
     public async Task<ScreenWithCampaignsResponse> GetScreenWithCampaignsAsync(Guid id)
     {
-        var display = await db.Displays
-            .Include(d => d.CampaignAssignments).ThenInclude(ca => ca.Campaign)
-                .ThenInclude(c => c.CampaignAssets)
+        var display = await db
+            .Displays.Include(d => d.CampaignAssignments)
+                .ThenInclude(ca => ca.Campaign)
+                    .ThenInclude(c => c.CampaignAssets)
             .Include(d => d.Zone)
             .FirstOrDefaultAsync(d => d.Id == id);
 
         if (display == null)
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
-        var allCampaigns = await db.Campaigns
-            .Include(c => c.CampaignAssets)
+        var allCampaigns = await db
+            .Campaigns.Include(c => c.CampaignAssets)
             .Include(c => c.CampaignAssignments)
             .OrderBy(c => c.Name)
             .ToListAsync();
@@ -388,21 +415,47 @@ public class ScreenManagementService(
             ZoneName = response.ZoneName,
             CreatedAt = response.CreatedAt,
             UpdatedAt = response.UpdatedAt,
-            AssignedCampaigns = display.CampaignAssignments
-                .Select(ca => ca.Campaign)
-                .Select(c => new CampaignSummary(c.Id, c.Name, c.Description,
-                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt,
-                    c.IsEnabled, c.StartDateUtc, c.EndDateUtc, c.IsActiveAt(DateTime.UtcNow), c.Priority))
+            AssignedCampaigns = display
+                .CampaignAssignments.Select(ca => ca.Campaign)
+                .Select(c => new CampaignSummary(
+                    c.Id,
+                    c.Name,
+                    c.Description,
+                    c.CampaignAssets.Count,
+                    c.CampaignAssignments.Count,
+                    c.CreatedAt,
+                    c.UpdatedAt,
+                    c.IsEnabled,
+                    c.StartDateUtc,
+                    c.EndDateUtc,
+                    c.IsActiveAt(DateTime.UtcNow),
+                    c.Priority
+                ))
                 .ToList(),
             AllCampaigns = allCampaigns
-                .Select(c => new CampaignSummary(c.Id, c.Name, c.Description,
-                    c.CampaignAssets.Count, c.CampaignAssignments.Count, c.CreatedAt, c.UpdatedAt,
-                    c.IsEnabled, c.StartDateUtc, c.EndDateUtc, c.IsActiveAt(DateTime.UtcNow), c.Priority))
+                .Select(c => new CampaignSummary(
+                    c.Id,
+                    c.Name,
+                    c.Description,
+                    c.CampaignAssets.Count,
+                    c.CampaignAssignments.Count,
+                    c.CreatedAt,
+                    c.UpdatedAt,
+                    c.IsEnabled,
+                    c.StartDateUtc,
+                    c.EndDateUtc,
+                    c.IsActiveAt(DateTime.UtcNow),
+                    c.Priority
+                ))
                 .ToList(),
         };
     }
 
-    public async Task UpdateScreenWithCampaignsAsync(Guid id, UpdateScreenRequest request, List<Guid> campaignIds)
+    public async Task UpdateScreenWithCampaignsAsync(
+        Guid id,
+        UpdateScreenRequest request,
+        List<Guid> campaignIds
+    )
     {
         var display = await db.Displays.FindAsync(id);
         if (display == null)
@@ -427,34 +480,47 @@ public class ScreenManagementService(
         var distinctCampaignIds = campaignIds.Distinct().ToList();
         if (distinctCampaignIds.Count > 0)
         {
-            var existingCount = await db.Campaigns
-                .CountAsync(c => distinctCampaignIds.Contains(c.Id));
+            var existingCount = await db.Campaigns.CountAsync(c =>
+                distinctCampaignIds.Contains(c.Id)
+            );
             if (existingCount != distinctCampaignIds.Count)
                 throw new ArgumentException("One or more campaigns do not exist");
         }
 
         // Update campaign assignments
-        var currentAssignments = await db.CampaignAssignments
-            .Where(ca => ca.DisplayId == id)
+        var currentAssignments = await db
+            .CampaignAssignments.Where(ca => ca.DisplayId == id)
             .ToListAsync();
 
-        var toRemove = currentAssignments.Where(ca => !campaignIds.Contains(ca.CampaignId)).ToList();
+        var toRemove = currentAssignments
+            .Where(ca => !campaignIds.Contains(ca.CampaignId))
+            .ToList();
         db.CampaignAssignments.RemoveRange(toRemove);
 
         var existingCampaignIds = currentAssignments.Select(ca => ca.CampaignId).ToHashSet();
         foreach (var campaignId in campaignIds.Where(cid => !existingCampaignIds.Contains(cid)))
-            db.CampaignAssignments.Add(new CampaignAssignment
-            {
-                CampaignId = campaignId,
-                DisplayId = id,
-                CreatedAt = DateTime.UtcNow,
-            });
+            db.CampaignAssignments.Add(
+                new CampaignAssignment
+                {
+                    CampaignId = campaignId,
+                    DisplayId = id,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
 
         await db.SaveChangesAsync();
-        logger.LogInformation("Screen {DisplayId} updated with {CampaignCount} campaigns", display.Id, campaignIds.Count);
+        logger.LogInformation(
+            "Screen {DisplayId} updated with {CampaignCount} campaigns",
+            display.Id,
+            campaignIds.Count
+        );
 
-        await audit.LogAsync("Updated", "Screen", display.Id.ToString(),
-            $"Updated screen '{display.Name}' ({campaignIds.Count} campaign(s) assigned)");
+        await audit.LogAsync(
+            "Updated",
+            "Screen",
+            display.Id.ToString(),
+            $"Updated screen '{display.Name}' ({campaignIds.Count} campaign(s) assigned)"
+        );
 
         await syncService.SyncScreenAsync(display.Id);
     }
@@ -479,8 +545,12 @@ public class ScreenManagementService(
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
         var delivered = await syncService.SendCommandAsync(id, command);
-        await audit.LogAsync("Command", "Screen", id.ToString(),
-            $"Sent command '{command}' to screen '{display.Name}'{(delivered ? "" : " (screen offline)")}");
+        await audit.LogAsync(
+            "Command",
+            "Screen",
+            id.ToString(),
+            $"Sent command '{command}' to screen '{display.Name}'{(delivered ? "" : " (screen offline)")}"
+        );
         return delivered;
     }
 

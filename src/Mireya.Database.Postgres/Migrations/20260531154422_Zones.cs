@@ -15,22 +15,38 @@ namespace Mireya.Database.Postgres.Migrations
                 name: "ZoneId",
                 table: "Displays",
                 type: "uuid",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.CreateTable(
                 name: "Zones",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Name = table.Column<string>(
+                        type: "character varying(200)",
+                        maxLength: 200,
+                        nullable: false
+                    ),
+                    Description = table.Column<string>(
+                        type: "character varying(500)",
+                        maxLength: 500,
+                        nullable: true
+                    ),
+                    CreatedAt = table.Column<DateTime>(
+                        type: "timestamp with time zone",
+                        nullable: false
+                    ),
+                    UpdatedAt = table.Column<DateTime>(
+                        type: "timestamp with time zone",
+                        nullable: false
+                    ),
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Zones", x => x.Id);
-                });
+                }
+            );
 
             migrationBuilder.CreateTable(
                 name: "ZoneCampaigns",
@@ -39,7 +55,10 @@ namespace Mireya.Database.Postgres.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ZoneId = table.Column<Guid>(type: "uuid", nullable: false),
                     CampaignId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(
+                        type: "timestamp with time zone",
+                        nullable: false
+                    ),
                 },
                 constraints: table =>
                 {
@@ -49,40 +68,44 @@ namespace Mireya.Database.Postgres.Migrations
                         column: x => x.CampaignId,
                         principalTable: "Campaigns",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Cascade
+                    );
                     table.ForeignKey(
                         name: "FK_ZoneCampaigns_Zones_ZoneId",
                         column: x => x.ZoneId,
                         principalTable: "Zones",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_Displays_ZoneId",
                 table: "Displays",
-                column: "ZoneId");
+                column: "ZoneId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_ZoneCampaigns_CampaignId",
                 table: "ZoneCampaigns",
-                column: "CampaignId");
+                column: "CampaignId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_ZoneCampaigns_ZoneId",
                 table: "ZoneCampaigns",
-                column: "ZoneId");
+                column: "ZoneId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_ZoneCampaigns_ZoneId_CampaignId",
                 table: "ZoneCampaigns",
                 columns: new[] { "ZoneId", "CampaignId" },
-                unique: true);
+                unique: true
+            );
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Zones_Name",
-                table: "Zones",
-                column: "Name");
+            migrationBuilder.CreateIndex(name: "IX_Zones_Name", table: "Zones", column: "Name");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Displays_Zones_ZoneId",
@@ -90,29 +113,22 @@ namespace Mireya.Database.Postgres.Migrations
                 column: "ZoneId",
                 principalTable: "Zones",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.SetNull
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Displays_Zones_ZoneId",
-                table: "Displays");
+            migrationBuilder.DropForeignKey(name: "FK_Displays_Zones_ZoneId", table: "Displays");
 
-            migrationBuilder.DropTable(
-                name: "ZoneCampaigns");
+            migrationBuilder.DropTable(name: "ZoneCampaigns");
 
-            migrationBuilder.DropTable(
-                name: "Zones");
+            migrationBuilder.DropTable(name: "Zones");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Displays_ZoneId",
-                table: "Displays");
+            migrationBuilder.DropIndex(name: "IX_Displays_ZoneId", table: "Displays");
 
-            migrationBuilder.DropColumn(
-                name: "ZoneId",
-                table: "Displays");
+            migrationBuilder.DropColumn(name: "ZoneId", table: "Displays");
         }
     }
 }

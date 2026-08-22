@@ -17,10 +17,14 @@ namespace Mireya.Database.Sqlite.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     DisplayId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    DisplayName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    DisplayName = table.Column<string>(
+                        type: "TEXT",
+                        maxLength: 200,
+                        nullable: false
+                    ),
                     AssetId = table.Column<Guid>(type: "TEXT", nullable: true),
                     AssetName = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
-                    PlayedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    PlayedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -30,30 +34,34 @@ namespace Mireya.Database.Sqlite.Migrations
                         column: x => x.DisplayId,
                         principalTable: "Displays",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlaybackEvents_AssetId",
                 table: "PlaybackEvents",
-                column: "AssetId");
+                column: "AssetId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlaybackEvents_DisplayId",
                 table: "PlaybackEvents",
-                column: "DisplayId");
+                column: "DisplayId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlaybackEvents_PlayedAtUtc",
                 table: "PlaybackEvents",
-                column: "PlayedAtUtc");
+                column: "PlayedAtUtc"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "PlaybackEvents");
+            migrationBuilder.DropTable(name: "PlaybackEvents");
         }
     }
 }

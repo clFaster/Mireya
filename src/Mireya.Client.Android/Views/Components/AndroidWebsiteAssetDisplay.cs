@@ -98,13 +98,13 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
     private sealed class SignageWebViewClient : WebViewClient
     {
         private const string HardenScript =
-            "javascript:(function(){" +
-            "document.querySelectorAll('video,audio').forEach(function(e){e.muted=true;e.volume=0;});" +
-            "var s=document.createElement('style');" +
-            "s.textContent='*{pointer-events:none!important;user-select:none!important;}" +
-            "html,body{overflow:hidden!important;scrollbar-width:none!important;}" +
-            "::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}';" +
-            "document.head.appendChild(s);})()";
+            "javascript:(function(){"
+            + "document.querySelectorAll('video,audio').forEach(function(e){e.muted=true;e.volume=0;});"
+            + "var s=document.createElement('style');"
+            + "s.textContent='*{pointer-events:none!important;user-select:none!important;}"
+            + "html,body{overflow:hidden!important;scrollbar-width:none!important;}"
+            + "::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}';"
+            + "document.head.appendChild(s);})()";
 
         private readonly AndroidWebsiteAssetDisplay _owner;
 

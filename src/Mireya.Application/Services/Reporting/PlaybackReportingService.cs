@@ -60,10 +60,8 @@ public interface IPlaybackReportingService
     Task<List<PlaybackEventEntry>> GetRecentAsync(int take = 200);
 }
 
-public class PlaybackReportingService(
-    MireyaDbContext db,
-    ILogger<PlaybackReportingService> logger
-) : IPlaybackReportingService
+public class PlaybackReportingService(MireyaDbContext db, ILogger<PlaybackReportingService> logger)
+    : IPlaybackReportingService
 {
     public async Task RecordAsync(string userId, Guid? assetId, string? assetName)
     {
@@ -72,42 +70,54 @@ public class PlaybackReportingService(
 
         try
         {
-            var display = await db.Displays
-                .Where(d => d.UserId == userId)
+            var display = await db
+                .Displays.Where(d => d.UserId == userId)
                 .Select(d => new { d.Id, d.Name })
                 .FirstOrDefaultAsync();
 
             if (display is null)
                 return;
 
-            db.PlaybackEvents.Add(new PlaybackEvent
-            {
-                DisplayId = display.Id,
-                DisplayName = display.Name,
-                AssetId = assetId,
-                AssetName = assetName,
-                PlayedAtUtc = DateTime.UtcNow,
-            });
+            db.PlaybackEvents.Add(
+                new PlaybackEvent
+                {
+                    DisplayId = display.Id,
+                    DisplayName = display.Name,
+                    AssetId = assetId,
+                    AssetName = assetName,
+                    PlayedAtUtc = DateTime.UtcNow,
+                }
+            );
             await db.SaveChangesAsync();
         }
         catch (Exception ex)
         {
             // Proof-of-play must never break live playback reporting.
-            logger.LogError(ex, "Failed to record playback event for user {UserId} asset {AssetId}",
-                userId, assetId);
+            logger.LogError(
+                ex,
+                "Failed to record playback event for user {UserId} asset {AssetId}",
+                userId,
+                assetId
+            );
         }
     }
 
     public async Task<PlaybackReport> GetReportAsync(DateTime fromUtc, DateTime toUtc)
     {
-        var events = db.PlaybackEvents
-            .Where(e => e.PlayedAtUtc >= fromUtc && e.PlayedAtUtc <= toUtc);
+        var events = db.PlaybackEvents.Where(e =>
+            e.PlayedAtUtc >= fromUtc && e.PlayedAtUtc <= toUtc
+        );
 
         var total = await events.CountAsync();
 
         var byAssetRaw = await events
             .GroupBy(e => new { e.AssetId, e.AssetName })
-            .Select(g => new { g.Key.AssetId, g.Key.AssetName, Plays = g.Count() })
+            .Select(g => new
+            {
+                g.Key.AssetId,
+                g.Key.AssetName,
+                Plays = g.Count(),
+            })
             .ToListAsync();
 
         var byAsset = byAssetRaw
@@ -117,7 +127,12 @@ public class PlaybackReportingService(
 
         var byScreenRaw = await events
             .GroupBy(e => new { e.DisplayId, e.DisplayName })
-            .Select(g => new { g.Key.DisplayId, g.Key.DisplayName, Plays = g.Count() })
+            .Select(g => new
+            {
+                g.Key.DisplayId,
+                g.Key.DisplayName,
+                Plays = g.Count(),
+            })
             .ToListAsync();
 
         var byScreen = byScreenRaw
@@ -132,14 +147,15 @@ public class PlaybackReportingService(
             byAsset.Count,
             byScreen.Count,
             byAsset,
-            byScreen);
+            byScreen
+        );
     }
 
     public async Task<List<PlaybackEventEntry>> GetRecentAsync(int take = 200)
     {
         take = Math.Clamp(take, 1, 1000);
-        return await db.PlaybackEvents
-            .OrderByDescending(e => e.PlayedAtUtc)
+        return await db
+            .PlaybackEvents.OrderByDescending(e => e.PlayedAtUtc)
             .Take(take)
             .Select(e => new PlaybackEventEntry(
                 e.Id,
@@ -147,7 +163,8 @@ public class PlaybackReportingService(
                 e.DisplayId,
                 e.DisplayName,
                 e.AssetId,
-                e.AssetName))
+                e.AssetName
+            ))
             .ToListAsync();
     }
 }

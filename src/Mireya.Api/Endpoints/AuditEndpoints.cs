@@ -17,7 +17,8 @@ public class AuditEndpoints : ICarterModule
     private static async Task<IResult> HandleGetAuditLogAsync(
         IAuditService auditService,
         ILogger<AuditEndpoints> logger,
-        [FromQuery] int take = 200)
+        [FromQuery] int take = 200
+    )
     {
         try
         {
