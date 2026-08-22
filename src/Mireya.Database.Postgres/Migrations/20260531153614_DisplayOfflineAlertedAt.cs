@@ -15,15 +15,14 @@ namespace Mireya.Database.Postgres.Migrations
                 name: "OfflineAlertedAt",
                 table: "Displays",
                 type: "timestamp with time zone",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "OfflineAlertedAt",
-                table: "Displays");
+            migrationBuilder.DropColumn(name: "OfflineAlertedAt", table: "Displays");
         }
     }
 }

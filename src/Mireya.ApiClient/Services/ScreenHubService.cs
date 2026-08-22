@@ -163,7 +163,11 @@ public class ScreenHubService : IScreenHubService
             }
         }
 
-        _logger.LogError(lastError, "Failed to connect to SignalR hub after {Attempts} attempts", maxAttempts);
+        _logger.LogError(
+            lastError,
+            "Failed to connect to SignalR hub after {Attempts} attempts",
+            maxAttempts
+        );
         if (lastError is not null)
             throw lastError;
     }

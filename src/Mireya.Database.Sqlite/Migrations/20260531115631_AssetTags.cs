@@ -15,15 +15,14 @@ namespace Mireya.Database.Sqlite.Migrations
                 table: "Assets",
                 type: "TEXT",
                 maxLength: 500,
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Tags",
-                table: "Assets");
+            migrationBuilder.DropColumn(name: "Tags", table: "Assets");
         }
     }
 }

@@ -26,10 +26,12 @@ namespace Mireya.Client.Avalonia.AndroidTv;
         | ConfigChanges.UiMode
         | ConfigChanges.Keyboard
         | ConfigChanges.KeyboardHidden
-        | ConfigChanges.Navigation)]
+        | ConfigChanges.Navigation
+)]
 [IntentFilter(
     new[] { Intent.ActionMain },
-    Categories = new[] { Intent.CategoryLeanbackLauncher, Intent.CategoryLauncher })]
+    Categories = new[] { Intent.CategoryLeanbackLauncher, Intent.CategoryLauncher }
+)]
 public class MainActivity : AvaloniaMainActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
@@ -46,9 +48,9 @@ public class MainActivity : AvaloniaMainActivity
             if (controller is not null)
             {
                 controller.Hide(WindowInsets.Type.SystemBars());
-                controller.SystemBarsBehavior = (int)WindowInsetsControllerBehavior.ShowTransientBarsBySwipe;
+                controller.SystemBarsBehavior = (int)
+                    WindowInsetsControllerBehavior.ShowTransientBarsBySwipe;
             }
         }
     }
 }
-

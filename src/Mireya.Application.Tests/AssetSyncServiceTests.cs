@@ -16,7 +16,12 @@ public class AssetSyncServiceTests
             UserId = Guid.NewGuid().ToString("N"),
             ApprovalStatus = ApprovalStatus.Approved,
         };
-        var asset = new Asset { Name = "A", Type = AssetType.Image, Source = "/x.png" };
+        var asset = new Asset
+        {
+            Name = "A",
+            Type = AssetType.Image,
+            Source = "/x.png",
+        };
         db.Context.Displays.Add(display);
         db.Context.Assets.Add(asset);
         db.Context.SaveChanges();
@@ -33,8 +38,10 @@ public class AssetSyncServiceTests
         var (display, asset) = Seed(db);
         var service = CreateService(db);
 
-        var result = await service.UpdateAssetSyncStatusAsync(display.Id,
-            new UpdateAssetSyncRequest(asset.Id, "Downloaded", 100, null));
+        var result = await service.UpdateAssetSyncStatusAsync(
+            display.Id,
+            new UpdateAssetSyncRequest(asset.Id, "Downloaded", 100, null)
+        );
 
         Assert.Equal(AssetSyncUpdateResult.NotFound, result);
     }
@@ -47,8 +54,10 @@ public class AssetSyncServiceTests
         var service = CreateService(db);
         await service.InitializeSyncStatusForDisplayAsync(display.Id, [asset.Id]);
 
-        var result = await service.UpdateAssetSyncStatusAsync(display.Id,
-            new UpdateAssetSyncRequest(asset.Id, "NotARealState", 50, null));
+        var result = await service.UpdateAssetSyncStatusAsync(
+            display.Id,
+            new UpdateAssetSyncRequest(asset.Id, "NotARealState", 50, null)
+        );
 
         Assert.Equal(AssetSyncUpdateResult.InvalidState, result);
     }
@@ -61,8 +70,10 @@ public class AssetSyncServiceTests
         var service = CreateService(db);
         await service.InitializeSyncStatusForDisplayAsync(display.Id, [asset.Id]);
 
-        var result = await service.UpdateAssetSyncStatusAsync(display.Id,
-            new UpdateAssetSyncRequest(asset.Id, "Downloaded", 100, null));
+        var result = await service.UpdateAssetSyncStatusAsync(
+            display.Id,
+            new UpdateAssetSyncRequest(asset.Id, "Downloaded", 100, null)
+        );
 
         Assert.Equal(AssetSyncUpdateResult.Updated, result);
 

@@ -1,42 +1,57 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Mireya.Application.Hubs;
 using Mireya.Application.Services;
 using Mireya.Application.Services.AssetSync;
 using Mireya.Application.Services.ScreenManagement;
 using Mireya.Database.Models;
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace Mireya.Application.Tests;
 
 public class ScreenSynchronizationServiceTests
 {
-    private static Display NewDisplay() => new()
-    {
-        Name = "Screen",
-        Location = "Lobby",
-        ScreenIdentifier = Guid.NewGuid().ToString("N")[..10],
-        UserId = Guid.NewGuid().ToString("N"),
-        ApprovalStatus = ApprovalStatus.Approved,
-    };
+    private static Display NewDisplay() =>
+        new()
+        {
+            Name = "Screen",
+            Location = "Lobby",
+            ScreenIdentifier = Guid.NewGuid().ToString("N")[..10],
+            UserId = Guid.NewGuid().ToString("N"),
+            ApprovalStatus = ApprovalStatus.Approved,
+        };
 
-    private static (ScreenSynchronizationService service, Func<ScreenConfiguration?> captured) CreateService(TestDatabase db)
+    private static (
+        ScreenSynchronizationService service,
+        Func<ScreenConfiguration?> captured
+    ) CreateService(TestDatabase db)
     {
         var (service, captured, _) = CreateServiceWithHub(db);
         return (service, captured);
     }
 
-    private static (ScreenSynchronizationService service, Func<ScreenConfiguration?> captured, IScreenHubContext hub) CreateServiceWithHub(TestDatabase db)
+    private static (
+        ScreenSynchronizationService service,
+        Func<ScreenConfiguration?> captured,
+        IScreenHubContext hub
+    ) CreateServiceWithHub(TestDatabase db)
     {
         ScreenConfiguration? config = null;
         var hub = Substitute.For<IScreenHubContext>();
-        hub.SendConfigurationUpdateAsync(Arg.Any<string>(), Arg.Do<ScreenConfiguration>(c => config = c))
+        hub.SendConfigurationUpdateAsync(
+                Arg.Any<string>(),
+                Arg.Do<ScreenConfiguration>(c => config = c)
+            )
             .Returns(Task.CompletedTask);
 
         var assetSync = Substitute.For<IAssetSyncService>();
         assetSync.GetCampaignsToSyncAsync(Arg.Any<Guid>()).Returns(new List<CampaignSyncInfo>());
 
         var service = new ScreenSynchronizationService(
-            db.Context, hub, assetSync, NullLogger<ScreenSynchronizationService>.Instance);
+            db.Context,
+            hub,
+            assetSync,
+            NullLogger<ScreenSynchronizationService>.Instance
+        );
         return (service, () => config, hub);
     }
 
@@ -45,8 +60,18 @@ public class ScreenSynchronizationServiceTests
     {
         using var db = new TestDatabase();
         var display = NewDisplay();
-        var asset = new Asset { Name = "Default Asset", Type = AssetType.Image, Source = "/uploads/d.png" };
-        var defaultCampaign = new Campaign { Name = "House Ads", IsDefault = true, IsEnabled = true };
+        var asset = new Asset
+        {
+            Name = "Default Asset",
+            Type = AssetType.Image,
+            Source = "/uploads/d.png",
+        };
+        var defaultCampaign = new Campaign
+        {
+            Name = "House Ads",
+            IsDefault = true,
+            IsEnabled = true,
+        };
         defaultCampaign.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
         db.Context.Displays.Add(display);
         db.Context.Campaigns.Add(defaultCampaign);
@@ -66,11 +91,21 @@ public class ScreenSynchronizationServiceTests
     {
         using var db = new TestDatabase();
         var display = NewDisplay();
-        var asset = new Asset { Name = "Asset", Type = AssetType.Image, Source = "/uploads/a.png" };
+        var asset = new Asset
+        {
+            Name = "Asset",
+            Type = AssetType.Image,
+            Source = "/uploads/a.png",
+        };
         var assigned = new Campaign { Name = "Assigned", IsEnabled = true };
         assigned.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
         assigned.CampaignAssignments.Add(new CampaignAssignment { Display = display });
-        var defaultCampaign = new Campaign { Name = "House Ads", IsDefault = true, IsEnabled = true };
+        var defaultCampaign = new Campaign
+        {
+            Name = "House Ads",
+            IsDefault = true,
+            IsEnabled = true,
+        };
         db.Context.Displays.Add(display);
         db.Context.Campaigns.AddRange(assigned, defaultCampaign);
         await db.Context.SaveChangesAsync();
@@ -89,7 +124,12 @@ public class ScreenSynchronizationServiceTests
     {
         using var db = new TestDatabase();
         var display = NewDisplay();
-        var defaultCampaign = new Campaign { Name = "House Ads", IsDefault = true, IsEnabled = false };
+        var defaultCampaign = new Campaign
+        {
+            Name = "House Ads",
+            IsDefault = true,
+            IsEnabled = false,
+        };
         db.Context.Displays.Add(display);
         db.Context.Campaigns.Add(defaultCampaign);
         await db.Context.SaveChangesAsync();
@@ -108,12 +148,22 @@ public class ScreenSynchronizationServiceTests
         using var db = new TestDatabase();
         var display = NewDisplay();
 
-        var directAsset = new Asset { Name = "Direct", Type = AssetType.Image, Source = "/uploads/direct.png" };
+        var directAsset = new Asset
+        {
+            Name = "Direct",
+            Type = AssetType.Image,
+            Source = "/uploads/direct.png",
+        };
         var direct = new Campaign { Name = "Direct", IsEnabled = true };
         direct.CampaignAssets.Add(new CampaignAsset { Asset = directAsset, Position = 1 });
         direct.CampaignAssignments.Add(new CampaignAssignment { Display = display });
 
-        var zoneAsset = new Asset { Name = "Zone", Type = AssetType.Image, Source = "/uploads/zone.png" };
+        var zoneAsset = new Asset
+        {
+            Name = "Zone",
+            Type = AssetType.Image,
+            Source = "/uploads/zone.png",
+        };
         var zoneCampaign = new Campaign { Name = "Zone", IsEnabled = true };
         zoneCampaign.CampaignAssets.Add(new CampaignAsset { Asset = zoneAsset, Position = 1 });
 
@@ -142,7 +192,12 @@ public class ScreenSynchronizationServiceTests
         using var db = new TestDatabase();
         var display = NewDisplay();
 
-        var zoneAsset = new Asset { Name = "Zone", Type = AssetType.Image, Source = "/uploads/zone.png" };
+        var zoneAsset = new Asset
+        {
+            Name = "Zone",
+            Type = AssetType.Image,
+            Source = "/uploads/zone.png",
+        };
         var zoneCampaign = new Campaign { Name = "Zone", IsEnabled = true };
         zoneCampaign.CampaignAssets.Add(new CampaignAsset { Asset = zoneAsset, Position = 1 });
 
@@ -150,7 +205,12 @@ public class ScreenSynchronizationServiceTests
         zone.ZoneCampaigns.Add(new ZoneCampaign { Campaign = zoneCampaign });
         display.Zone = zone;
 
-        var defaultCampaign = new Campaign { Name = "House Ads", IsDefault = true, IsEnabled = true };
+        var defaultCampaign = new Campaign
+        {
+            Name = "House Ads",
+            IsDefault = true,
+            IsEnabled = true,
+        };
 
         db.Context.Displays.Add(display);
         db.Context.Campaigns.AddRange(zoneCampaign, defaultCampaign);

@@ -93,9 +93,7 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
             _cachedParentHwnd = TryGetHwnd(window);
             _windowOpened = true;
 
-            System.Diagnostics.Debug.WriteLine(
-                $"Window.Opened — HWND = 0x{_cachedParentHwnd:X}"
-            );
+            System.Diagnostics.Debug.WriteLine($"Window.Opened — HWND = 0x{_cachedParentHwnd:X}");
 
             // Flash fix C: create eagerly regardless of visibility so the HWND
             // creation flash happens before any signage content is displayed.
@@ -198,7 +196,7 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
         {
             ShowError(
                 "Could not obtain the parent window handle (HWND).\n"
-                + "The native window may not have been created yet."
+                    + "The native window may not have been created yet."
             );
             return;
         }
@@ -223,9 +221,7 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
             );
             System.IO.Directory.CreateDirectory(userDataFolder);
 
-            _webViewEnvironment = await CoreWebView2Environment.CreateAsync(
-                null, userDataFolder
-            );
+            _webViewEnvironment = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
 
             System.Diagnostics.Debug.WriteLine(
                 $"Creating controller for HWND 0x{_cachedParentHwnd:X}"
@@ -254,12 +250,14 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
 
             _browserContainer.SizeChanged += (_, _) =>
             {
-                if (IsEffectivelyVisible) UpdateWebViewBounds();
+                if (IsEffectivelyVisible)
+                    UpdateWebViewBounds();
             };
 
             this.LayoutUpdated += (_, _) =>
             {
-                if (IsEffectivelyVisible && _webViewController != null) UpdateWebViewBounds();
+                if (IsEffectivelyVisible && _webViewController != null)
+                    UpdateWebViewBounds();
             };
 
             _isInitialized = true;
@@ -302,7 +300,8 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
 
     private static void OnAcceleratorKeyPressed(
         object? sender,
-        CoreWebView2AcceleratorKeyPressedEventArgs e)
+        CoreWebView2AcceleratorKeyPressedEventArgs e
+    )
     {
         // Prevent all keyboard shortcuts from reaching the browser
         e.Handled = true;
@@ -362,7 +361,12 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
 
                     if (width > 0 && height > 0)
                     {
-                        _webViewController.Bounds = new System.Drawing.Rectangle(x, y, width, height);
+                        _webViewController.Bounds = new System.Drawing.Rectangle(
+                            x,
+                            y,
+                            width,
+                            height
+                        );
                     }
                 }
             }
@@ -386,8 +390,10 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
         if (!_isInitialized || _webViewController?.CoreWebView2 == null)
         {
             _pendingUri = uri;
-            if (_loadingPanel != null) _loadingPanel.IsVisible = true;
-            if (_errorPanel != null) _errorPanel.IsVisible = false;
+            if (_loadingPanel != null)
+                _loadingPanel.IsVisible = true;
+            if (_errorPanel != null)
+                _errorPanel.IsVisible = false;
             return;
         }
 
@@ -491,7 +497,8 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
         if (IsEffectivelyVisible && _webViewController != null)
         {
             _webViewController.IsVisible = true;
-            if (_loadingPanel != null) _loadingPanel.IsVisible = false;
+            if (_loadingPanel != null)
+                _loadingPanel.IsVisible = false;
             Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
         }
 

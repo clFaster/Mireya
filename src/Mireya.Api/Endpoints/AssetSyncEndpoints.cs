@@ -21,7 +21,9 @@ public class AssetSyncEndpoints : ICarterModule
     }
 
     private static async Task<(Guid DisplayId, IResult? Error)> ResolveDisplayIdAsync(
-        ClaimsPrincipal user, IAssetSyncService assetSyncService)
+        ClaimsPrincipal user,
+        IAssetSyncService assetSyncService
+    )
     {
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
@@ -38,10 +40,12 @@ public class AssetSyncEndpoints : ICarterModule
         [FromBody] UpdateAssetSyncRequest request,
         ClaimsPrincipal user,
         IAssetSyncService assetSyncService,
-        ILogger<AssetSyncEndpoints> logger)
+        ILogger<AssetSyncEndpoints> logger
+    )
     {
         var (displayId, error) = await ResolveDisplayIdAsync(user, assetSyncService);
-        if (error != null) return error;
+        if (error != null)
+            return error;
 
         try
         {
@@ -50,9 +54,11 @@ public class AssetSyncEndpoints : ICarterModule
             {
                 AssetSyncUpdateResult.Updated => Results.Ok(),
                 AssetSyncUpdateResult.NotFound => Results.NotFound(
-                    $"No sync status found for asset {request.AssetId} on this display."),
+                    $"No sync status found for asset {request.AssetId} on this display."
+                ),
                 AssetSyncUpdateResult.InvalidState => Results.BadRequest(
-                    $"Invalid sync state '{request.SyncState}'."),
+                    $"Invalid sync state '{request.SyncState}'."
+                ),
                 _ => Results.Ok(),
             };
         }
@@ -66,10 +72,12 @@ public class AssetSyncEndpoints : ICarterModule
     private static async Task<IResult> HandleGetSyncStatusAsync(
         ClaimsPrincipal user,
         IAssetSyncService assetSyncService,
-        ILogger<AssetSyncEndpoints> logger)
+        ILogger<AssetSyncEndpoints> logger
+    )
     {
         var (displayId, error) = await ResolveDisplayIdAsync(user, assetSyncService);
-        if (error != null) return error;
+        if (error != null)
+            return error;
 
         try
         {
@@ -86,10 +94,12 @@ public class AssetSyncEndpoints : ICarterModule
     private static async Task<IResult> HandleGetCampaignsAsync(
         ClaimsPrincipal user,
         IAssetSyncService assetSyncService,
-        ILogger<AssetSyncEndpoints> logger)
+        ILogger<AssetSyncEndpoints> logger
+    )
     {
         var (displayId, error) = await ResolveDisplayIdAsync(user, assetSyncService);
-        if (error != null) return error;
+        if (error != null)
+            return error;
 
         try
         {
@@ -106,7 +116,8 @@ public class AssetSyncEndpoints : ICarterModule
     private static async Task<IResult> HandleGetDisplaySyncStatusAsync(
         Guid displayId,
         IAssetSyncService assetSyncService,
-        ILogger<AssetSyncEndpoints> logger)
+        ILogger<AssetSyncEndpoints> logger
+    )
     {
         try
         {

@@ -14,13 +14,16 @@ public interface IZoneService
     Task DeleteZoneAsync(Guid id);
 }
 
-public class ZoneService(MireyaDbContext db, IScreenSynchronizationService syncService, IAuditService audit)
-    : IZoneService
+public class ZoneService(
+    MireyaDbContext db,
+    IScreenSynchronizationService syncService,
+    IAuditService audit
+) : IZoneService
 {
     public async Task<List<ZoneSummary>> GetZonesAsync()
     {
-        var zones = await db.Zones
-            .Include(z => z.Displays)
+        var zones = await db
+            .Zones.Include(z => z.Displays)
             .Include(z => z.ZoneCampaigns)
             .OrderBy(z => z.Name)
             .ToListAsync();
@@ -40,8 +43,8 @@ public class ZoneService(MireyaDbContext db, IScreenSynchronizationService syncS
 
     public async Task<ZoneDetail> GetZoneAsync(Guid id)
     {
-        var zone = await db.Zones
-            .Include(z => z.Displays)
+        var zone = await db
+            .Zones.Include(z => z.Displays)
             .Include(z => z.ZoneCampaigns)
                 .ThenInclude(zc => zc.Campaign)
             .FirstOrDefaultAsync(z => z.Id == id);
@@ -83,8 +86,8 @@ public class ZoneService(MireyaDbContext db, IScreenSynchronizationService syncS
         var campaignIds = request.CampaignIds.Distinct().ToList();
         await VerifyCampaignsExistAsync(campaignIds);
 
-        var zone = await db.Zones
-            .Include(z => z.Displays)
+        var zone = await db
+            .Zones.Include(z => z.Displays)
             .Include(z => z.ZoneCampaigns)
             .FirstOrDefaultAsync(z => z.Id == id);
 
@@ -114,9 +117,7 @@ public class ZoneService(MireyaDbContext db, IScreenSynchronizationService syncS
 
     public async Task DeleteZoneAsync(Guid id)
     {
-        var zone = await db.Zones
-            .Include(z => z.Displays)
-            .FirstOrDefaultAsync(z => z.Id == id);
+        var zone = await db.Zones.Include(z => z.Displays).FirstOrDefaultAsync(z => z.Id == id);
 
         if (zone == null)
             throw new KeyNotFoundException($"Zone with ID {id} not found");
@@ -139,12 +140,10 @@ public class ZoneService(MireyaDbContext db, IScreenSynchronizationService syncS
             zone.Description,
             zone.CreatedAt,
             zone.UpdatedAt,
-            zone.Displays
-                .OrderBy(d => d.Name)
+            zone.Displays.OrderBy(d => d.Name)
                 .Select(d => new ZoneScreenInfo(d.Id, d.Name, d.Location))
                 .ToList(),
-            zone.ZoneCampaigns
-                .Select(zc => new ZoneCampaignInfo(zc.CampaignId, zc.Campaign.Name))
+            zone.ZoneCampaigns.Select(zc => new ZoneCampaignInfo(zc.CampaignId, zc.Campaign.Name))
                 .OrderBy(c => c.Name)
                 .ToList()
         );

@@ -34,7 +34,8 @@ public class ScreenManagementEndpoints : ICarterModule
     private static async Task<IResult> HandleRegisterAsync(
         [FromBody] RegisterScreenRequest request,
         IScreenManagementService screenManagementService,
-        ILogger<ScreenManagementEndpoints> logger)
+        ILogger<ScreenManagementEndpoints> logger
+    )
     {
         try
         {
@@ -44,14 +45,17 @@ public class ScreenManagementEndpoints : ICarterModule
         catch (Exception ex)
         {
             logger.LogError(ex, "Error registering screen");
-            return Results.BadRequest(new { error = "Failed to register screen. Please try again." });
+            return Results.BadRequest(
+                new { error = "Failed to register screen. Please try again." }
+            );
         }
     }
 
     private static async Task<IResult> HandleBonjourAsync(
         ClaimsPrincipal user,
         IScreenManagementService screenManagementService,
-        ILogger<ScreenManagementEndpoints> logger)
+        ILogger<ScreenManagementEndpoints> logger
+    )
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userId))
@@ -77,27 +81,39 @@ public class ScreenManagementEndpoints : ICarterModule
         [property: FromQuery] int Page = 1,
         [property: FromQuery] int PageSize = 10,
         [property: FromQuery] ApprovalStatus? Status = null,
-        [property: FromQuery] string? SortBy = null);
+        [property: FromQuery] string? SortBy = null
+    );
 
     private static async Task<IResult> HandleGetScreensAsync(
         IScreenManagementService screenManagementService,
         ILogger<ScreenManagementEndpoints> logger,
-        [AsParameters] GetScreensQuery query)
+        [AsParameters] GetScreensQuery query
+    )
     {
         try
         {
-            var response = await screenManagementService.GetScreensAsync(query.Page, query.PageSize, query.Status, query.SortBy);
+            var response = await screenManagementService.GetScreensAsync(
+                query.Page,
+                query.PageSize,
+                query.Status,
+                query.SortBy
+            );
             return Results.Ok(response);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error retrieving screens");
-            return Results.BadRequest(new { error = "An error occurred while retrieving screens." });
+            return Results.BadRequest(
+                new { error = "An error occurred while retrieving screens." }
+            );
         }
     }
 
     private static async Task<IResult> ExecuteScreenOperationAsync(
-        Func<Task<object>> operation, Guid id, ILogger logger)
+        Func<Task<object>> operation,
+        Guid id,
+        ILogger logger
+    )
     {
         try
         {
@@ -110,34 +126,56 @@ public class ScreenManagementEndpoints : ICarterModule
         catch (Exception ex)
         {
             logger.LogError(ex, "Error performing operation on screen {ScreenId}", id);
-            return Results.BadRequest(new { error = "An error occurred while processing the request." });
+            return Results.BadRequest(
+                new { error = "An error occurred while processing the request." }
+            );
         }
     }
 
     private static Task<IResult> HandleGetScreenByIdAsync(
         Guid id,
         IScreenManagementService screenManagementService,
-        ILogger<ScreenManagementEndpoints> logger) =>
-        ExecuteScreenOperationAsync(async () => await screenManagementService.GetScreenByIdAsync(id), id, logger);
+        ILogger<ScreenManagementEndpoints> logger
+    ) =>
+        ExecuteScreenOperationAsync(
+            async () => await screenManagementService.GetScreenByIdAsync(id),
+            id,
+            logger
+        );
 
     private static Task<IResult> HandleUpdateScreenAsync(
         Guid id,
         [FromBody] UpdateScreenRequest request,
         IScreenManagementService screenManagementService,
-        ILogger<ScreenManagementEndpoints> logger) =>
-        ExecuteScreenOperationAsync(async () => await screenManagementService.UpdateScreenAsync(id, request), id, logger);
+        ILogger<ScreenManagementEndpoints> logger
+    ) =>
+        ExecuteScreenOperationAsync(
+            async () => await screenManagementService.UpdateScreenAsync(id, request),
+            id,
+            logger
+        );
 
     private static Task<IResult> HandleApproveScreenAsync(
         Guid id,
         IScreenManagementService screenManagementService,
-        ILogger<ScreenManagementEndpoints> logger) =>
-        ExecuteScreenOperationAsync(async () => await screenManagementService.ApproveScreenAsync(id), id, logger);
+        ILogger<ScreenManagementEndpoints> logger
+    ) =>
+        ExecuteScreenOperationAsync(
+            async () => await screenManagementService.ApproveScreenAsync(id),
+            id,
+            logger
+        );
 
     private static Task<IResult> HandleRejectScreenAsync(
         Guid id,
         IScreenManagementService screenManagementService,
-        ILogger<ScreenManagementEndpoints> logger) =>
-        ExecuteScreenOperationAsync(async () => await screenManagementService.RejectScreenAsync(id), id, logger);
+        ILogger<ScreenManagementEndpoints> logger
+    ) =>
+        ExecuteScreenOperationAsync(
+            async () => await screenManagementService.RejectScreenAsync(id),
+            id,
+            logger
+        );
 
     private static IResult HandleGetOnlineCountAsync(IScreenConnectionTracker connectionTracker)
     {
@@ -151,7 +189,8 @@ public class ScreenManagementEndpoints : ICarterModule
         Guid id,
         [FromBody] SendCommandRequest request,
         IScreenManagementService screenManagementService,
-        ILogger<ScreenManagementEndpoints> logger)
+        ILogger<ScreenManagementEndpoints> logger
+    )
     {
         try
         {
@@ -169,7 +208,9 @@ public class ScreenManagementEndpoints : ICarterModule
         catch (Exception ex)
         {
             logger.LogError(ex, "Error sending command to screen {ScreenId}", id);
-            return Results.BadRequest(new { error = "An error occurred while sending the command." });
+            return Results.BadRequest(
+                new { error = "An error occurred while sending the command." }
+            );
         }
     }
 }

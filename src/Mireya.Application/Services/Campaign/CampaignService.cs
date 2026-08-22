@@ -16,10 +16,12 @@ public interface ICampaignService
     Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId);
 }
 
-public class CampaignService(MireyaDbContext db, IScreenSynchronizationService syncService, IAuditService audit)
-    : ICampaignService
+public class CampaignService(
+    MireyaDbContext db,
+    IScreenSynchronizationService syncService,
+    IAuditService audit
+) : ICampaignService
 {
-
     public async Task<List<CampaignSummary>> GetCampaignsAsync(Guid? displayId = null)
     {
         var query = db
@@ -113,9 +115,16 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
     {
         ValidateCampaignRequest(request.Name, request.Assets);
         ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
-        ValidateRecurrence(request.DailyStartTime, request.DailyEndTime, request.RecurrenceTimeZoneId);
+        ValidateRecurrence(
+            request.DailyStartTime,
+            request.DailyEndTime,
+            request.RecurrenceTimeZoneId
+        );
 
-        await VerifyAssetsExistAsync(request.Assets.Select(a => a.AssetId).Distinct().ToList(), request.Assets.Count);
+        await VerifyAssetsExistAsync(
+            request.Assets.Select(a => a.AssetId).Distinct().ToList(),
+            request.Assets.Count
+        );
 
         if (request.DisplayIds.Any())
             await VerifyDisplaysExistAsync(request.DisplayIds);
@@ -134,7 +143,9 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
             RecurrenceDaysMask = NormalizeDaysMask(request.RecurrenceDaysMask),
             DailyStartTime = request.DailyStartTime,
             DailyEndTime = request.DailyEndTime,
-            RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId) ? null : request.RecurrenceTimeZoneId,
+            RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId)
+                ? null
+                : request.RecurrenceTimeZoneId,
         };
 
         db.Campaigns.Add(campaign);
@@ -148,7 +159,12 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
 
-        await audit.LogAsync("Created", "Campaign", campaign.Id.ToString(), $"Created campaign '{campaign.Name}'");
+        await audit.LogAsync(
+            "Created",
+            "Campaign",
+            campaign.Id.ToString(),
+            $"Created campaign '{campaign.Name}'"
+        );
 
         // A new default campaign affects every screen that currently has nothing active.
         if (request.IsDefault)
@@ -163,7 +179,11 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
     {
         ValidateCampaignRequest(request.Name, request.Assets);
         ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
-        ValidateRecurrence(request.DailyStartTime, request.DailyEndTime, request.RecurrenceTimeZoneId);
+        ValidateRecurrence(
+            request.DailyStartTime,
+            request.DailyEndTime,
+            request.RecurrenceTimeZoneId
+        );
 
         var campaign = await db
             .Campaigns.Include(c => c.CampaignAssets)
@@ -176,7 +196,10 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         var oldDisplayIds = campaign.CampaignAssignments.Select(ca => ca.DisplayId).ToList();
         var defaultChanged = campaign.IsDefault != request.IsDefault;
 
-        await VerifyAssetsExistAsync(request.Assets.Select(a => a.AssetId).Distinct().ToList(), request.Assets.Count);
+        await VerifyAssetsExistAsync(
+            request.Assets.Select(a => a.AssetId).Distinct().ToList(),
+            request.Assets.Count
+        );
 
         if (request.DisplayIds is { Count: > 0 })
             await VerifyDisplaysExistAsync(request.DisplayIds);
@@ -192,7 +215,9 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         campaign.RecurrenceDaysMask = NormalizeDaysMask(request.RecurrenceDaysMask);
         campaign.DailyStartTime = request.DailyStartTime;
         campaign.DailyEndTime = request.DailyEndTime;
-        campaign.RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId) ? null : request.RecurrenceTimeZoneId;
+        campaign.RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId)
+            ? null
+            : request.RecurrenceTimeZoneId;
 
         if (request.IsDefault)
             await ClearOtherDefaultsAsync(campaign.Id);
@@ -215,7 +240,12 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
 
-        await audit.LogAsync("Updated", "Campaign", campaign.Id.ToString(), $"Updated campaign '{campaign.Name}'");
+        await audit.LogAsync(
+            "Updated",
+            "Campaign",
+            campaign.Id.ToString(),
+            $"Updated campaign '{campaign.Name}'"
+        );
 
         // Changing the default designation (or editing the default campaign's content)
         // can affect any screen that relies on the fallback, so re-sync everything.
@@ -229,8 +259,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
     public async Task DeleteCampaignAsync(Guid id)
     {
-        var campaign = await db.Campaigns
-            .Include(c => c.CampaignAssignments)
+        var campaign = await db
+            .Campaigns.Include(c => c.CampaignAssignments)
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (campaign == null)
@@ -242,7 +272,12 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
         db.Campaigns.Remove(campaign);
         await db.SaveChangesAsync();
 
-        await audit.LogAsync("Deleted", "Campaign", id.ToString(), $"Deleted campaign '{campaign.Name}'");
+        await audit.LogAsync(
+            "Deleted",
+            "Campaign",
+            id.ToString(),
+            $"Deleted campaign '{campaign.Name}'"
+        );
 
         // Notify affected screens so they stop showing deleted campaign content
         if (affectedDisplayIds.Count > 0)
@@ -273,13 +308,17 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
     private static void ValidateSchedule(DateTime? startDateUtc, DateTime? endDateUtc)
     {
         if (startDateUtc.HasValue && endDateUtc.HasValue && endDateUtc.Value < startDateUtc.Value)
-            throw new ArgumentException("Campaign end date must not be earlier than its start date");
+            throw new ArgumentException(
+                "Campaign end date must not be earlier than its start date"
+            );
     }
 
     private static void ValidateRecurrence(TimeOnly? start, TimeOnly? end, string? timeZoneId)
     {
         if (start.HasValue != end.HasValue)
-            throw new ArgumentException("Daily start and end time must both be set or both be empty");
+            throw new ArgumentException(
+                "Daily start and end time must both be set or both be empty"
+            );
 
         if (!string.IsNullOrWhiteSpace(timeZoneId))
         {
@@ -324,8 +363,8 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
 
     private async Task ClearOtherDefaultsAsync(Guid keepCampaignId)
     {
-        var otherDefaults = await db.Campaigns
-            .Where(c => c.IsDefault && c.Id != keepCampaignId)
+        var otherDefaults = await db
+            .Campaigns.Where(c => c.IsDefault && c.Id != keepCampaignId)
             .ToListAsync();
         foreach (var other in otherDefaults)
             other.IsDefault = false;
@@ -340,22 +379,22 @@ public class CampaignService(MireyaDbContext db, IScreenSynchronizationService s
     private void AddCampaignAssets(Guid campaignId, List<CampaignAssetDto> assets)
     {
         foreach (var assetDto in assets)
-            db.CampaignAssets.Add(new CampaignAsset
-            {
-                CampaignId = campaignId,
-                AssetId = assetDto.AssetId,
-                Position = assetDto.Position,
-                DurationSeconds = assetDto.DurationSeconds,
-            });
+            db.CampaignAssets.Add(
+                new CampaignAsset
+                {
+                    CampaignId = campaignId,
+                    AssetId = assetDto.AssetId,
+                    Position = assetDto.Position,
+                    DurationSeconds = assetDto.DurationSeconds,
+                }
+            );
     }
 
     private void AddCampaignAssignments(Guid campaignId, List<Guid> displayIds)
     {
         foreach (var displayId in displayIds)
-            db.CampaignAssignments.Add(new CampaignAssignment
-            {
-                CampaignId = campaignId,
-                DisplayId = displayId,
-            });
+            db.CampaignAssignments.Add(
+                new CampaignAssignment { CampaignId = campaignId, DisplayId = displayId }
+            );
     }
 }

@@ -14,9 +14,21 @@ public enum AuthenticationState
     Failed,
 }
 
-public record RegisterResult(bool Success, string? ScreenIdentifier, string? UserId, string? ErrorMessage);
+public record RegisterResult(
+    bool Success,
+    string? ScreenIdentifier,
+    string? UserId,
+    string? ErrorMessage
+);
+
 public record LoginResult(bool Success, string? AccessToken, string? ErrorMessage);
-public record ScreenInfo(string ScreenIdentifier, string ScreenName, string? Description, string? ApprovalStatus);
+
+public record ScreenInfo(
+    string ScreenIdentifier,
+    string ScreenName,
+    string? Description,
+    string? ApprovalStatus
+);
 
 /// <summary>
 ///     Authentication service interface for screen clients

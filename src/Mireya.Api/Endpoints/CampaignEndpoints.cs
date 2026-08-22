@@ -21,7 +21,8 @@ public class CampaignEndpoints : ICarterModule
     private static async Task<IResult> HandleGetCampaignsAsync(
         ICampaignService campaignService,
         ILogger<CampaignEndpoints> logger,
-        [FromQuery] Guid? displayId = null)
+        [FromQuery] Guid? displayId = null
+    )
     {
         try
         {
@@ -38,7 +39,8 @@ public class CampaignEndpoints : ICarterModule
     private static async Task<IResult> HandleGetCampaignAsync(
         Guid id,
         ICampaignService campaignService,
-        ILogger<CampaignEndpoints> logger)
+        ILogger<CampaignEndpoints> logger
+    )
     {
         try
         {
@@ -59,7 +61,8 @@ public class CampaignEndpoints : ICarterModule
     private static async Task<IResult> HandleCreateCampaignAsync(
         [FromBody] CreateCampaignRequest request,
         ICampaignService campaignService,
-        ILogger<CampaignEndpoints> logger)
+        ILogger<CampaignEndpoints> logger
+    )
     {
         try
         {
@@ -81,7 +84,8 @@ public class CampaignEndpoints : ICarterModule
         Guid id,
         [FromBody] UpdateCampaignRequest request,
         ICampaignService campaignService,
-        ILogger<CampaignEndpoints> logger)
+        ILogger<CampaignEndpoints> logger
+    )
     {
         try
         {
@@ -106,7 +110,8 @@ public class CampaignEndpoints : ICarterModule
     private static async Task<IResult> HandleDeleteCampaignAsync(
         Guid id,
         ICampaignService campaignService,
-        ILogger<CampaignEndpoints> logger)
+        ILogger<CampaignEndpoints> logger
+    )
     {
         try
         {

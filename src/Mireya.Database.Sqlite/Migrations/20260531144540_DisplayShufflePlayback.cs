@@ -15,15 +15,14 @@ namespace Mireya.Database.Sqlite.Migrations
                 table: "Displays",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "ShufflePlayback",
-                table: "Displays");
+            migrationBuilder.DropColumn(name: "ShufflePlayback", table: "Displays");
         }
     }
 }

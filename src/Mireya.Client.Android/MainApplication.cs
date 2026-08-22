@@ -14,9 +14,7 @@ namespace Mireya.Client.Avalonia.AndroidTv;
 public class MainApplication : AvaloniaAndroidApplication<App>
 {
     protected MainApplication(nint javaReference, JniHandleOwnership transfer)
-        : base(javaReference, transfer)
-    {
-    }
+        : base(javaReference, transfer) { }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
@@ -24,7 +22,6 @@ public class MainApplication : AvaloniaAndroidApplication<App>
         // App can build the service provider with the Android-specific implementations.
         App.ServiceProviderFactory = AndroidServices.Build;
 
-        return base.CustomizeAppBuilder(builder)
-            .WithInterFont();
+        return base.CustomizeAppBuilder(builder).WithInterFont();
     }
 }

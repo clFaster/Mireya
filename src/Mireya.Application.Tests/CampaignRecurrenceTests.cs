@@ -4,11 +4,7 @@ namespace Mireya.Application.Tests;
 
 public class CampaignRecurrenceTests
 {
-    private static Campaign EnabledCampaign() => new()
-    {
-        Name = "Recurring",
-        IsEnabled = true,
-    };
+    private static Campaign EnabledCampaign() => new() { Name = "Recurring", IsEnabled = true };
 
     private static int MaskFor(params DayOfWeek[] days)
     {

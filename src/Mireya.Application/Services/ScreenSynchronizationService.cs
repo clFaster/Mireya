@@ -24,7 +24,6 @@ public class ScreenSynchronizationService(
     ILogger<ScreenSynchronizationService> logger
 ) : IScreenSynchronizationService
 {
-
     public async Task SyncScreensAsync(IEnumerable<Guid> displayIds)
     {
         // Sequential execution required: DbContext is not thread-safe
@@ -88,7 +87,9 @@ public class ScreenSynchronizationService(
         {
             logger.LogWarning(
                 "Cannot send command '{Command}' to screen {DisplayId}: screen not found or has no associated user",
-                command, displayId);
+                command,
+                displayId
+            );
             return false;
         }
 
@@ -116,9 +117,7 @@ public class ScreenSynchronizationService(
     {
         var direct = display.CampaignAssignments.Select(ca => ca.Campaign);
         var zone = display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign) ?? [];
-        return direct.Concat(zone)
-            .GroupBy(c => c.Id)
-            .Select(g => g.First());
+        return direct.Concat(zone).GroupBy(c => c.Id).Select(g => g.First());
     }
 
     /// <summary>
@@ -128,8 +127,8 @@ public class ScreenSynchronizationService(
     private async Task<List<CampaignDetail>> BuildDefaultCampaignListAsync()
     {
         var utcNow = DateTime.UtcNow;
-        var defaultCampaign = await db.Campaigns
-            .Include(c => c.CampaignAssets)
+        var defaultCampaign = await db
+            .Campaigns.Include(c => c.CampaignAssets)
                 .ThenInclude(ca => ca.Asset)
             .Where(c => c.IsDefault)
             .FirstOrDefaultAsync();
@@ -164,7 +163,10 @@ public class ScreenSynchronizationService(
             c.UpdatedAt
         );
 
-    private static ScreenConfiguration BuildScreenConfiguration(Display display, List<CampaignDetail> campaigns) =>
+    private static ScreenConfiguration BuildScreenConfiguration(
+        Display display,
+        List<CampaignDetail> campaigns
+    ) =>
         new()
         {
             DisplayId = display.Id,
