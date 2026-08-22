@@ -131,7 +131,7 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
         {
             using var file = new File(videoPath);
             using var fileUri = Uri.FromFile(file);
-            using var mediaItem = MediaItem.FromUri(fileUri!);
+            using var mediaItem = MediaItem.FromUri(fileUri);
 
             _player.Volume = muted ? 0f : 1f;
             _currentVideoPath = videoPath;

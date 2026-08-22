@@ -422,7 +422,10 @@ public partial class BackendSelectionViewModel : ViewModelBase
                             StatusMessage = null;
                     });
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             });
         }
     }

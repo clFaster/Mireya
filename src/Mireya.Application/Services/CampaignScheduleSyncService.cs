@@ -83,6 +83,7 @@ public class CampaignScheduleSyncService(
             .Include(d => d.Zone)
                 .ThenInclude(z => z!.ZoneCampaigns)
                     .ThenInclude(zc => zc.Campaign)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
         foreach (var display in displays)

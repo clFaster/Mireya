@@ -54,7 +54,7 @@ else
                                     <label class="zone-campaign-row d-flex align-items-center gap-2">
                                         <input type="checkbox" class="form-check-input mt-0"
                                                checked="@_selectedCampaignIds.Contains(c.Id)"
-                                               @onchange="e => ToggleCampaign(c.Id, (bool)e.Value!)" />
+                                                @onchange="e => ToggleCampaign(c.Id, e.Value is true)" />
                                         <span class="flex-grow-1">@c.Name</span>
                                         @if (!c.IsEnabled)
                                         {

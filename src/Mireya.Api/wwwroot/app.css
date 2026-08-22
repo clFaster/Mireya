@@ -98,6 +98,8 @@
 * {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 html,
@@ -334,8 +336,8 @@ nav.bg-dark .btn-outline-light {
   transition: all var(--t-fast) var(--ease);
 }
 nav.bg-dark .btn-outline-light:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--text-on-ink);
+  color: var(--ink);
   border-color: rgba(255, 255, 255, 0.32);
 }
 
@@ -973,10 +975,6 @@ a:focus-visible {
 }
 
 /* ---- Scrollbar ----------------------------------------------------------- */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
-}
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;

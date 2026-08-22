@@ -89,10 +89,19 @@ public class Campaign
 
         var local = ConvertToRecurrenceZone(utcNow);
 
-        if (hasDays && (RecurrenceDaysMask!.Value & (1 << (int)local.DayOfWeek)) == 0)
+        if (
+            hasDays
+            && RecurrenceDaysMask is int recurrenceDaysMask
+            && (recurrenceDaysMask & (1 << (int)local.DayOfWeek)) == 0
+        )
             return false;
 
-        if (hasWindow && !IsWithinDailyWindow(TimeOnly.FromDateTime(local)))
+        if (
+            hasWindow
+            && DailyStartTime is TimeOnly dailyStartTime
+            && DailyEndTime is TimeOnly dailyEndTime
+            && !IsWithinDailyWindow(TimeOnly.FromDateTime(local), dailyStartTime, dailyEndTime)
+        )
             return false;
 
         return true;
@@ -116,10 +125,8 @@ public class Campaign
         }
     }
 
-    private bool IsWithinDailyWindow(TimeOnly nowLocal)
+    private static bool IsWithinDailyWindow(TimeOnly nowLocal, TimeOnly start, TimeOnly end)
     {
-        var start = DailyStartTime!.Value;
-        var end = DailyEndTime!.Value;
         return start <= end
             ? nowLocal >= start && nowLocal < end
             : nowLocal >= start || nowLocal < end; // window spans midnight

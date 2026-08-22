@@ -30,7 +30,7 @@ public static class DisplayClientServiceProviderFactory
         return services.BuildServiceProvider();
     }
 
-    private static IServiceCollection AddDisplayClientServices<TAssetViewFactory>(
+    private static void AddDisplayClientServices<TAssetViewFactory>(
         this IServiceCollection services,
         string defaultBackendUrl,
         bool supportsFullscreen
@@ -56,7 +56,9 @@ public static class DisplayClientServiceProviderFactory
 
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var dbPath = Path.Combine(appDataPath, "Mireya", "mireya_client.db");
-        Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+        var dbDirectory = Path.GetDirectoryName(dbPath)
+            ?? throw new InvalidOperationException("The client database path has no directory.");
+        Directory.CreateDirectory(dbDirectory);
 
         services.AddDbContext<LocalDbContext>(options =>
         {
@@ -72,7 +74,5 @@ public static class DisplayClientServiceProviderFactory
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<ContentDisplayViewModel>();
         services.AddTransient<BackendSelectionViewModel>();
-
-        return services;
     }
 }

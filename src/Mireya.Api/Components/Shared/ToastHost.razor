@@ -24,11 +24,8 @@
     private async void OnToastsChanged()
     {
         await InvokeAsync(StateHasChanged);
-        foreach (var toast in ToastService.Messages.ToList())
-        {
-            if (_scheduled.Add(toast.Id))
-                _ = AutoDismissAsync(toast.Id);
-        }
+        foreach (var toast in ToastService.Messages.ToList().Where(toast => _scheduled.Add(toast.Id)))
+            _ = AutoDismissAsync(toast.Id);
     }
 
     private async Task AutoDismissAsync(Guid id)
