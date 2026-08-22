@@ -35,7 +35,14 @@ public sealed class ToastService
 
     public void Show(ToastLevel level, string text)
     {
-        _messages.Add(new ToastMessage { Id = Guid.NewGuid(), Level = level, Text = text });
+        _messages.Add(
+            new ToastMessage
+            {
+                Id = Guid.NewGuid(),
+                Level = level,
+                Text = text,
+            }
+        );
         OnChange?.Invoke();
     }
 

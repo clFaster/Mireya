@@ -12,6 +12,8 @@ public static class DesktopServices
 {
     public static IServiceProvider Build()
     {
-        return DisplayClientServiceProviderFactory.Build<DesktopAssetViewFactory>(App.DefaultBackendUrl);
+        return DisplayClientServiceProviderFactory.Build<DesktopAssetViewFactory>(
+            App.DefaultBackendUrl
+        );
     }
 }

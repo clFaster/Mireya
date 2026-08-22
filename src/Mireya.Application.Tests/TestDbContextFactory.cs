@@ -17,9 +17,7 @@ public sealed class TestDatabase : IDisposable
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
-        var options = new DbContextOptionsBuilder<MireyaDbContext>()
-            .UseSqlite(_connection)
-            .Options;
+        var options = new DbContextOptionsBuilder<MireyaDbContext>().UseSqlite(_connection).Options;
 
         Context = new MireyaDbContext(options);
         Context.Database.EnsureCreated();
@@ -29,9 +27,7 @@ public sealed class TestDatabase : IDisposable
 
     public MireyaDbContext NewContext()
     {
-        var options = new DbContextOptionsBuilder<MireyaDbContext>()
-            .UseSqlite(_connection)
-            .Options;
+        var options = new DbContextOptionsBuilder<MireyaDbContext>().UseSqlite(_connection).Options;
         return new MireyaDbContext(options);
     }
 

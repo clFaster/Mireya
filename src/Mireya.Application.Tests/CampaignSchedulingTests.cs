@@ -55,20 +55,30 @@ public class CampaignSchedulingTests
         using var db = new TestDatabase();
         var sync = Substitute.For<Application.Services.IScreenSynchronizationService>();
 
-        var asset = new Asset { Name = "A", Type = AssetType.Image, Source = "/uploads/a.png" };
+        var asset = new Asset
+        {
+            Name = "A",
+            Type = AssetType.Image,
+            Source = "/uploads/a.png",
+        };
         db.Context.Assets.Add(asset);
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.CreateCampaignAsync(
-            new CreateCampaignRequest(
-                "Bad schedule", null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                [],
-                IsEnabled: true,
-                StartDateUtc: Now,
-                EndDateUtc: Now.AddDays(-1))));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateCampaignAsync(
+                new CreateCampaignRequest(
+                    "Bad schedule",
+                    null,
+                    [new CampaignAssetDto(asset.Id, 1, 5)],
+                    [],
+                    IsEnabled: true,
+                    StartDateUtc: Now,
+                    EndDateUtc: Now.AddDays(-1)
+                )
+            )
+        );
     }
 
     [Fact]
@@ -77,18 +87,27 @@ public class CampaignSchedulingTests
         using var db = new TestDatabase();
         var sync = Substitute.For<Application.Services.IScreenSynchronizationService>();
 
-        var asset = new Asset { Name = "A", Type = AssetType.Image, Source = "/uploads/a.png" };
+        var asset = new Asset
+        {
+            Name = "A",
+            Type = AssetType.Image,
+            Source = "/uploads/a.png",
+        };
         db.Context.Assets.Add(asset);
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
-            "Scheduled", null,
-            [new CampaignAssetDto(asset.Id, 1, 5)],
-            [],
-            IsEnabled: false,
-            StartDateUtc: Now,
-            EndDateUtc: Now.AddDays(7)));
+        var created = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "Scheduled",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [],
+                IsEnabled: false,
+                StartDateUtc: Now,
+                EndDateUtc: Now.AddDays(7)
+            )
+        );
 
         Assert.False(created.IsEnabled);
         Assert.Equal(Now, created.StartDateUtc);
@@ -101,16 +120,25 @@ public class CampaignSchedulingTests
         using var db = new TestDatabase();
         var sync = Substitute.For<Application.Services.IScreenSynchronizationService>();
 
-        var asset = new Asset { Name = "A", Type = AssetType.Image, Source = "/uploads/a.png" };
+        var asset = new Asset
+        {
+            Name = "A",
+            Type = AssetType.Image,
+            Source = "/uploads/a.png",
+        };
         db.Context.Assets.Add(asset);
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(new CreateCampaignRequest(
-            "Prioritised", null,
-            [new CampaignAssetDto(asset.Id, 1, 5)],
-            [],
-            Priority: 42));
+        var created = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "Prioritised",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)],
+                [],
+                Priority: 42
+            )
+        );
 
         Assert.Equal(42, created.Priority);
     }

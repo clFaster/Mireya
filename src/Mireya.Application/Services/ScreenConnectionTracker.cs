@@ -64,7 +64,8 @@ public interface IScreenConnectionTracker
     event Action<ScreenStateChangedEvent>? OnScreenStateChanged;
 }
 
-public class ScreenConnectionTracker(ILogger<ScreenConnectionTracker> logger) : IScreenConnectionTracker
+public class ScreenConnectionTracker(ILogger<ScreenConnectionTracker> logger)
+    : IScreenConnectionTracker
 {
     // Maps ConnectionId -> UserId
     private readonly Dictionary<string, string> _connectionToUser = new();
@@ -99,7 +100,10 @@ public class ScreenConnectionTracker(ILogger<ScreenConnectionTracker> logger) : 
             if (_screenStates.TryGetValue(userId, out var existing))
             {
                 // Preserve now-playing info, mark as online
-                newState = existing with { IsOnline = true };
+                newState = existing with
+                {
+                    IsOnline = true,
+                };
             }
             else
             {
@@ -120,7 +124,10 @@ public class ScreenConnectionTracker(ILogger<ScreenConnectionTracker> logger) : 
 
         lock (_lock)
         {
-            if (_connectionToUser.Remove(connectionId, out userId) && _userToConnections.TryGetValue(userId, out var connections))
+            if (
+                _connectionToUser.Remove(connectionId, out userId)
+                && _userToConnections.TryGetValue(userId, out var connections)
+            )
             {
                 connections.Remove(connectionId);
 
@@ -181,9 +188,7 @@ public class ScreenConnectionTracker(ILogger<ScreenConnectionTracker> logger) : 
     {
         lock (_lock)
         {
-            return _screenStates.Values
-                .Where(s => s.IsOnline)
-                .ToList();
+            return _screenStates.Values.Where(s => s.IsOnline).ToList();
         }
     }
 
@@ -204,8 +209,11 @@ public class ScreenConnectionTracker(ILogger<ScreenConnectionTracker> logger) : 
         catch (Exception ex)
         {
             // Swallow subscriber exceptions to prevent hub disruption, but log them
-            logger.LogError(ex,
-                "Subscriber threw while handling screen state change for user {UserId}", userId);
+            logger.LogError(
+                ex,
+                "Subscriber threw while handling screen state change for user {UserId}",
+                userId
+            );
         }
     }
 }

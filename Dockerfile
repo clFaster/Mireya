@@ -51,10 +51,11 @@ ENV ASPNETCORE_URLS=http://+:8080 \
 
 EXPOSE 8080
 
-# curl is used by the image health check. Uploaded media must be writable by the
-# non-root user and mounted as persistent storage by the container runtime.
+# curl is used by the image health check. FFmpeg/ffprobe inspect uploaded videos,
+# normalize rotation metadata into pixels and generate thumbnails. Uploaded media
+# must be writable by the non-root user and mounted as persistent storage.
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends curl \
+    && apt-get install --yes --no-install-recommends curl ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/uploads /home/app/.aspnet/DataProtection-Keys \
     && chown -R "$APP_UID:$APP_UID" /app/uploads /home/app/.aspnet

@@ -38,7 +38,13 @@ public class ScreenOfflineMonitorService(
                 using var scope = scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<MireyaDbContext>();
                 var alerts = scope.ServiceProvider.GetRequiredService<IScreenAlertService>();
-                await EvaluateOnceAsync(db, alerts, settings.OfflineThresholdMinutes, DateTime.UtcNow, stoppingToken);
+                await EvaluateOnceAsync(
+                    db,
+                    alerts,
+                    settings.OfflineThresholdMinutes,
+                    DateTime.UtcNow,
+                    stoppingToken
+                );
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -61,18 +67,20 @@ public class ScreenOfflineMonitorService(
         IScreenAlertService alerts,
         int thresholdMinutes,
         DateTime utcNow,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var threshold = utcNow.AddMinutes(-Math.Max(1, thresholdMinutes));
         var sent = 0;
 
-        var approved = await db.Displays
-            .Where(d => d.ApprovalStatus == ApprovalStatus.Approved)
+        var approved = await db
+            .Displays.Where(d => d.ApprovalStatus == ApprovalStatus.Approved)
             .ToListAsync(cancellationToken);
 
         foreach (var display in approved)
         {
-            var offlineLongEnough = !display.IsActive
+            var offlineLongEnough =
+                !display.IsActive
                 && display.LastSeenAt.HasValue
                 && display.LastSeenAt.Value <= threshold;
 

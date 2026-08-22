@@ -1,6 +1,6 @@
 using Avalonia.Controls;
-using Mireya.Client.Avalonia.Platform;
 using Mireya.Client.Avalonia.AndroidTv.Views.Components;
+using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia.AndroidTv.Platform;
 

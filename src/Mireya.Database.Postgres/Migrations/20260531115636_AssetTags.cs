@@ -15,15 +15,14 @@ namespace Mireya.Database.Postgres.Migrations
                 table: "Assets",
                 type: "character varying(500)",
                 maxLength: 500,
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Tags",
-                table: "Assets");
+            migrationBuilder.DropColumn(name: "Tags", table: "Assets");
         }
     }
 }

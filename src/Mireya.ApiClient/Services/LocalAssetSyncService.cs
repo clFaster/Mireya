@@ -83,10 +83,19 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             await UpsertCampaignAsync(campaign, backend.Id);
         }
 
-        var uniqueAssets = campaigns.SelectMany(c => c.Assets).GroupBy(a => a.AssetId).Select(g => g.First()).ToList();
+        var uniqueAssets = campaigns
+            .SelectMany(c => c.Assets)
+            .GroupBy(a => a.AssetId)
+            .Select(g => g.First())
+            .ToList();
         _logger.LogDebug("Total unique assets to check: {Count}", uniqueAssets.Count);
 
-        await DownloadUniqueAssetsAsync(uniqueAssets, backend.Id, new Uri(backend.BaseUrl.TrimEnd('/')), cancellationToken);
+        await DownloadUniqueAssetsAsync(
+            uniqueAssets,
+            backend.Id,
+            new Uri(backend.BaseUrl.TrimEnd('/')),
+            cancellationToken
+        );
 
         foreach (var campaign in campaigns)
             OnCampaignSyncCompleted?.Invoke(campaign.CampaignId, campaign.CampaignName);
@@ -164,7 +173,8 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         List<AssetDownloadInfo> uniqueAssets,
         Guid backendId,
         Uri baseUrl,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var downloadCount = 0;
         var skipCount = 0;
@@ -182,24 +192,38 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             {
                 _logger.LogInformation(
                     "Processing asset {AssetId} - {AssetName} ({Type})",
-                    asset.AssetId, asset.Name, asset.Type
+                    asset.AssetId,
+                    asset.Name,
+                    asset.Type
                 );
 
-                var wasDownloaded = await SyncAssetAsync(new AssetDownloadContext(asset, backendId, baseUrl), cancellationToken);
-                if (wasDownloaded) downloadCount++;
-                else skipCount++;
+                var wasDownloaded = await SyncAssetAsync(
+                    new AssetDownloadContext(asset, backendId, baseUrl),
+                    cancellationToken
+                );
+                if (wasDownloaded)
+                    downloadCount++;
+                else
+                    skipCount++;
             }
             catch (Exception ex)
             {
                 errorCount++;
-                _logger.LogError(ex, "Failed to sync asset {AssetId} ({AssetName})", asset.AssetId, asset.Name);
+                _logger.LogError(
+                    ex,
+                    "Failed to sync asset {AssetId} ({AssetName})",
+                    asset.AssetId,
+                    asset.Name
+                );
                 OnAssetSyncFailed?.Invoke(asset.AssetId, ex.Message);
             }
         }
 
         _logger.LogInformation(
             "=== SYNC COMPLETE === Downloaded: {Downloaded}, Skipped: {Skipped}, Errors: {Errors}",
-            downloadCount, skipCount, errorCount
+            downloadCount,
+            skipCount,
+            errorCount
         );
     }
 
@@ -207,7 +231,9 @@ public class LocalAssetSyncService : ILocalAssetSyncService
     {
         _logger.LogDebug(
             "Upserting campaign {CampaignId} - {CampaignName} for backend {BackendId}",
-            campaign.CampaignId, campaign.CampaignName, backendId
+            campaign.CampaignId,
+            campaign.CampaignName,
+            backendId
         );
 
         await UpsertCampaignEntityAsync(campaign);
@@ -216,7 +242,9 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
         _logger.LogInformation(
             "Upserted campaign {CampaignId} with {AssetCount} assets for backend {BackendId}",
-            campaign.CampaignId, campaign.Assets.Count, backendId
+            campaign.CampaignId,
+            campaign.Assets.Count,
+            backendId
         );
     }
 
@@ -255,12 +283,14 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
         if (backendCampaign == null)
         {
-            _db.BackendCampaigns.Add(new BackendCampaign
-            {
-                BackendInstanceId = backendId,
-                CampaignId = campaignId,
-                SyncedAt = DateTime.UtcNow,
-            });
+            _db.BackendCampaigns.Add(
+                new BackendCampaign
+                {
+                    BackendInstanceId = backendId,
+                    CampaignId = campaignId,
+                    SyncedAt = DateTime.UtcNow,
+                }
+            );
             _logger.LogDebug("Created BackendCampaign mapping for backend {BackendId}", backendId);
         }
         else
@@ -286,18 +316,24 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         var asset = await _db.Assets.FindAsync(assetInfo.AssetId);
         if (asset == null)
         {
-            _db.Assets.Add(new Asset
-            {
-                Id = assetInfo.AssetId,
-                Name = assetInfo.Name,
-                Type = Enum.Parse<AssetType>(assetInfo.Type, true),
-                Source = assetInfo.Source,
-                FileSizeBytes = assetInfo.FileSizeBytes,
-                DurationSeconds = assetInfo.DurationSeconds,
-                IsMuted = assetInfo.IsMuted,
-                CreatedAt = DateTime.UtcNow,
-            });
-            _logger.LogDebug("Created new asset {AssetId} - {AssetName}", assetInfo.AssetId, assetInfo.Name);
+            _db.Assets.Add(
+                new Asset
+                {
+                    Id = assetInfo.AssetId,
+                    Name = assetInfo.Name,
+                    Type = Enum.Parse<AssetType>(assetInfo.Type, true),
+                    Source = assetInfo.Source,
+                    FileSizeBytes = assetInfo.FileSizeBytes,
+                    DurationSeconds = assetInfo.DurationSeconds,
+                    IsMuted = assetInfo.IsMuted,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+            _logger.LogDebug(
+                "Created new asset {AssetId} - {AssetName}",
+                assetInfo.AssetId,
+                assetInfo.Name
+            );
         }
         else
         {
@@ -320,14 +356,23 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         );
 
         if (backendAsset == null)
-            _db.BackendAssets.Add(new BackendAsset { BackendInstanceId = backendId, AssetId = assetId, SyncedAt = DateTime.UtcNow });
+            _db.BackendAssets.Add(
+                new BackendAsset
+                {
+                    BackendInstanceId = backendId,
+                    AssetId = assetId,
+                    SyncedAt = DateTime.UtcNow,
+                }
+            );
         else
             backendAsset.SyncedAt = DateTime.UtcNow;
     }
 
     private async Task ReplaceCampaignAssetLinksAsync(CampaignSyncInfo campaign)
     {
-        var existing = await _db.CampaignAssets.Where(ca => ca.CampaignId == campaign.CampaignId).ToListAsync();
+        var existing = await _db
+            .CampaignAssets.Where(ca => ca.CampaignId == campaign.CampaignId)
+            .ToListAsync();
         if (existing.Count != 0)
         {
             _db.CampaignAssets.RemoveRange(existing);
@@ -337,13 +382,15 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
         for (var i = 0; i < campaign.Assets.Count; i++)
         {
-            _db.CampaignAssets.Add(new CampaignAsset
-            {
-                CampaignId = campaign.CampaignId,
-                AssetId = campaign.Assets[i].AssetId,
-                Position = i + 1,
-                DurationSeconds = null,
-            });
+            _db.CampaignAssets.Add(
+                new CampaignAsset
+                {
+                    CampaignId = campaign.CampaignId,
+                    AssetId = campaign.Assets[i].AssetId,
+                    Position = i + 1,
+                    DurationSeconds = null,
+                }
+            );
         }
 
         await _db.SaveChangesAsync();
@@ -354,7 +401,11 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         CancellationToken cancellationToken
     )
     {
-        _logger.LogDebug("SyncAssetAsync: Checking asset {AssetId} for backend {BackendId}", ctx.Asset.AssetId, ctx.BackendId);
+        _logger.LogDebug(
+            "SyncAssetAsync: Checking asset {AssetId} for backend {BackendId}",
+            ctx.Asset.AssetId,
+            ctx.BackendId
+        );
 
         var downloadedAsset = await _db.DownloadedAssets.FirstOrDefaultAsync(da =>
             da.BackendInstanceId == ctx.BackendId && da.AssetId == ctx.Asset.AssetId
@@ -364,7 +415,8 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         {
             _logger.LogInformation(
                 "Asset {AssetId} already downloaded at {Path}, skipping",
-                ctx.Asset.AssetId, downloadedAsset!.LocalPath
+                ctx.Asset.AssetId,
+                downloadedAsset!.LocalPath
             );
             downloadedAsset.LastCheckedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
@@ -372,12 +424,22 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         }
 
         if (IsStaleDownload(downloadedAsset))
-            _logger.LogWarning("Asset {AssetId} marked downloaded but file missing, re-downloading", ctx.Asset.AssetId);
+            _logger.LogWarning(
+                "Asset {AssetId} marked downloaded but file missing, re-downloading",
+                ctx.Asset.AssetId
+            );
 
         if (ctx.Asset.Type == "Website")
         {
-            _logger.LogInformation("Asset {AssetId} is a Website, no download needed", ctx.Asset.AssetId);
-            await UpsertDownloadedAssetAsync(ctx.BackendId, ctx.Asset.AssetId, new AssetDownloadState(null, null, true));
+            _logger.LogInformation(
+                "Asset {AssetId} is a Website, no download needed",
+                ctx.Asset.AssetId
+            );
+            await UpsertDownloadedAssetAsync(
+                ctx.BackendId,
+                ctx.Asset.AssetId,
+                new AssetDownloadState(null, null, true)
+            );
             return false;
         }
 
@@ -385,20 +447,27 @@ public class LocalAssetSyncService : ILocalAssetSyncService
     }
 
     private static bool IsAlreadyDownloaded(DownloadedAsset? asset) =>
-        asset?.IsDownloaded == true && !string.IsNullOrEmpty(asset.LocalPath) && File.Exists(asset.LocalPath);
+        asset?.IsDownloaded == true
+        && !string.IsNullOrEmpty(asset.LocalPath)
+        && File.Exists(asset.LocalPath);
 
     private static bool IsStaleDownload(DownloadedAsset? asset) =>
-        asset?.IsDownloaded == true && !string.IsNullOrEmpty(asset.LocalPath) && !File.Exists(asset.LocalPath);
+        asset?.IsDownloaded == true
+        && !string.IsNullOrEmpty(asset.LocalPath)
+        && !File.Exists(asset.LocalPath);
 
     private async Task<bool> DownloadAndTrackAssetAsync(
         AssetDownloadContext ctx,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
             _logger.LogInformation(
                 "Downloading asset {AssetId} from {Source} for backend {BackendId}",
-                ctx.Asset.AssetId, ctx.Asset.Source, ctx.BackendId
+                ctx.Asset.AssetId,
+                ctx.Asset.Source,
+                ctx.BackendId
             );
             OnSyncProgressChanged?.Invoke(ctx.Asset.AssetId, "Downloading", 0);
 
@@ -406,20 +475,41 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
             _logger.LogInformation(
                 "Successfully downloaded asset {AssetId} to {Path} ({Extension})",
-                ctx.Asset.AssetId, localPath, extension
+                ctx.Asset.AssetId,
+                localPath,
+                extension
             );
 
-            await UpsertDownloadedAssetAsync(ctx.BackendId, ctx.Asset.AssetId, new AssetDownloadState(localPath, extension, true));
-            await UpdateServerSyncStatusAsync(ctx.Asset.AssetId, new SyncStatusUpdate("Downloaded", 100));
+            await UpsertDownloadedAssetAsync(
+                ctx.BackendId,
+                ctx.Asset.AssetId,
+                new AssetDownloadState(localPath, extension, true)
+            );
+            await UpdateServerSyncStatusAsync(
+                ctx.Asset.AssetId,
+                new SyncStatusUpdate("Downloaded", 100)
+            );
 
             OnSyncProgressChanged?.Invoke(ctx.Asset.AssetId, "Downloaded", 100);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to download asset {AssetId} for backend {BackendId}", ctx.Asset.AssetId, ctx.BackendId);
-            await UpsertDownloadedAssetAsync(ctx.BackendId, ctx.Asset.AssetId, new AssetDownloadState(null, null, false));
-            await UpdateServerSyncStatusAsync(ctx.Asset.AssetId, new SyncStatusUpdate("Failed", 0, ex.Message));
+            _logger.LogError(
+                ex,
+                "Failed to download asset {AssetId} for backend {BackendId}",
+                ctx.Asset.AssetId,
+                ctx.BackendId
+            );
+            await UpsertDownloadedAssetAsync(
+                ctx.BackendId,
+                ctx.Asset.AssetId,
+                new AssetDownloadState(null, null, false)
+            );
+            await UpdateServerSyncStatusAsync(
+                ctx.Asset.AssetId,
+                new SyncStatusUpdate("Failed", 0, ex.Message)
+            );
             return false;
         }
     }
@@ -447,9 +537,18 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         var localPath = Path.Combine(assetCacheDirectory, $"{ctx.Asset.AssetId}{extension}");
         _logger.LogDebug("Target local path: {LocalPath}", localPath);
 
-        var downloadedBytes = await WriteResponseToFileAsync(response, localPath, ctx.Asset, cancellationToken);
+        var downloadedBytes = await WriteResponseToFileAsync(
+            response,
+            localPath,
+            ctx.Asset,
+            cancellationToken
+        );
 
-        _logger.LogInformation("Download complete: {Bytes} bytes written to {Path}", downloadedBytes, localPath);
+        _logger.LogInformation(
+            "Download complete: {Bytes} bytes written to {Path}",
+            downloadedBytes,
+            localPath
+        );
         return (localPath, extension);
     }
 
@@ -464,17 +563,25 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         return extension;
     }
 
-    private async Task<HttpResponseMessage> SendAuthorizedGetAsync(Uri url, CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage> SendAuthorizedGetAsync(
+        Uri url,
+        CancellationToken cancellationToken
+    )
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         var token = _accessTokenProvider.GetAccessToken();
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        return await _httpClientFactory.CreateClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        return await _httpClientFactory
+            .CreateClient()
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
     }
 
-    private string RefineExtensionFromResponse(HttpResponseMessage response, string currentExtension)
+    private string RefineExtensionFromResponse(
+        HttpResponseMessage response,
+        string currentExtension
+    )
     {
         if (currentExtension != ".jpg" && currentExtension != ".mp4")
             return currentExtension;
@@ -482,7 +589,10 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         var contentType = response.Content.Headers.ContentType?.MediaType;
         _logger.LogDebug("Content-Type from response: {ContentType}", contentType);
 
-        var detected = contentType != null && ContentTypeExtensions.TryGetValue(contentType, out var ext) ? ext : null;
+        var detected =
+            contentType != null && ContentTypeExtensions.TryGetValue(contentType, out var ext)
+                ? ext
+                : null;
         if (detected != null)
             _logger.LogInformation("Extension updated from Content-Type: {Extension}", detected);
 
@@ -493,7 +603,8 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         HttpResponseMessage response,
         string localPath,
         AssetDownloadInfo asset,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var totalBytes = response.Content.Headers.ContentLength ?? asset.FileSizeBytes ?? 0;
         _logger.LogInformation("Content length: {Bytes} bytes", totalBytes);
@@ -502,7 +613,14 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         var lastLoggedProgress = -1;
 
         await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await using var fileStream = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+        await using var fileStream = new FileStream(
+            localPath,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            8192,
+            true
+        );
 
         var buffer = new byte[8192];
         int bytesRead;
@@ -517,38 +635,59 @@ public class LocalAssetSyncService : ILocalAssetSyncService
                 var progress = (int)(downloadedBytes * 100 / totalBytes);
                 if (progress >= lastLoggedProgress + 25 || progress == 100)
                 {
-                    _logger.LogInformation("Download progress: {Progress}% ({Downloaded}/{Total} bytes)", progress, downloadedBytes, totalBytes);
+                    _logger.LogInformation(
+                        "Download progress: {Progress}% ({Downloaded}/{Total} bytes)",
+                        progress,
+                        downloadedBytes,
+                        totalBytes
+                    );
                     lastLoggedProgress = progress;
                 }
                 OnSyncProgressChanged?.Invoke(asset.AssetId, "Downloading", progress);
                 if (progress % 25 == 0)
-                    await UpdateServerSyncStatusAsync(asset.AssetId, new SyncStatusUpdate("Downloading", progress));
+                    await UpdateServerSyncStatusAsync(
+                        asset.AssetId,
+                        new SyncStatusUpdate("Downloading", progress)
+                    );
             }
         }
 
         return downloadedBytes;
     }
 
-    private static readonly Dictionary<string, string> ContentTypeExtensions =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["image/jpeg"] = ".jpg",
-            ["image/png"] = ".png",
-            ["image/gif"] = ".gif",
-            ["image/webp"] = ".webp",
-            ["video/mp4"] = ".mp4",
-            ["video/webm"] = ".webm",
-            ["video/x-msvideo"] = ".avi",
-            ["video/quicktime"] = ".mov",
-        };
+    private static readonly Dictionary<string, string> ContentTypeExtensions = new(
+        StringComparer.OrdinalIgnoreCase
+    )
+    {
+        ["image/jpeg"] = ".jpg",
+        ["image/png"] = ".png",
+        ["image/gif"] = ".gif",
+        ["image/webp"] = ".webp",
+        ["video/mp4"] = ".mp4",
+        ["video/webm"] = ".webm",
+        ["video/x-msvideo"] = ".avi",
+        ["video/quicktime"] = ".mov",
+    };
 
-    private sealed record AssetDownloadState(string? LocalPath, string? Extension, bool IsDownloaded);
+    private sealed record AssetDownloadState(
+        string? LocalPath,
+        string? Extension,
+        bool IsDownloaded
+    );
 
-    private sealed record AssetDownloadContext(AssetDownloadInfo Asset, Guid BackendId, Uri BaseUrl);
+    private sealed record AssetDownloadContext(
+        AssetDownloadInfo Asset,
+        Guid BackendId,
+        Uri BaseUrl
+    );
 
     private sealed record SyncStatusUpdate(string State, int Progress, string? ErrorMessage = null);
 
-    private async Task UpsertDownloadedAssetAsync(Guid backendId, Guid assetId, AssetDownloadState state)
+    private async Task UpsertDownloadedAssetAsync(
+        Guid backendId,
+        Guid assetId,
+        AssetDownloadState state
+    )
     {
         var downloadedAsset = await _db.DownloadedAssets.FirstOrDefaultAsync(da =>
             da.BackendInstanceId == backendId && da.AssetId == assetId
@@ -556,26 +695,39 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
         if (downloadedAsset == null)
         {
-            _db.DownloadedAssets.Add(new DownloadedAsset
-            {
-                BackendInstanceId = backendId,
-                AssetId = assetId,
-                LocalPath = state.LocalPath,
-                FileExtension = state.Extension,
-                IsDownloaded = state.IsDownloaded,
-                DownloadedAt = state.IsDownloaded ? DateTime.UtcNow : null,
-                LastCheckedAt = DateTime.UtcNow,
-            });
-            _logger.LogDebug("Created DownloadedAsset record for {AssetId} (backend {BackendId})", assetId, backendId);
+            _db.DownloadedAssets.Add(
+                new DownloadedAsset
+                {
+                    BackendInstanceId = backendId,
+                    AssetId = assetId,
+                    LocalPath = state.LocalPath,
+                    FileExtension = state.Extension,
+                    IsDownloaded = state.IsDownloaded,
+                    DownloadedAt = state.IsDownloaded ? DateTime.UtcNow : null,
+                    LastCheckedAt = DateTime.UtcNow,
+                }
+            );
+            _logger.LogDebug(
+                "Created DownloadedAsset record for {AssetId} (backend {BackendId})",
+                assetId,
+                backendId
+            );
         }
         else
         {
-            if (state.LocalPath != null) downloadedAsset.LocalPath = state.LocalPath;
-            if (state.Extension != null) downloadedAsset.FileExtension = state.Extension;
+            if (state.LocalPath != null)
+                downloadedAsset.LocalPath = state.LocalPath;
+            if (state.Extension != null)
+                downloadedAsset.FileExtension = state.Extension;
             downloadedAsset.IsDownloaded = state.IsDownloaded;
-            if (state.IsDownloaded) downloadedAsset.DownloadedAt = DateTime.UtcNow;
+            if (state.IsDownloaded)
+                downloadedAsset.DownloadedAt = DateTime.UtcNow;
             downloadedAsset.LastCheckedAt = DateTime.UtcNow;
-            _logger.LogDebug("Updated DownloadedAsset record for {AssetId} (backend {BackendId})", assetId, backendId);
+            _logger.LogDebug(
+                "Updated DownloadedAsset record for {AssetId} (backend {BackendId})",
+                assetId,
+                backendId
+            );
         }
 
         await _db.SaveChangesAsync();
@@ -593,9 +745,14 @@ public class LocalAssetSyncService : ILocalAssetSyncService
                 ErrorMessage = status.ErrorMessage,
             };
 
-            var baseUrl = (await _backendManager.GetCurrentBackendAsync())?.BaseUrl?.TrimEnd('/') ?? string.Empty;
+            var baseUrl =
+                (await _backendManager.GetCurrentBackendAsync())?.BaseUrl?.TrimEnd('/')
+                ?? string.Empty;
             var token = _accessTokenProvider.GetAccessToken();
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/api/AssetSync/status")
+            var httpRequest = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"{baseUrl}/api/AssetSync/status"
+            )
             {
                 Content = JsonContent.Create(request),
             };
@@ -608,7 +765,11 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to update server sync status for asset {AssetId}", assetId);
+            _logger.LogWarning(
+                ex,
+                "Failed to update server sync status for asset {AssetId}",
+                assetId
+            );
         }
     }
 }

@@ -13,11 +13,16 @@ public class InfoEndpoints : ICarterModule
 
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/info", () =>
-        {
-            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
-            return Results.Ok(new ApiInfoResponse(ApplicationName, version));
-        }).AllowAnonymous();
+        app.MapGet(
+                "/api/info",
+                () =>
+                {
+                    var version =
+                        Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+                    return Results.Ok(new ApiInfoResponse(ApplicationName, version));
+                }
+            )
+            .AllowAnonymous();
     }
 }
 

@@ -1,19 +1,17 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.3.0">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>5a848976-55c0-42d0-92c0-6e0f797393cf</UserSecretsId>
+  </PropertyGroup>
 
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <UserSecretsId>5a848976-55c0-42d0-92c0-6e0f797393cf</UserSecretsId>
-    </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Mireya.Api\Mireya.Api.csproj" />
-    </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Mireya.Api\Mireya.Api.csproj" />
+  </ItemGroup>
 </Project>

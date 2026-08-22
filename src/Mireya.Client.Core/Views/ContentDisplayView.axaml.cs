@@ -143,13 +143,13 @@ public partial class ContentDisplayView : UserControl
         // over native content (UA9 / UA10).
         _overlayWindow = new Window
         {
-            Title               = string.Empty,
+            Title = string.Empty,
             // Remove all window chrome (title bar + border) using Avalonia 12 API
-            WindowDecorations   = WindowDecorations.None,
-            Topmost             = true,
-            ShowInTaskbar       = false,
-            CanResize           = false,
-            Background          = Brushes.Transparent,
+            WindowDecorations = WindowDecorations.None,
+            Topmost = true,
+            ShowInTaskbar = false,
+            CanResize = false,
+            Background = Brushes.Transparent,
             TransparencyLevelHint = new[]
             {
                 WindowTransparencyLevel.Transparent,
@@ -160,7 +160,7 @@ public partial class ContentDisplayView : UserControl
 
         // Track parent window movement / resize
         parentWindow.PositionChanged += (_, _) => UpdateFloatingWindowPositions();
-        parentWindow.SizeChanged     += (_, _) => UpdateFloatingWindowPositions();
+        parentWindow.SizeChanged += (_, _) => UpdateFloatingWindowPositions();
 
         // The transition curtain lives in its own top-most transparent window for the same
         // "airspace" reason as the overlay: it must cover the native website/video
@@ -168,12 +168,12 @@ public partial class ContentDisplayView : UserControl
         // window so the dip-to-black masks everything during a transition.
         _curtainWindow = new Window
         {
-            Title               = string.Empty,
-            WindowDecorations   = WindowDecorations.None,
-            Topmost             = true,
-            ShowInTaskbar       = false,
-            CanResize           = false,
-            Background          = Brushes.Transparent,
+            Title = string.Empty,
+            WindowDecorations = WindowDecorations.None,
+            Topmost = true,
+            ShowInTaskbar = false,
+            CanResize = false,
+            Background = Brushes.Transparent,
             TransparencyLevelHint = new[]
             {
                 WindowTransparencyLevel.Transparent,
@@ -208,8 +208,11 @@ public partial class ContentDisplayView : UserControl
             UpdatePlatformRendererHosts();
             UpdateOverlayVisibility();
         }
-        else if (e.PropertyName is nameof(ContentDisplayViewModel.IsOverlayVisible)
-                           or nameof(ContentDisplayViewModel.IsIdentifying))
+        else if (
+            e.PropertyName
+            is nameof(ContentDisplayViewModel.IsOverlayVisible)
+                or nameof(ContentDisplayViewModel.IsIdentifying)
+        )
         {
             UpdateOverlayVisibility();
         }
@@ -229,14 +232,12 @@ public partial class ContentDisplayView : UserControl
         // the renderer that is actively needed so image-only campaigns do not keep two
         // hidden native surfaces and their composition loops alive.
         if (_websiteHost != null)
-            _websiteHost.Content = _viewModel.CurrentContentType == ContentType.Website
-                ? _websiteControl
-                : null;
+            _websiteHost.Content =
+                _viewModel.CurrentContentType == ContentType.Website ? _websiteControl : null;
 
         if (_videoHost != null)
-            _videoHost.Content = _viewModel.CurrentContentType == ContentType.Video
-                ? _videoControl
-                : null;
+            _videoHost.Content =
+                _viewModel.CurrentContentType == ContentType.Video ? _videoControl : null;
     }
 
     private void UpdateCurtainVisibility()
@@ -260,8 +261,8 @@ public partial class ContentDisplayView : UserControl
         // The floating window is only needed over native surfaces (video / website),
         // which paint over the inline AXAML overlays. For image / idle content the inline
         // OverlayLayer in ContentDisplayView.axaml already sits above the content.
-        var isNativeContent = _viewModel.CurrentContentType is ContentType.Website
-                                                             or ContentType.Video;
+        var isNativeContent =
+            _viewModel.CurrentContentType is ContentType.Website or ContentType.Video;
 
         // Keep it hidden unless something actually needs to be shown, so the transparent
         // top-level window does not needlessly sit over the content.

@@ -6,7 +6,13 @@ using Xabe.FFmpeg;
 
 namespace Mireya.Application.Services.Asset;
 
-public record AssetFilter(int Page = 1, int PageSize = 10, AssetType? Type = null, string SortBy = "name", string? Search = null);
+public record AssetFilter(
+    int Page = 1,
+    int PageSize = 10,
+    AssetType? Type = null,
+    string SortBy = "name",
+    string? Search = null
+);
 
 public interface IAssetService
 {
@@ -20,7 +26,8 @@ public interface IAssetService
     );
 }
 
-public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditService audit) : IAssetService
+public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditService audit)
+    : IAssetService
 {
     private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
     private const long MaxVideoSizeBytes = 100 * 1024 * 1024; // 100 MB
@@ -43,24 +50,38 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
         if (assets.Count == 0)
         {
-            var errorMessage = errors.Count != 0
-                ? $"No valid files uploaded. Errors: {string.Join("; ", errors)}"
-                : "No valid image or video files provided";
+            var errorMessage =
+                errors.Count != 0
+                    ? $"No valid files uploaded. Errors: {string.Join("; ", errors)}"
+                    : "No valid image or video files provided";
             throw new ArgumentException(errorMessage);
         }
 
         db.Assets.AddRange(assets);
         await db.SaveChangesAsync();
 
-        await audit.LogAsync("Uploaded", "Asset", null,
-            $"Uploaded {assets.Count} asset(s): {string.Join(", ", assets.Select(a => a.Name))}");
+        await audit.LogAsync(
+            "Uploaded",
+            "Asset",
+            null,
+            $"Uploaded {assets.Count} asset(s): {string.Join(", ", assets.Select(a => a.Name))}"
+        );
 
         return assets
-            .Select(a => new AssetSummary { Id = a.Id, Name = a.Name, Source = a.Source })
+            .Select(a => new AssetSummary
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Source = a.Source,
+            })
             .ToList();
     }
 
-    private async Task TryProcessUploadedFileAsync(IFormFile file, List<Database.Models.Asset> assets, List<string> errors)
+    private async Task TryProcessUploadedFileAsync(
+        IFormFile file,
+        List<Database.Models.Asset> assets,
+        List<string> errors
+    )
     {
         if (file.Length == 0)
             return;
@@ -107,11 +128,14 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
         return null;
     }
 
-    private async Task<(Database.Models.Asset? asset, string? error)> ProcessFileAsync(IFormFile file)
+    private async Task<(Database.Models.Asset? asset, string? error)> ProcessFileAsync(
+        IFormFile file
+    )
     {
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         var isImage = ImageExtensions.Contains(extension);
-        var fileName = Guid.NewGuid() + extension;
+        var assetId = Guid.NewGuid().ToString();
+        var fileName = assetId + extension;
         var filePath = Path.Combine(_uploadsFolder, fileName);
 
         await using (var stream = new FileStream(filePath, FileMode.Create))
@@ -123,7 +147,25 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
         if (!isImage)
         {
-            (videoDurationSeconds, durationError) = await ExtractVideoDurationAsync(filePath, file.FileName);
+            var (normalizedFileName, normalizationError) = await NormalizeVideoOrientationAsync(
+                filePath,
+                fileName,
+                assetId,
+                file.FileName
+            );
+            if (normalizationError != null)
+                return (null, normalizationError);
+
+            if (normalizedFileName != fileName)
+            {
+                fileName = normalizedFileName;
+                filePath = Path.Combine(_uploadsFolder, fileName);
+            }
+
+            (videoDurationSeconds, durationError) = await ExtractVideoDurationAsync(
+                filePath,
+                file.FileName
+            );
             thumbnailSource = await GenerateVideoThumbnailAsync(filePath, fileName, file.FileName);
         }
 
@@ -133,14 +175,75 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
             Type = isImage ? AssetType.Image : AssetType.Video,
             Source = $"/uploads/{fileName}",
             ThumbnailSource = thumbnailSource,
-            FileSizeBytes = file.Length,
+            FileSizeBytes = new FileInfo(filePath).Length,
             DurationSeconds = videoDurationSeconds,
         };
 
         return (asset, durationError);
     }
 
-    private async Task<string?> GenerateVideoThumbnailAsync(string filePath, string fileName, string originalName)
+    private async Task<(string fileName, string? error)> NormalizeVideoOrientationAsync(
+        string filePath,
+        string fileName,
+        string assetId,
+        string originalName
+    )
+    {
+        string? normalizedPath = null;
+
+        try
+        {
+            var rotationDegrees = await VideoOrientationNormalizer.ProbeRotationDegreesAsync(
+                filePath
+            );
+            if (rotationDegrees == 0)
+                return (fileName, null);
+
+            normalizedPath = Path.Combine(_uploadsFolder, $"{assetId}_normalized.mp4");
+            await VideoOrientationNormalizer.NormalizeAsync(filePath, normalizedPath);
+
+            var remainingRotation = await VideoOrientationNormalizer.ProbeRotationDegreesAsync(
+                normalizedPath
+            );
+            if (remainingRotation != 0)
+            {
+                throw new InvalidOperationException(
+                    $"Normalized output still requires {remainingRotation} degrees of rotation."
+                );
+            }
+
+            var normalizedFileName = $"{assetId}.mp4";
+            var finalPath = Path.Combine(_uploadsFolder, normalizedFileName);
+            if (!string.Equals(filePath, finalPath, StringComparison.OrdinalIgnoreCase))
+                File.Delete(filePath);
+
+            File.Move(normalizedPath, finalPath, overwrite: true);
+            normalizedPath = null;
+
+            System.Diagnostics.Debug.WriteLine(
+                $"[AssetService] Normalized {rotationDegrees} degree rotation for '{originalName}'."
+            );
+            return (normalizedFileName, null);
+        }
+        catch (Exception ex)
+        {
+            if (normalizedPath != null && File.Exists(normalizedPath))
+                File.Delete(normalizedPath);
+            if (File.Exists(filePath))
+                File.Delete(filePath);
+
+            System.Diagnostics.Debug.WriteLine(
+                $"[AssetService] Failed to normalize orientation for '{originalName}': {ex.Message}"
+            );
+            return (fileName, $"{originalName}: Could not inspect or normalize video orientation");
+        }
+    }
+
+    private async Task<string?> GenerateVideoThumbnailAsync(
+        string filePath,
+        string fileName,
+        string originalName
+    )
     {
         var thumbnailName = $"{Path.GetFileNameWithoutExtension(fileName)}_thumb.jpg";
         var thumbnailPath = Path.Combine(_uploadsFolder, thumbnailName);
@@ -148,19 +251,26 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
         try
         {
             var conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(
-                filePath, thumbnailPath, TimeSpan.FromSeconds(1));
+                filePath,
+                thumbnailPath,
+                TimeSpan.FromSeconds(1)
+            );
             await conversion.Start();
             return File.Exists(thumbnailPath) ? $"/uploads/{thumbnailName}" : null;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(
-                $"[AssetService] Failed to generate thumbnail for '{originalName}': {ex.Message}");
+                $"[AssetService] Failed to generate thumbnail for '{originalName}': {ex.Message}"
+            );
             return null;
         }
     }
 
-    private static async Task<(int? duration, string? error)> ExtractVideoDurationAsync(string filePath, string fileName)
+    private static async Task<(int? duration, string? error)> ExtractVideoDurationAsync(
+        string filePath,
+        string fileName
+    )
     {
         try
         {
@@ -170,7 +280,8 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(
-                $"[AssetService] Failed to extract duration for '{fileName}': {ex.Message}");
+                $"[AssetService] Failed to extract duration for '{fileName}': {ex.Message}"
+            );
             return (null, $"{fileName}: Could not extract duration (will use default)");
         }
     }
@@ -183,7 +294,9 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
     }
 
     private static IQueryable<Database.Models.Asset> ApplyAssetSorting(
-        IQueryable<Database.Models.Asset> query, AssetFilter filter) =>
+        IQueryable<Database.Models.Asset> query,
+        AssetFilter filter
+    ) =>
         string.Equals(filter.SortBy, "date", StringComparison.OrdinalIgnoreCase)
             ? query.OrderByDescending(a => a.CreatedAt)
             : query.OrderBy(a => a.Name);
@@ -204,7 +317,8 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
             query = query.Where(a =>
                 EF.Functions.Like(a.Name, $"%{term}%")
                 || (a.Description != null && EF.Functions.Like(a.Description, $"%{term}%"))
-                || (a.Tags != null && EF.Functions.Like(a.Tags, $"%{term}%")));
+                || (a.Tags != null && EF.Functions.Like(a.Tags, $"%{term}%"))
+            );
         }
 
         query = ApplyAssetSorting(query, filter);
@@ -249,7 +363,10 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
         if (!string.IsNullOrEmpty(asset.ThumbnailSource) && asset.ThumbnailSource != asset.Source)
         {
-            var thumbnailPath = Path.Combine(_uploadsFolder, asset.ThumbnailSource["/uploads/".Length..]);
+            var thumbnailPath = Path.Combine(
+                _uploadsFolder,
+                asset.ThumbnailSource["/uploads/".Length..]
+            );
             if (IsUploadedFile(asset.ThumbnailSource, thumbnailPath))
                 File.Delete(thumbnailPath);
         }
@@ -294,7 +411,12 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
         await db.SaveChangesAsync();
 
-        await audit.LogAsync("Updated", "Asset", id.ToString(), $"Updated metadata for asset '{asset.Name}'");
+        await audit.LogAsync(
+            "Updated",
+            "Asset",
+            id.ToString(),
+            $"Updated metadata for asset '{asset.Name}'"
+        );
 
         return asset;
     }
@@ -304,8 +426,10 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
     private static string? NormalizeTags(string tags)
     {
-        var cleaned = tags
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        var cleaned = tags.Split(
+                ',',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            )
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
         return cleaned.Count == 0 ? null : string.Join(", ", cleaned);
@@ -352,7 +476,12 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
         db.Assets.Add(asset);
         await db.SaveChangesAsync();
 
-        await audit.LogAsync("Created", "Asset", asset.Id.ToString(), $"Created website asset '{asset.Name}'");
+        await audit.LogAsync(
+            "Created",
+            "Asset",
+            asset.Id.ToString(),
+            $"Created website asset '{asset.Name}'"
+        );
 
         return new AssetSummary
         {

@@ -69,8 +69,8 @@ public sealed class AppSettings
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-        Fullscreen     = await GetBoolAsync(db, "Fullscreen",     false);
-        AutoStart      = await GetBoolAsync(db, "AutoStart",      false);
+        Fullscreen = await GetBoolAsync(db, "Fullscreen", false);
+        AutoStart = await GetBoolAsync(db, "AutoStart", false);
         HideScreenInfo = await GetBoolAsync(db, "HideScreenInfo", false);
     }
 
@@ -80,8 +80,8 @@ public sealed class AppSettings
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-        await SetValueAsync(db, "Fullscreen",     Fullscreen.ToString());
-        await SetValueAsync(db, "AutoStart",      AutoStart.ToString());
+        await SetValueAsync(db, "Fullscreen", Fullscreen.ToString());
+        await SetValueAsync(db, "AutoStart", AutoStart.ToString());
         await SetValueAsync(db, "HideScreenInfo", HideScreenInfo.ToString());
     }
 
@@ -89,8 +89,7 @@ public sealed class AppSettings
     // Private helpers
     // ──────────────────────────────────────────────────────────────
 
-    private static async Task<bool> GetBoolAsync(
-        LocalDbContext db, string key, bool defaultValue)
+    private static async Task<bool> GetBoolAsync(LocalDbContext db, string key, bool defaultValue)
     {
         var row = await db.ClientSettings.FindAsync(key);
         if (row == null)
@@ -104,8 +103,7 @@ public sealed class AppSettings
         return bool.TryParse(row.Value, out var v) ? v : defaultValue;
     }
 
-    private static async Task SetValueAsync(
-        LocalDbContext db, string key, string value)
+    private static async Task SetValueAsync(LocalDbContext db, string key, string value)
     {
         var row = await db.ClientSettings.FindAsync(key);
         if (row == null)
