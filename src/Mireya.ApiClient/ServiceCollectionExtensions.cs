@@ -36,7 +36,10 @@ public static class ServiceCollectionExtensions
                 {
                     var options = sp.GetRequiredService<IOptions<MireyaApiClientOptions>>();
                     client.BaseAddress = new Uri(options.Value.BaseUrl);
-                    client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
+                    client.DefaultRequestHeaders.TryAddWithoutValidation(
+                        "Accept",
+                        "application/json"
+                    );
                 }
             )
             .AddHttpMessageHandler<AuthenticationHandler>();

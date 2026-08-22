@@ -9,6 +9,7 @@ This guide is for contributors and maintainers running Mireya locally.
 - SQLite for the default development database
 - Docker Desktop or compatible Docker runtime for Docker Compose and Aspire PostgreSQL runs
 - Android SDK plus the .NET Android workload when building the Android TV client
+- FFmpeg and ffprobe on `PATH` for local video uploads; the production container includes them
 
 Restore local .NET tools before using NSwag:
 
@@ -209,3 +210,4 @@ For Docker configuration and health checks, see [Operations](operations.md). The
 - **Admin login fails**: confirm migrations ran and `DefaultAdminUser:Password` is configured for first startup.
 - **PostgreSQL migration uses SQLite**: set `provider=Postgres` in the same shell command/session that runs EF.
 - **Video/website rendering differs by platform**: desktop uses WebView2 and LibVLC; Android uses native Android WebView and Media3/ExoPlayer.
+- **A newly uploaded rotated video is rejected**: confirm both `ffmpeg` and `ffprobe` are installed and available on `PATH`. Mireya normalizes non-zero MP4/MOV display rotation into the encoded pixels during upload so older Android TV codecs do not need to apply container rotation metadata.

@@ -24,7 +24,12 @@ public interface IAuditService
     ///     Records a mutating admin action. Never throws: audit failures are logged and swallowed
     ///     so they cannot break the underlying operation.
     /// </summary>
-    Task LogAsync(string action, string entityType, string? entityId = null, string? summary = null);
+    Task LogAsync(
+        string action,
+        string entityType,
+        string? entityId = null,
+        string? summary = null
+    );
 
     /// <summary>
     ///     Returns the most recent audit-log entries, newest first.
@@ -38,36 +43,48 @@ public class AuditService(
     ILogger<AuditService> logger
 ) : IAuditService
 {
-    public async Task LogAsync(string action, string entityType, string? entityId = null, string? summary = null)
+    public async Task LogAsync(
+        string action,
+        string entityType,
+        string? entityId = null,
+        string? summary = null
+    )
     {
         try
         {
             var (userId, userName) = await userContext.GetCurrentUserAsync();
-            db.AuditLogs.Add(new AuditLog
-            {
-                Timestamp = DateTime.UtcNow,
-                ActorUserId = userId,
-                ActorName = userName,
-                Action = action,
-                EntityType = entityType,
-                EntityId = entityId,
-                Summary = summary,
-            });
+            db.AuditLogs.Add(
+                new AuditLog
+                {
+                    Timestamp = DateTime.UtcNow,
+                    ActorUserId = userId,
+                    ActorName = userName,
+                    Action = action,
+                    EntityType = entityType,
+                    EntityId = entityId,
+                    Summary = summary,
+                }
+            );
             await db.SaveChangesAsync();
         }
         catch (Exception ex)
         {
             // Auditing must never break the action it records.
-            logger.LogError(ex, "Failed to write audit log entry for {Action} {EntityType} {EntityId}",
-                action, entityType, entityId);
+            logger.LogError(
+                ex,
+                "Failed to write audit log entry for {Action} {EntityType} {EntityId}",
+                action,
+                entityType,
+                entityId
+            );
         }
     }
 
     public async Task<List<AuditLogEntry>> GetRecentAsync(int take = 200)
     {
         take = Math.Clamp(take, 1, 1000);
-        return await db.AuditLogs
-            .OrderByDescending(a => a.Timestamp)
+        return await db
+            .AuditLogs.OrderByDescending(a => a.Timestamp)
             .Take(take)
             .Select(a => new AuditLogEntry(
                 a.Id,
@@ -76,7 +93,8 @@ public class AuditService(
                 a.Action,
                 a.EntityType,
                 a.EntityId,
-                a.Summary))
+                a.Summary
+            ))
             .ToListAsync();
     }
 }

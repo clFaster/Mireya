@@ -12,7 +12,9 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
     {
         // Only buffer responses for API paths to avoid overhead on static files and streaming
         var path = context.Request.Path.Value ?? string.Empty;
-        var isApiPath = ApiPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        var isApiPath = ApiPrefixes.Any(prefix =>
+            path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+        );
 
         if (!isApiPath)
         {

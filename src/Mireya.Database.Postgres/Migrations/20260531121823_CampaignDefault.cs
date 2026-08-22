@@ -15,15 +15,14 @@ namespace Mireya.Database.Postgres.Migrations
                 table: "Campaigns",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "IsDefault",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "IsDefault", table: "Campaigns");
         }
     }
 }

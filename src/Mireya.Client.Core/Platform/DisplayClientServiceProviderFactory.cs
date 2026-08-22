@@ -29,7 +29,8 @@ public static class DisplayClientServiceProviderFactory
 
     private static IServiceCollection AddDisplayClientServices<TAssetViewFactory>(
         this IServiceCollection services,
-        string defaultBackendUrl)
+        string defaultBackendUrl
+    )
         where TAssetViewFactory : class, IAssetViewFactory
     {
         services.AddSingleton<AppSettings>();
@@ -43,15 +44,17 @@ public static class DisplayClientServiceProviderFactory
         services.Configure<MireyaApiClientOptions>(options =>
         {
             options.BaseUrl =
-                Environment.GetEnvironmentVariable("MIREYA_BACKEND_URL")
-                ?? defaultBackendUrl;
+                Environment.GetEnvironmentVariable("MIREYA_BACKEND_URL") ?? defaultBackendUrl;
         });
 
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var dbPath = Path.Combine(appDataPath, "Mireya", "mireya_client.db");
         Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 
-        services.AddDbContext<LocalDbContext>(options => { options.UseSqlite($"Data Source={dbPath}"); });
+        services.AddDbContext<LocalDbContext>(options =>
+        {
+            options.UseSqlite($"Data Source={dbPath}");
+        });
 
         services.AddSingleton<ICredentialStorage, AvaloniaCredentialStorage>();
         services.AddSingleton<ISettingsService, SettingsService>();

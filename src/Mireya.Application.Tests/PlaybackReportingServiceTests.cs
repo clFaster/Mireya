@@ -77,7 +77,10 @@ public class PlaybackReportingServiceTests
         await service.RecordAsync("screen-1", sale, "Sale");
         await service.RecordAsync("screen-2", promo, "Promo");
 
-        var report = await service.GetReportAsync(DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddHours(1));
+        var report = await service.GetReportAsync(
+            DateTime.UtcNow.AddHours(-1),
+            DateTime.UtcNow.AddHours(1)
+        );
 
         Assert.Equal(4, report.TotalPlays);
         Assert.Equal(2, report.DistinctAssets);
@@ -100,19 +103,24 @@ public class PlaybackReportingServiceTests
         var service = CreateService(db);
 
         // An old event written directly with a past timestamp.
-        db.Context.PlaybackEvents.Add(new PlaybackEvent
-        {
-            DisplayId = db.Context.Displays.First().Id,
-            DisplayName = "Front Window",
-            AssetId = Guid.NewGuid(),
-            AssetName = "Old",
-            PlayedAtUtc = DateTime.UtcNow.AddDays(-30),
-        });
+        db.Context.PlaybackEvents.Add(
+            new PlaybackEvent
+            {
+                DisplayId = db.Context.Displays.First().Id,
+                DisplayName = "Front Window",
+                AssetId = Guid.NewGuid(),
+                AssetName = "Old",
+                PlayedAtUtc = DateTime.UtcNow.AddDays(-30),
+            }
+        );
         db.Context.SaveChanges();
 
         await service.RecordAsync("screen-1", Guid.NewGuid(), "Recent");
 
-        var report = await service.GetReportAsync(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddHours(1));
+        var report = await service.GetReportAsync(
+            DateTime.UtcNow.AddDays(-1),
+            DateTime.UtcNow.AddHours(1)
+        );
 
         Assert.Equal(1, report.TotalPlays);
         Assert.Equal("Recent", report.ByAsset[0].AssetName);

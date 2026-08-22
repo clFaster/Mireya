@@ -95,7 +95,9 @@ public class ScreenHub(
 
         logger.LogDebug(
             "Screen {UserId} now playing: {AssetName} ({AssetId})",
-            userId, assetName, assetId
+            userId,
+            assetName,
+            assetId
         );
 
         connectionTracker.UpdateNowPlaying(userId, assetId, assetName);

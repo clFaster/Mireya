@@ -36,8 +36,7 @@ var config = builder
     .Build();
 
 // ─── Blazor Server ───────────────────────────────────────────────────────────
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
 
 // ─── Carter (REST API) ────────────────────────────────────────────────────────
@@ -49,8 +48,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // ─── Readiness health check (database connectivity) ───────────────────────────
-builder.Services.AddHealthChecks()
-    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
 
 // ─── NSwag OpenAPI ───────────────────────────────────────────────────────────
 builder.Services.AddOpenApiDocument(generatorSettings =>
@@ -65,8 +63,8 @@ builder.Services.AddOpenApiDocument(generatorSettings =>
 builder.Services.AddMireyaDbContext(config);
 
 // ─── Identity + dual auth (Bearer for screens/API, Cookie for Blazor admin) ──
-builder.Services
-    .AddIdentityApiEndpoints<User>(options =>
+builder
+    .Services.AddIdentityApiEndpoints<User>(options =>
     {
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = false;
@@ -109,7 +107,10 @@ builder.Services.AddAuthorization(options =>
 });
 
 // ─── Application services ─────────────────────────────────────────────────────
-builder.Services.AddSignalR(options => { options.EnableDetailedErrors = builder.Environment.IsDevelopment(); });
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 builder.Services.AddScoped<IAuditService, AuditService>();
@@ -123,7 +124,9 @@ builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IZoneService, ZoneService>();
 builder.Services.AddScoped<IScreenSynchronizationService, ScreenSynchronizationService>();
 builder.Services.AddScoped<IPlaybackReportingService, PlaybackReportingService>();
-builder.Services.Configure<AlertingOptions>(builder.Configuration.GetSection(AlertingOptions.SectionName));
+builder.Services.Configure<AlertingOptions>(
+    builder.Configuration.GetSection(AlertingOptions.SectionName)
+);
 builder.Services.AddHttpClient(nameof(ScreenAlertService));
 builder.Services.AddScoped<IScreenAlertService, ScreenAlertService>();
 builder.Services.AddHostedService<ScreenOfflineMonitorService>();
@@ -133,11 +136,15 @@ builder.Services.AddScoped<IScreenHubContext, ScreenHubContextAdapter>();
 // ─── CORS (dev only) ──────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("Development", policy =>
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials());
+    options.AddPolicy(
+        "Development",
+        policy =>
+            policy
+                .WithOrigins("http://localhost:3000")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()
+    );
 });
 
 var app = builder.Build();
@@ -172,11 +179,13 @@ app.UseStaticFiles(); // Blazor static assets (wwwroot)
 // Serve uploaded media files from /uploads
 var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
 Directory.CreateDirectory(uploadsPath);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(uploadsPath),
-    RequestPath = "/uploads",
-});
+app.UseStaticFiles(
+    new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadsPath),
+        RequestPath = "/uploads",
+    }
+);
 
 app.UseRouting();
 
@@ -187,16 +196,17 @@ if (app.Environment.IsDevelopment())
 // (?access_token=...) because HTTP headers cannot be set on WebSocket upgrade requests.
 // The Identity Bearer handler only reads from the Authorization header, so we copy
 // the query-string token into the header before authentication runs.
-app.Use(async (context, next) =>
-{
-    var accessToken = context.Request.Query["access_token"];
-    if (!string.IsNullOrEmpty(accessToken)
-        && context.Request.Path.StartsWithSegments("/hubs"))
+app.Use(
+    async (context, next) =>
     {
-        context.Request.Headers.Authorization = $"Bearer {accessToken}";
+        var accessToken = context.Request.Query["access_token"];
+        if (!string.IsNullOrEmpty(accessToken) && context.Request.Path.StartsWithSegments("/hubs"))
+        {
+            context.Request.Headers.Authorization = $"Bearer {accessToken}";
+        }
+        await next();
     }
-    await next();
-});
+);
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -217,7 +227,6 @@ app.MapHub<ScreenHub>("/hubs/screen");
 if (!app.Environment.IsEnvironment("NSwag"))
     app.MapStaticAssets();
 
-app.MapRazorComponents<App>()
-   .AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 await app.RunAsync();

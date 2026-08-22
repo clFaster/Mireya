@@ -79,9 +79,9 @@ public partial class BackendSelectionViewModel : ViewModelBase
         _onBackendSelected = onBackendSelected;
 
         // Mirror current settings into the observable properties
-        _fullscreen      = appSettings.Fullscreen;
-        _autoStart       = appSettings.AutoStart;
-        _hideScreenInfo  = appSettings.HideScreenInfo;
+        _fullscreen = appSettings.Fullscreen;
+        _autoStart = appSettings.AutoStart;
+        _hideScreenInfo = appSettings.HideScreenInfo;
 
         _ = LoadBackendsAsync();
     }
@@ -90,7 +90,10 @@ public partial class BackendSelectionViewModel : ViewModelBase
     // Selection change — subscribe to IsOnline so CanConnect updates
     // ──────────────────────────────────────────────────────────────
 
-    partial void OnSelectedBackendChanged(BackendItemViewModel? oldValue, BackendItemViewModel? newValue)
+    partial void OnSelectedBackendChanged(
+        BackendItemViewModel? oldValue,
+        BackendItemViewModel? newValue
+    )
     {
         if (oldValue != null)
             oldValue.PropertyChanged -= OnSelectedItemPropertyChanged;
@@ -103,8 +106,11 @@ public partial class BackendSelectionViewModel : ViewModelBase
 
     private void OnSelectedItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(BackendItemViewModel.IsOnline)
-                           or nameof(BackendItemViewModel.IsCheckingOnline))
+        if (
+            e.PropertyName
+            is nameof(BackendItemViewModel.IsOnline)
+                or nameof(BackendItemViewModel.IsCheckingOnline)
+        )
             ConnectCommand.NotifyCanExecuteChanged();
     }
 
@@ -180,13 +186,15 @@ public partial class BackendSelectionViewModel : ViewModelBase
     {
         try
         {
-            _appSettings.Fullscreen      = Fullscreen;
-            _appSettings.AutoStart       = AutoStart;
-            _appSettings.HideScreenInfo  = HideScreenInfo;
+            _appSettings.Fullscreen = Fullscreen;
+            _appSettings.AutoStart = AutoStart;
+            _appSettings.HideScreenInfo = HideScreenInfo;
             await _appSettings.SaveAsync();
             _logger.LogInformation(
                 "Settings saved — Fullscreen={Fullscreen}, AutoStart={AutoStart}, HideScreenInfo={HideScreenInfo}",
-                Fullscreen, AutoStart, HideScreenInfo
+                Fullscreen,
+                AutoStart,
+                HideScreenInfo
             );
             // Apply fullscreen immediately — no restart required
             _appSettings.ApplyFullscreen?.Invoke(Fullscreen);
@@ -214,10 +222,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
 
         if (!IsValidUrl(NewBackendUrl))
         {
-            SetStatus(
-                "Invalid URL format. Please enter a valid HTTP or HTTPS URL.",
-                isError: true
-            );
+            SetStatus("Invalid URL format. Please enter a valid HTTP or HTTPS URL.", isError: true);
             return;
         }
 
@@ -281,8 +286,14 @@ public partial class BackendSelectionViewModel : ViewModelBase
                 {
                     await using var stream = await infoResponse.Content.ReadAsStreamAsync();
                     using var doc = await JsonDocument.ParseAsync(stream);
-                    if (doc.RootElement.TryGetProperty("application", out var appName)
-                        && string.Equals(appName.GetString(), "Mireya", StringComparison.OrdinalIgnoreCase))
+                    if (
+                        doc.RootElement.TryGetProperty("application", out var appName)
+                        && string.Equals(
+                            appName.GetString(),
+                            "Mireya",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
                     {
                         return true;
                     }
@@ -313,8 +324,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
     // Connect — only allowed when the selected server is online
     // ──────────────────────────────────────────────────────────────
 
-    private bool CanConnect() =>
-        SelectedBackend is { IsOnline: true };
+    private bool CanConnect() => SelectedBackend is { IsOnline: true };
 
     [RelayCommand(CanExecute = nameof(CanConnect))]
     private async Task ConnectAsync()

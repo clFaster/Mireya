@@ -15,36 +15,33 @@ namespace Mireya.Database.Sqlite.Migrations
                 name: "EndDateUtc",
                 table: "Campaigns",
                 type: "TEXT",
-                nullable: true);
+                nullable: true
+            );
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsEnabled",
                 table: "Campaigns",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: true);
+                defaultValue: true
+            );
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "StartDateUtc",
                 table: "Campaigns",
                 type: "TEXT",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "EndDateUtc",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "EndDateUtc", table: "Campaigns");
 
-            migrationBuilder.DropColumn(
-                name: "IsEnabled",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "IsEnabled", table: "Campaigns");
 
-            migrationBuilder.DropColumn(
-                name: "StartDateUtc",
-                table: "Campaigns");
+            migrationBuilder.DropColumn(name: "StartDateUtc", table: "Campaigns");
         }
     }
 }

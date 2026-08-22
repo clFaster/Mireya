@@ -48,12 +48,23 @@ public class CampaignScheduleSyncService(
 
         var utcNow = DateTime.UtcNow;
 
-        var defaultCampaign = await db.Campaigns
-            .Where(c => c.IsDefault)
-            .Select(c => new { c.Id, c.IsEnabled, c.StartDateUtc, c.EndDateUtc, c.RecurrenceDaysMask, c.DailyStartTime, c.DailyEndTime, c.RecurrenceTimeZoneId })
+        var defaultCampaign = await db
+            .Campaigns.Where(c => c.IsDefault)
+            .Select(c => new
+            {
+                c.Id,
+                c.IsEnabled,
+                c.StartDateUtc,
+                c.EndDateUtc,
+                c.RecurrenceDaysMask,
+                c.DailyStartTime,
+                c.DailyEndTime,
+                c.RecurrenceTimeZoneId,
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        var defaultActiveId = defaultCampaign is not null
+        var defaultActiveId =
+            defaultCampaign is not null
             && new Database.Models.Campaign
             {
                 IsEnabled = defaultCampaign.IsEnabled,
@@ -67,8 +78,8 @@ public class CampaignScheduleSyncService(
                 ? defaultCampaign.Id
                 : (Guid?)null;
 
-        var displays = await db.Displays
-            .Where(d => d.UserId != null)
+        var displays = await db
+            .Displays.Where(d => d.UserId != null)
             .Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
             .Include(d => d.Zone)
@@ -79,10 +90,12 @@ public class CampaignScheduleSyncService(
         foreach (var display in displays)
         {
             var directCampaigns = display.CampaignAssignments.Select(ca => ca.Campaign);
-            var zoneCampaigns = display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign)
+            var zoneCampaigns =
+                display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign)
                 ?? Enumerable.Empty<Database.Models.Campaign>();
 
-            var activeIds = directCampaigns.Concat(zoneCampaigns)
+            var activeIds = directCampaigns
+                .Concat(zoneCampaigns)
                 .GroupBy(c => c.Id)
                 .Select(g => g.First())
                 .Where(c => c.IsActiveAt(utcNow))
@@ -91,9 +104,10 @@ public class CampaignScheduleSyncService(
                 .Select(c => c.Id)
                 .ToList();
 
-            var signature = activeIds.Count > 0
-                ? string.Join(",", activeIds)
-                : $"default:{defaultActiveId?.ToString() ?? "none"}";
+            var signature =
+                activeIds.Count > 0
+                    ? string.Join(",", activeIds)
+                    : $"default:{defaultActiveId?.ToString() ?? "none"}";
 
             if (_lastSignatures.TryGetValue(display.Id, out var previous) && previous == signature)
                 continue;
@@ -105,7 +119,10 @@ public class CampaignScheduleSyncService(
             if (isFirstObservation)
                 continue;
 
-            logger.LogInformation("Schedule change detected for screen {DisplayId}; re-syncing", display.Id);
+            logger.LogInformation(
+                "Schedule change detected for screen {DisplayId}; re-syncing",
+                display.Id
+            );
             await syncService.SyncScreenAsync(display.Id);
         }
     }
