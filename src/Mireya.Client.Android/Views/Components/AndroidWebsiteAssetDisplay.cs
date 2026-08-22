@@ -16,9 +16,6 @@ namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
 /// </summary>
 public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRenderer
 {
-    /// <summary>Raised once a navigated page has finished loading (see <see cref="IWebsiteRenderer" />).</summary>
-    public event Action? ContentReady;
-
     private WebView? _webView;
     private Uri? _pendingUri;
 
@@ -39,7 +36,7 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
         _webView.HorizontalScrollBarEnabled = false;
         _webView.VerticalScrollBarEnabled = false;
         _webView.SetBackgroundColor(global::Android.Graphics.Color.Black);
-        _webView.SetWebViewClient(new SignageWebViewClient(this));
+        _webView.SetWebViewClient(new SignageWebViewClient());
 
         // Apply any navigation that was requested before the native control existed.
         if (_pendingUri != null)
@@ -89,11 +86,9 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
         _webView.LoadUrl(uri?.AbsoluteUri ?? "about:blank");
     }
 
-    private void RaiseContentReady() => ContentReady?.Invoke();
-
     /// <summary>
-    ///     WebView client that hardens the loaded page for unattended signage and notifies
-    ///     the transition layer once the page has finished loading.
+    ///     WebView client that hardens the loaded page for unattended signage once it has
+    ///     finished loading.
     /// </summary>
     private sealed class SignageWebViewClient : WebViewClient
     {
@@ -106,19 +101,11 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
             + "::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;}';"
             + "document.head.appendChild(s);})()";
 
-        private readonly AndroidWebsiteAssetDisplay _owner;
-
-        public SignageWebViewClient(AndroidWebsiteAssetDisplay owner) => _owner = owner;
-
         public override void OnPageFinished(WebView? view, string? url)
         {
             base.OnPageFinished(view, url);
 
             view?.EvaluateJavascript(HardenScript, null);
-
-            // Signal the transition layer that the page is loaded so the crossfade
-            // curtain can be lifted without revealing a loading flash.
-            _owner.RaiseContentReady();
         }
     }
 }
