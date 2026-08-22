@@ -9,9 +9,14 @@ namespace Mireya.Client.Avalonia.Views.Components;
 
 public partial class VideoAssetDisplay : UserControl, IVideoRenderer
 {
+    public event Action<string>? PlaybackEnded;
+
     private LibVLC? _libVlc;
     private MediaPlayer? _mediaPlayer;
     private Media? _currentMedia;
+    private EventHandler<EventArgs>? _endReachedHandler;
+    private int _playbackGeneration;
+    private bool _playbackEndedSignaled;
 
     // Track desired mute state across lifecycle events
     private bool _isMuted;
@@ -20,6 +25,16 @@ public partial class VideoAssetDisplay : UserControl, IVideoRenderer
     {
         InitializeComponent();
         InitializeVlc();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+
+        // ContentDisplayView detaches native renderers while another asset type is active.
+        // OnDetachedFromVisualTree releases LibVLC, so a reused control must recreate it.
+        if (_mediaPlayer == null || _libVlc == null)
+            InitializeVlc();
     }
 
     private void InitializeVlc()
@@ -71,11 +86,21 @@ public partial class VideoAssetDisplay : UserControl, IVideoRenderer
 
         try
         {
-            // Dispose previous media if exists
-            _currentMedia?.Dispose();
+            Stop();
 
             // Create new media and keep reference
             _currentMedia = new Media(_libVlc, videoPath);
+            var generation = ++_playbackGeneration;
+            _playbackEndedSignaled = false;
+            _endReachedHandler = (_, _) =>
+            {
+                if (generation != _playbackGeneration || _playbackEndedSignaled)
+                    return;
+
+                _playbackEndedSignaled = true;
+                PlaybackEnded?.Invoke(videoPath);
+            };
+            _mediaPlayer.EndReached += _endReachedHandler;
 
             // Store desired mute state
             _isMuted = isMuted;
@@ -105,6 +130,13 @@ public partial class VideoAssetDisplay : UserControl, IVideoRenderer
 
     public void Stop()
     {
+        _playbackGeneration++;
+        _playbackEndedSignaled = false;
+
+        if (_mediaPlayer != null && _endReachedHandler != null)
+            _mediaPlayer.EndReached -= _endReachedHandler;
+        _endReachedHandler = null;
+
         _mediaPlayer?.Stop();
         _currentMedia?.Dispose();
         _currentMedia = null;

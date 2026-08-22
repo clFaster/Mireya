@@ -5,6 +5,7 @@ using AndroidX.Media3.UI;
 using Avalonia.Android;
 using Avalonia.Controls;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
@@ -16,9 +17,14 @@ namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
 /// </summary>
 public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
 {
+    public event Action<string>? PlaybackEnded;
+
     private PlayerView? _playerView;
     private IExoPlayer? _player;
+    private DispatcherTimer? _playbackCompletionTimer;
     private (string Path, bool Muted)? _pendingPlay;
+    private string? _currentVideoPath;
+    private bool _playbackEndedSignaled;
 
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
@@ -52,6 +58,9 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
         try
         {
             _pendingPlay = null;
+            _currentVideoPath = null;
+            _playbackEndedSignaled = false;
+            StopPlaybackCompletionPolling();
 
             if (_playerView != null)
                 _playerView.Player = null;
@@ -92,6 +101,9 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
     public void Stop()
     {
         _pendingPlay = null;
+        _currentVideoPath = null;
+        _playbackEndedSignaled = false;
+        StopPlaybackCompletionPolling();
 
         try
         {
@@ -116,13 +128,63 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
             using var mediaItem = MediaItem.FromUri(fileUri!);
 
             _player.Volume = muted ? 0f : 1f;
+            _currentVideoPath = videoPath;
+            _playbackEndedSignaled = false;
             _player.SetMediaItem(mediaItem);
             _player.Prepare();
             _player.Play();
+            StartPlaybackCompletionPolling();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to play video with Media3: {ex.Message}");
+        }
+    }
+
+    private void StartPlaybackCompletionPolling()
+    {
+        if (_playbackCompletionTimer == null)
+        {
+            _playbackCompletionTimer = new DispatcherTimer(
+                DispatcherPriority.Default,
+                Dispatcher.UIThread
+            )
+            {
+                Interval = TimeSpan.FromMilliseconds(100),
+            };
+            _playbackCompletionTimer.Tick += OnPlaybackCompletionTimerTick;
+        }
+
+        _playbackCompletionTimer.Stop();
+        _playbackCompletionTimer.Start();
+    }
+
+    private void StopPlaybackCompletionPolling() => _playbackCompletionTimer?.Stop();
+
+    private void OnPlaybackCompletionTimerTick(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (_player == null || _playbackEndedSignaled)
+            {
+                StopPlaybackCompletionPolling();
+                return;
+            }
+
+            if (
+                _player.PlaybackState != BasePlayer.InterfaceConsts.StateEnded
+                || _currentVideoPath == null
+            )
+                return;
+
+            _playbackEndedSignaled = true;
+            StopPlaybackCompletionPolling();
+            PlaybackEnded?.Invoke(_currentVideoPath);
+        }
+        catch (Exception ex)
+        {
+            StopPlaybackCompletionPolling();
+            Console.WriteLine($"Failed while checking Media3 playback completion: {ex.Message}");
         }
     }
 }

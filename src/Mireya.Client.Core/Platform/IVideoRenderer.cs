@@ -1,3 +1,5 @@
+using System;
+
 namespace Mireya.Client.Avalonia.Platform;
 
 /// <summary>
@@ -18,4 +20,10 @@ public interface IVideoRenderer
     ///     Stop playback and release the current media.
     /// </summary>
     void Stop();
+
+    /// <summary>
+    ///     Raised when the active video reaches its natural end. The path identifies the
+    ///     playback request that completed so stale notifications can be ignored.
+    /// </summary>
+    event Action<string>? PlaybackEnded;
 }

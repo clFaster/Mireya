@@ -789,9 +789,30 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
         // Trigger video playback in the UI component
         VideoPlaybackRequested?.Invoke(item.LocalPath, item.IsMuted);
+    }
 
-        // Set timer to advance after duration
-        StartAdvanceTimer(item.DurationSeconds);
+    /// <summary>Advances when the active renderer reports that the video ended naturally.</summary>
+    public void NotifyVideoPlaybackEnded(string path)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            CompleteVideoPlayback(path);
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() => CompleteVideoPlayback(path));
+    }
+
+    private void CompleteVideoPlayback(string path)
+    {
+        if (
+            _disposed
+            || CurrentContentType != ContentType.Video
+            || !string.Equals(CurrentVideoPath, path, StringComparison.Ordinal)
+        )
+            return;
+
+        AdvanceToNext();
     }
 
     private void ShowWebsite(PlaylistItem item)
