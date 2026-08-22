@@ -56,7 +56,8 @@ public static class DisplayClientServiceProviderFactory
 
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var dbPath = Path.Combine(appDataPath, "Mireya", "mireya_client.db");
-        var dbDirectory = Path.GetDirectoryName(dbPath)
+        var dbDirectory =
+            Path.GetDirectoryName(dbPath)
             ?? throw new InvalidOperationException("The client database path has no directory.");
         Directory.CreateDirectory(dbDirectory);
 
