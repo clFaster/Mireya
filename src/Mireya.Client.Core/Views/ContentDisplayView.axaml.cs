@@ -81,6 +81,7 @@ public partial class ContentDisplayView : UserControl
         {
             vm.VideoPlaybackRequested += _videoRenderer.Play;
             vm.VideoStopRequested += _videoRenderer.Stop;
+            _videoRenderer.PlaybackEnded += vm.NotifyVideoPlaybackEnded;
         }
 
         // Drive the platform website renderer on URI changes (kept as anonymous lambda
@@ -281,6 +282,13 @@ public partial class ContentDisplayView : UserControl
     {
         if (_viewModel != null)
         {
+            if (_videoRenderer != null)
+            {
+                _viewModel.VideoPlaybackRequested -= _videoRenderer.Play;
+                _viewModel.VideoStopRequested -= _videoRenderer.Stop;
+                _videoRenderer.PlaybackEnded -= _viewModel.NotifyVideoPlaybackEnded;
+            }
+
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _viewModel = null;
         }

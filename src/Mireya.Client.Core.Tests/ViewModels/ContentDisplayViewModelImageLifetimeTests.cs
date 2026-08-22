@@ -247,6 +247,55 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
             Assert.Equal(item.AssetName, viewModel.CurrentAssetName);
         });
 
+    [Fact]
+    public Task VideoPlaybackAdvancesAtNaturalEndInsteadOfUsingADurationTimer() =>
+        _session.RunAsync(() =>
+        {
+            using var viewModel = CreateViewModel();
+            var videoPath = Path.Combine(
+                Path.GetTempPath(),
+                $"mireya-video-{Guid.NewGuid():N}.mp4"
+            );
+            File.WriteAllBytes(videoPath, []);
+
+            try
+            {
+                GetPlaylist(viewModel)
+                    .AddRange([
+                        new PlaylistItem
+                        {
+                            AssetId = Guid.NewGuid(),
+                            AssetName = "Video",
+                            AssetType = AssetType.Video,
+                            LocalPath = videoPath,
+                            DurationSeconds = 1,
+                        },
+                        new PlaylistItem
+                        {
+                            AssetId = Guid.NewGuid(),
+                            AssetName = "Website",
+                            AssetType = AssetType.Website,
+                            Source = "https://example.com/",
+                            DurationSeconds = 10,
+                        },
+                    ]);
+
+                InvokePrivate(viewModel, "ShowCurrentItem");
+
+                Assert.Equal(ContentType.Video, viewModel.CurrentContentType);
+                Assert.Null(GetAdvanceTimer(viewModel));
+
+                viewModel.NotifyVideoPlaybackEnded(videoPath);
+
+                Assert.Equal(ContentType.Website, viewModel.CurrentContentType);
+                Assert.Equal("Website", viewModel.CurrentAssetName);
+            }
+            finally
+            {
+                File.Delete(videoPath);
+            }
+        });
+
     // ──────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────
@@ -311,6 +360,17 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
             ) ?? throw new InvalidOperationException("The playlist field was not found.");
 
         return (List<PlaylistItem>)field.GetValue(viewModel)!;
+    }
+
+    private static object? GetAdvanceTimer(ContentDisplayViewModel viewModel)
+    {
+        var field =
+            typeof(ContentDisplayViewModel).GetField(
+                "_advanceTimer",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            ) ?? throw new InvalidOperationException("The advance timer field was not found.");
+
+        return field.GetValue(viewModel);
     }
 
     /// <summary>
