@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
+             x:Class="Mireya.Client.Avalonia.Views.Components.IdentifyOverlay"
+             x:DataType="vm:ContentDisplayViewModel"
+             Background="Transparent"
+             IsHitTestVisible="False">
+
+    <Border IsVisible="{Binding IsIdentifying}"
+            Background="#3D5AFE"
+            Opacity="0.92"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+            <TextBlock Text="IDENTIFY"
+                       FontSize="64"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       LetterSpacing="8"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding DisplayName}"
+                       FontSize="30"
+                       Foreground="White"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding PairingCode}"
+                       FontSize="34"
+                       FontWeight="Bold"
+                       FontFamily="Consolas, monospace"
+                       Foreground="White"
+                       LetterSpacing="4"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+    </Border>
+</UserControl>

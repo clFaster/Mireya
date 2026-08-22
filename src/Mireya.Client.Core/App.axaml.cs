@@ -36,6 +36,12 @@ public class App : Application
     /// </summary>
     public static IServiceProvider? Services { get; private set; }
 
+    /// <summary>
+    ///     The active shared root view model. Platform hosts use this only to translate
+    ///     native remote, Back, and touch input into shared Screen Info navigation.
+    /// </summary>
+    public static MainWindowViewModel? RootViewModel { get; private set; }
+
     public override void Initialize()
     {
         // Configure Serilog
@@ -184,13 +190,13 @@ public class App : Application
         var appSettings = serviceProvider.GetRequiredService<AppSettings>();
         appSettings.LoadAsync().GetAwaiter().GetResult();
         Log.Information(
-            "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}, HideScreenInfo={HideScreenInfo}",
+            "App settings loaded — Fullscreen={Fullscreen}, AutoStart={AutoStart}",
             appSettings.Fullscreen,
-            appSettings.AutoStart,
-            appSettings.HideScreenInfo
+            appSettings.AutoStart
         );
 
         var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
+        RootViewModel = mainViewModel;
         return (serviceProvider, appSettings, mainViewModel);
     }
 }

@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
+             x:Class="Mireya.Client.Avalonia.Views.ScreenInfoPage"
+             x:DataType="vm:ContentDisplayViewModel"
+             Background="#0D0F1A">
+
+    <Grid RowDefinitions="*,Auto">
+    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel MaxWidth="720"
+                    Margin="24,32"
+                    Spacing="24"
+                    HorizontalAlignment="Center">
+
+            <StackPanel Spacing="8">
+                <TextBlock Text="SCREEN INFO"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           LetterSpacing="2"
+                           Foreground="#8C9EFF" />
+                <TextBlock Text="{Binding DisplayName}"
+                           FontSize="36"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Foreground="White" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Ellipse Width="12"
+                             Height="12"
+                             VerticalAlignment="Center"
+                             Fill="{Binding ConnectionIndicatorColor}" />
+                    <TextBlock Text="{Binding ConnectionStatus}"
+                               FontSize="16"
+                               VerticalAlignment="Center"
+                               Foreground="#C5CAE9" />
+                </StackPanel>
+            </StackPanel>
+
+            <Border Background="#171A2A"
+                    BorderBrush="#2C3150"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="24">
+                <StackPanel Spacing="20">
+                    <TextBlock Text="Now playing"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="White" />
+
+                    <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
+                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                   Text="Campaign"
+                                   FontSize="14"
+                                   Foreground="#7986A8" />
+                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding CurrentCampaignName, FallbackValue=—}"
+                                   FontSize="16"
+                                   TextWrapping="Wrap"
+                                   Foreground="#E8EAF6" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Text="Asset"
+                                   FontSize="14"
+                                   Foreground="#7986A8" />
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding CurrentAssetName, FallbackValue=—}"
+                                   FontSize="16"
+                                   TextWrapping="Wrap"
+                                   Foreground="#E8EAF6" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0"
+                                   Text="Position"
+                                   FontSize="14"
+                                   Foreground="#7986A8" />
+                        <TextBlock Grid.Row="2" Grid.Column="1"
+                                   FontSize="16"
+                                   Foreground="#E8EAF6">
+                            <Run Text="{Binding CurrentAssetPosition}" />
+                            <Run Text=" of " />
+                            <Run Text="{Binding TotalAssets}" />
+                        </TextBlock>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#121522"
+                    BorderBrush="#232842"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="24">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Device status"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="White" />
+                    <TextBlock Text="{Binding StatusText}"
+                               FontSize="15"
+                               LineHeight="22"
+                               TextWrapping="Wrap"
+                               Foreground="#AAB2D5" />
+                    <TextBlock Text="{Binding PairingCode}"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               FontFamily="Consolas, monospace"
+                               LetterSpacing="2"
+                               TextWrapping="Wrap"
+                               Foreground="#8C9EFF" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+
+        <Border Grid.Row="1"
+                Background="#121522"
+                BorderBrush="#232842"
+                BorderThickness="0,1,0,0"
+                Padding="24,16">
+            <StackPanel MaxWidth="720"
+                        Spacing="8"
+                        HorizontalAlignment="Stretch">
+                <Button Command="{Binding CloseScreenInfoCommand}"
+                        Height="56"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Background="#536DFE"
+                        Foreground="White"
+                        CornerRadius="12"
+                        FontSize="17"
+                        FontWeight="SemiBold"
+                        Content="Back to playback" />
+
+                <TextBlock Text="Press Enter, OK, Space, Escape, or Back to return"
+                           FontSize="13"
+                           TextAlignment="Center"
+                           Foreground="#687096" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

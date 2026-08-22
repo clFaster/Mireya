@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
              xmlns:components="using:Mireya.Client.Avalonia.Views.Components"
+             xmlns:views="using:Mireya.Client.Avalonia.Views"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
@@ -20,19 +21,24 @@
 
         <!-- Video display (platform renderer injected via IAssetViewFactory) -->
         <ContentControl x:Name="VideoHost"
-                        IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Video}}" />
+                        IsVisible="False" />
 
         <!-- Website display (platform renderer injected via IAssetViewFactory) -->
         <ContentControl x:Name="WebsiteHost"
-                        IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Website}}" />
+                        IsVisible="False" />
 
         <!-- No content message -->
         <components:NoContentDisplay DataContext="{Binding}"
                                      IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.None}}" />
 
-        <!-- Overlay layer (status panel + identify flash). Hosted inline for image /
-             idle content; a floating clone (code-behind) covers native video / website. -->
-        <components:OverlayLayer DataContext="{Binding}" />
+        <!-- Full-screen, on-demand diagnostics page. Native renderer hosts are hidden in
+             code-behind while this page is open so it also works over video and websites. -->
+        <views:ScreenInfoPage DataContext="{Binding}"
+                              IsVisible="{Binding IsScreenInfoVisible}" />
+
+        <!-- Remote identify remains an operator-triggered locating aid, independent of
+             the on-demand Screen Info page. -->
+        <components:IdentifyOverlay DataContext="{Binding}" />
     </Grid>
 
 </UserControl>

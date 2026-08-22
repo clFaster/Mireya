@@ -91,6 +91,39 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         CurrentView = _serviceProvider.GetRequiredService<ContentDisplayViewModel>();
     }
 
+    /// <summary>Whether the primary input can currently control the playback Screen Info page.</summary>
+    public bool CanHandleScreenInfoInput => CurrentView is ContentDisplayViewModel;
+
+    /// <summary>Opens Screen Info while playback is active.</summary>
+    public bool TryOpenScreenInfo()
+    {
+        if (CurrentView is not ContentDisplayViewModel content || content.IsScreenInfoVisible)
+            return false;
+
+        content.ShowScreenInfo();
+        return true;
+    }
+
+    /// <summary>Toggles Screen Info from a keyboard or TV remote primary action.</summary>
+    public bool TryToggleScreenInfo()
+    {
+        if (CurrentView is not ContentDisplayViewModel content)
+            return false;
+
+        content.ToggleScreenInfo();
+        return true;
+    }
+
+    /// <summary>Closes Screen Info for Escape, Android Back, or equivalent navigation.</summary>
+    public bool TryCloseScreenInfo()
+    {
+        if (CurrentView is not ContentDisplayViewModel { IsScreenInfoVisible: true } content)
+            return false;
+
+        content.HideScreenInfo();
+        return true;
+    }
+
     // ──────────────────────────────────────────────────────────────
     // Auto-connect (used when AppSettings.AutoStart == true)
     // ──────────────────────────────────────────────────────────────

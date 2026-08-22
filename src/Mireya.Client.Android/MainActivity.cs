@@ -34,6 +34,8 @@ namespace Mireya.Client.Avalonia.AndroidTv;
 )]
 public class MainActivity : AvaloniaMainActivity
 {
+    private bool _screenInfoTouchCaptured;
+
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
@@ -53,4 +55,72 @@ public class MainActivity : AvaloniaMainActivity
             }
         }
     }
+
+    public override bool DispatchKeyEvent(KeyEvent? e)
+    {
+        if (e is null)
+            return base.DispatchKeyEvent(e);
+
+        var root = App.RootViewModel;
+        var isPrimaryAction =
+            e.KeyCode
+            is Keycode.DpadCenter
+                or Keycode.Enter
+                or Keycode.NumpadEnter
+                or Keycode.Space
+                or Keycode.ButtonA;
+
+        if (isPrimaryAction && root?.CanHandleScreenInfoInput == true)
+        {
+            if (e.Action == KeyEventActions.Down && e.RepeatCount == 0)
+                root.TryToggleScreenInfo();
+
+            // Consume both halves of the native event so Avalonia does not toggle twice.
+            return true;
+        }
+
+        return base.DispatchKeyEvent(e);
+    }
+
+    public override bool DispatchTouchEvent(MotionEvent? e)
+    {
+        if (e is null)
+            return base.DispatchTouchEvent(e);
+
+        if (e.Action == MotionEventActions.Down && App.RootViewModel?.TryOpenScreenInfo() == true)
+        {
+            _screenInfoTouchCaptured = true;
+            return true;
+        }
+
+        if (_screenInfoTouchCaptured)
+        {
+            if (e.Action is MotionEventActions.Up or MotionEventActions.Cancel)
+                _screenInfoTouchCaptured = false;
+            return true;
+        }
+
+        return base.DispatchTouchEvent(e);
+    }
+
+#pragma warning disable CS0672 // AndroidX still routes predictive Back through this override as its fallback.
+#pragma warning disable CS0618 // Base OnBackPressed remains the AndroidX fallback below API 33.
+    public override void OnBackPressed()
+    {
+        if (App.RootViewModel?.TryCloseScreenInfo() == true)
+            return;
+
+        if (System.OperatingSystem.IsAndroidVersionAtLeast(24))
+        {
+#pragma warning disable CA1422 // AndroidX invokes this override as its predictive-Back fallback.
+            base.OnBackPressed();
+#pragma warning restore CA1422
+        }
+        else
+        {
+            Finish();
+        }
+    }
+#pragma warning restore CS0618
+#pragma warning restore CS0672
 }

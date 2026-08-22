@@ -4,7 +4,6 @@ using Avalonia.Android;
 using Avalonia.Controls;
 using Avalonia.Platform;
 using Mireya.Client.Avalonia.Platform;
-using AView = Android.Views.View;
 
 namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
 

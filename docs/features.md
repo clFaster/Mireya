@@ -94,7 +94,8 @@ Client capabilities include:
 
 - Backend URL selection and persisted backend list.
 - Optional `MIREYA_BACKEND_URL` preconfiguration.
-- Fullscreen, autostart, and status overlay settings.
+- Fullscreen and autostart settings.
+- On-demand Screen Info page, opened by touch, Enter/Space, or a TV remote's OK button.
 - First-run registration and approval waiting screen.
 - SignalR reconnect with capped exponential backoff.
 - Local asset database and media cache.

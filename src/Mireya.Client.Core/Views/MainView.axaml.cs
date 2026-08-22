@@ -1,5 +1,8 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Mireya.Client.Avalonia.ViewModels;
 
 namespace Mireya.Client.Avalonia.Views;
 
@@ -13,6 +16,31 @@ public partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
+        Focusable = true;
+        AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(PointerReleasedEvent, OnPointerReleased, RoutingStrategies.Tunnel);
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+            return;
+
+        var handled = e.Key switch
+        {
+            Key.Enter or Key.Space => viewModel.TryToggleScreenInfo(),
+            Key.Escape => viewModel.TryCloseScreenInfo(),
+            _ => false,
+        };
+
+        if (handled)
+            e.Handled = true;
+    }
+
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel && viewModel.TryOpenScreenInfo())
+            e.Handled = true;
     }
 
     private void InitializeComponent()

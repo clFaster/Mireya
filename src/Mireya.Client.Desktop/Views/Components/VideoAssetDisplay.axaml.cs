@@ -1,7 +1,6 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
-using LibVLCSharp.Avalonia;
 using LibVLCSharp.Shared;
 using Mireya.Client.Avalonia.Platform;
 
