@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
 using Mireya.ApiClient.Services;
-using Mireya.Client.Avalonia.Services;
 using ClientImageFit = Mireya.ApiClient.Models.ImageFit;
 
 namespace Mireya.Client.Avalonia.ViewModels;
@@ -58,7 +57,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private int _totalAssets;
 
     [ObservableProperty]
-    private bool _isOverlayVisible = true;
+    private bool _isScreenInfoVisible;
 
     [ObservableProperty]
     private string _statusText = "Waiting for content...";
@@ -116,8 +115,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         IAuthenticationService authenticationService,
         IScreenHubService hubService,
         ILocalAssetSyncService assetSyncService,
-        ILogger<ContentDisplayViewModel> logger,
-        AppSettings appSettings
+        ILogger<ContentDisplayViewModel> logger
     )
     {
         _authenticationService = authenticationService;
@@ -140,16 +138,6 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
                 t => _logger.LogError(t.Exception, "Background initialization failed"),
                 TaskContinuationOptions.OnlyOnFaulted
             );
-
-        // Auto-hide the status overlay once content starts playing (independent of AutoStart)
-        if (appSettings.HideScreenInfo)
-        {
-            _ = AutoHideOverlayAsync()
-                .ContinueWith(
-                    t => _logger.LogError(t.Exception, "Auto-hide overlay faulted"),
-                    TaskContinuationOptions.OnlyOnFaulted
-                );
-        }
     }
 
     private async Task InitializeAsync()
@@ -897,11 +885,36 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         ShowCurrentItem();
     }
 
-    [RelayCommand]
-    private void ToggleOverlay()
+    public void ShowScreenInfo()
     {
-        IsOverlayVisible = !IsOverlayVisible;
-        _logger.LogDebug("Overlay visibility: {Visible}", IsOverlayVisible);
+        if (IsScreenInfoVisible)
+            return;
+
+        IsScreenInfoVisible = true;
+        _logger.LogDebug("Screen Info page opened");
+    }
+
+    public void HideScreenInfo()
+    {
+        if (!IsScreenInfoVisible)
+            return;
+
+        IsScreenInfoVisible = false;
+        _logger.LogDebug("Screen Info page closed");
+    }
+
+    public void ToggleScreenInfo()
+    {
+        if (IsScreenInfoVisible)
+            HideScreenInfo();
+        else
+            ShowScreenInfo();
+    }
+
+    [RelayCommand]
+    private void CloseScreenInfo()
+    {
+        HideScreenInfo();
     }
 
     [RelayCommand]
@@ -929,17 +942,6 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         }
 
         ShowCurrentItem();
-    }
-
-    private async Task AutoHideOverlayAsync()
-    {
-        _logger.LogDebug("AutoStart: overlay will auto-hide in 10 s");
-        await Task.Delay(TimeSpan.FromSeconds(10));
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            IsOverlayVisible = false;
-            _logger.LogInformation("AutoStart: overlay hidden");
-        });
     }
 
     public void Cleanup()
