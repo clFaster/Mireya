@@ -1,4 +1,6 @@
 using System;
+using Android.App;
+using Android.Graphics;
 using Android.Webkit;
 using Avalonia.Android;
 using Avalonia.Controls;
@@ -15,12 +17,22 @@ namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
 /// </summary>
 public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRenderer
 {
-    private WebView? _webView;
     private Uri? _pendingUri;
+    private WebView? _webView;
+
+    public void Navigate(Uri? uri)
+    {
+        _pendingUri = uri;
+
+        if (_webView == null)
+            return;
+
+        _webView.LoadUrl(uri?.AbsoluteUri ?? "about:blank");
+    }
 
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
-        var context = global::Android.App.Application.Context;
+        var context = Application.Context;
 
         _webView = new WebView(context);
         var settings = _webView.Settings;
@@ -34,7 +46,7 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
 
         _webView.HorizontalScrollBarEnabled = false;
         _webView.VerticalScrollBarEnabled = false;
-        _webView.SetBackgroundColor(global::Android.Graphics.Color.Black);
+        _webView.SetBackgroundColor(Color.Black);
         _webView.SetWebViewClient(new SignageWebViewClient());
 
         // Apply any navigation that was requested before the native control existed.
@@ -73,16 +85,6 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
             // AndroidViewControlHandle owns disposal of the wrapped Android View.
             base.DestroyNativeControlCore(control);
         }
-    }
-
-    public void Navigate(Uri? uri)
-    {
-        _pendingUri = uri;
-
-        if (_webView == null)
-            return;
-
-        _webView.LoadUrl(uri?.AbsoluteUri ?? "about:blank");
     }
 
     /// <summary>

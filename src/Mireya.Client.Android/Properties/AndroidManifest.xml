@@ -4,12 +4,12 @@
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
   <!-- Android TV devices have no touchscreen; declaring it not required lets the app
-	     install and run on both TV and regular devices. Leanback is likewise optional. -->
+           install and run on both TV and regular devices. Leanback is likewise optional. -->
   <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
   <uses-feature android:name="android.software.leanback" android:required="false" />
 
   <!-- Digital-signage servers are commonly reached over plain HTTP on a LAN, so
-	     cleartext traffic must be permitted. -->
+           cleartext traffic must be permitted. -->
   <application
     android:label="Mireya"
     android:icon="@drawable/Icon"

@@ -1,3 +1,4 @@
+using System;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
@@ -44,7 +45,7 @@ public class MainActivity : AvaloniaMainActivity
         // bars so signage content fills the whole TV screen. The modern WindowInsets API
         // is only available from API 30 (Android 11).
         Window?.AddFlags(WindowManagerFlags.KeepScreenOn);
-        if (System.OperatingSystem.IsAndroidVersionAtLeast(30))
+        if (OperatingSystem.IsAndroidVersionAtLeast(30))
         {
             var controller = Window?.InsetsController;
             if (controller is not null)
@@ -110,7 +111,7 @@ public class MainActivity : AvaloniaMainActivity
         if (App.RootViewModel?.TryCloseScreenInfo() == true)
             return;
 
-        if (System.OperatingSystem.IsAndroidVersionAtLeast(24))
+        if (OperatingSystem.IsAndroidVersionAtLeast(24))
         {
 #pragma warning disable CA1422 // AndroidX invokes this override as its predictive-Back fallback.
             base.OnBackPressed();

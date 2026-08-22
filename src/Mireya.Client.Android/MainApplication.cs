@@ -6,7 +6,8 @@ using Avalonia.Android;
 namespace Mireya.Client.Avalonia.AndroidTv;
 
 /// <summary>
-///     Android application entry point (Avalonia 12 hosting model). It names the shared <see cref="App" /> as the Avalonia application and supplies the Android
+///     Android application entry point (Avalonia 12 hosting model). It names the shared <see cref="App" /> as the Avalonia
+///     application and supplies the Android
 ///     composition root before Avalonia starts, so the activity lifetime can build the
 ///     service provider with the Android-specific implementations.
 /// </summary>
