@@ -1,11 +1,8 @@
 using System.Reflection;
 using Avalonia.Media.Imaging;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Mireya.ApiClient.Generated;
-using Mireya.ApiClient.Models;
 using Mireya.ApiClient.Services;
-using Mireya.Client.Avalonia.Services;
 using Mireya.Client.Avalonia.ViewModels;
 using NSubstitute;
 
@@ -333,8 +330,7 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
             authenticationService,
             Substitute.For<IScreenHubService>(),
             Substitute.For<ILocalAssetSyncService>(),
-            NullLogger<ContentDisplayViewModel>.Instance,
-            new AppSettings(Substitute.For<IServiceScopeFactory>())
+            NullLogger<ContentDisplayViewModel>.Instance
         );
     }
 

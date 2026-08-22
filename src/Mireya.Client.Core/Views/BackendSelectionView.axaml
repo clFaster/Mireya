@@ -290,30 +290,6 @@
                                       OnContent="" />
                     </Grid>
 
-                    <Border Height="1" Background="#2A2A44" />
-
-                    <!-- HideScreenInfo toggle -->
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="Hide Screen Info"
-                                       FontSize="13"
-                                       FontWeight="Medium"
-                                       Foreground="#E0E0E0" />
-                            <TextBlock Text="Automatically hide the status overlay 10 s after content starts"
-                                       FontSize="11"
-                                       Foreground="#546E7A" />
-                            <TextBlock Text="Takes effect on next connection"
-                                       FontSize="10"
-                                       Foreground="#37474F"
-                                       FontStyle="Italic" />
-                        </StackPanel>
-                        <ToggleSwitch Grid.Column="1"
-                                      IsChecked="{Binding HideScreenInfo}"
-                                      VerticalAlignment="Center"
-                                      OffContent=""
-                                      OnContent="" />
-                    </Grid>
-
                     <!-- Save button -->
                     <Button Content="Save Settings"
                             Command="{Binding SaveSettingsCommand}"

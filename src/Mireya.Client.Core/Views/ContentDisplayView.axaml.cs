@@ -66,8 +66,8 @@ public partial class ContentDisplayView : UserControl
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
-        // Tear down any previous overlay and unsubscribe old VM
-        CloseOverlayWindow();
+        // Tear down any previous identify window and unsubscribe old VM
+        CloseIdentifyWindow();
 
         if (DataContext is not ContentDisplayViewModel vm)
         {
@@ -97,7 +97,7 @@ public partial class ContentDisplayView : UserControl
             };
         }
 
-        // Subscribe to VM changes that affect the overlay window visibility
+        // Subscribe to VM changes that affect native renderer and identify visibility.
         vm.PropertyChanged += OnViewModelPropertyChanged;
         UpdatePlatformRendererHosts();
 
@@ -106,7 +106,7 @@ public partial class ContentDisplayView : UserControl
         // wait for AttachedToVisualTree.
         var parentWindow = TopLevel.GetTopLevel(this) as Window;
         if (parentWindow != null)
-            SetupOverlayWindow(parentWindow);
+            SetupIdentifyWindow(parentWindow);
         else
             AttachedToVisualTree += OnFirstAttach;
     }
@@ -117,14 +117,14 @@ public partial class ContentDisplayView : UserControl
 
         var parentWindow = TopLevel.GetTopLevel(this) as Window;
         if (parentWindow != null && _viewModel != null)
-            SetupOverlayWindow(parentWindow);
+            SetupIdentifyWindow(parentWindow);
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Floating overlay window (paints over the Win32 WebView2 HWND)
+    // Floating identify window (paints over the Win32 WebView2 HWND)
     // ──────────────────────────────────────────────────────────────
 
-    private void SetupOverlayWindow(Window parentWindow)
+    private void SetupIdentifyWindow(Window parentWindow)
     {
         if (_overlayWindow != null || _viewModel == null)
             return;
@@ -132,11 +132,10 @@ public partial class ContentDisplayView : UserControl
         _parentWindow = parentWindow;
 
         // Create a borderless, transparent, always-on-top window that mirrors the
-        // overlay layer.  This is required because both WebView2 (websites) and the
+        // identify flash. This is required because both WebView2 (websites) and the
         // LibVLC VideoView (videos) render into native child windows that always paint
         // over ordinary Avalonia visuals (the "airspace" problem). The window covers the
-        // whole client area so both the status panel and the identify flash are visible
-        // over native content (UA9 / UA10).
+        // whole client area so the identify flash is visible over native content.
         _overlayWindow = new Window
         {
             Title = string.Empty,
@@ -151,7 +150,7 @@ public partial class ContentDisplayView : UserControl
                 WindowTransparencyLevel.Transparent,
                 WindowTransparencyLevel.AcrylicBlur,
             },
-            Content = new OverlayLayer { DataContext = _viewModel },
+            Content = new IdentifyOverlay { DataContext = _viewModel },
         };
 
         // Track parent window movement / resize
@@ -162,7 +161,7 @@ public partial class ContentDisplayView : UserControl
         _overlayWindow.Show(parentWindow);
         _overlayWindow.IsVisible = false;
 
-        UpdateOverlayVisibility();
+        UpdateIdentifyVisibility();
 
         // Measure the overlay content after the first layout pass so the
         // initial position calculation has valid size information.
@@ -170,7 +169,7 @@ public partial class ContentDisplayView : UserControl
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Overlay visibility / position helpers
+    // Identify visibility / position helpers
     // ──────────────────────────────────────────────────────────────
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -178,15 +177,15 @@ public partial class ContentDisplayView : UserControl
         if (e.PropertyName is nameof(ContentDisplayViewModel.CurrentContentType))
         {
             UpdatePlatformRendererHosts();
-            UpdateOverlayVisibility();
+            UpdateIdentifyVisibility();
         }
-        else if (
-            e.PropertyName
-            is nameof(ContentDisplayViewModel.IsOverlayVisible)
-                or nameof(ContentDisplayViewModel.IsIdentifying)
-        )
+        else if (e.PropertyName is nameof(ContentDisplayViewModel.IsScreenInfoVisible))
         {
-            UpdateOverlayVisibility();
+            UpdatePlatformRendererHosts();
+        }
+        else if (e.PropertyName is nameof(ContentDisplayViewModel.IsIdentifying))
+        {
+            UpdateIdentifyVisibility();
         }
     }
 
@@ -199,13 +198,20 @@ public partial class ContentDisplayView : UserControl
         // attached to the visual tree, even when its Avalonia host is invisible. Attach only
         // the renderer that is actively needed so image-only campaigns do not keep two
         // hidden native surfaces and their composition loops alive.
+        var showPlayback = !_viewModel.IsScreenInfoVisible;
+
         if (_websiteHost != null)
+        {
+            _websiteHost.IsVisible =
+                showPlayback && _viewModel.CurrentContentType == ContentType.Website;
             _websiteHost.Content =
                 _viewModel.CurrentContentType == ContentType.Website ? _websiteControl : null;
+        }
 
         if (_videoHost != null)
         {
             var isVideoActive = _viewModel.CurrentContentType == ContentType.Video;
+            _videoHost.IsVisible = showPlayback && isVideoActive;
             if (isVideoActive)
                 _videoRendererHasBeenAttached = true;
 
@@ -220,22 +226,17 @@ public partial class ContentDisplayView : UserControl
         }
     }
 
-    private void UpdateOverlayVisibility()
+    private void UpdateIdentifyVisibility()
     {
         if (_overlayWindow == null || _viewModel == null)
             return;
 
         // The floating window is only needed over native surfaces (video / website),
-        // which paint over the inline AXAML overlays. For image / idle content the inline
-        // OverlayLayer in ContentDisplayView.axaml already sits above the content.
+        // which paint over the inline Avalonia identify flash.
         var isNativeContent =
             _viewModel.CurrentContentType is ContentType.Website or ContentType.Video;
 
-        // Keep it hidden unless something actually needs to be shown, so the transparent
-        // top-level window does not needlessly sit over the content.
-        var hasOverlayContent = _viewModel.IsOverlayVisible || _viewModel.IsIdentifying;
-
-        var shouldShow = isNativeContent && hasOverlayContent;
+        var shouldShow = isNativeContent && _viewModel.IsIdentifying;
 
         _overlayWindow.IsVisible = shouldShow;
 
@@ -288,10 +289,10 @@ public partial class ContentDisplayView : UserControl
         // Cancel any pending first-attach subscription
         AttachedToVisualTree -= OnFirstAttach;
 
-        CloseOverlayWindow();
+        CloseIdentifyWindow();
     }
 
-    private void CloseOverlayWindow()
+    private void CloseIdentifyWindow()
     {
         if (_viewModel != null)
         {

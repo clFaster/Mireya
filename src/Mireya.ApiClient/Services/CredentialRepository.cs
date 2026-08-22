@@ -1,5 +1,4 @@
 using Mireya.ApiClient.Data;
-using Mireya.ApiClient.Models;
 
 namespace Mireya.ApiClient.Services;
 
