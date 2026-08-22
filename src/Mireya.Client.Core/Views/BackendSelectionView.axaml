@@ -244,8 +244,9 @@
                                Foreground="#B0BEC5"
                                Margin="0,0,0,2" />
 
-                    <!-- Fullscreen toggle -->
-                    <Grid ColumnDefinitions="*,Auto">
+                    <!-- Fullscreen is available only on windowed desktop clients. -->
+                    <Grid ColumnDefinitions="*,Auto"
+                          IsVisible="{Binding SupportsFullscreen}">
                         <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
                             <TextBlock Text="Fullscreen"
                                        FontSize="13"
@@ -266,7 +267,9 @@
                                       OnContent="" />
                     </Grid>
 
-                    <Border Height="1" Background="#2A2A44" />
+                    <Border Height="1"
+                            Background="#2A2A44"
+                            IsVisible="{Binding SupportsFullscreen}" />
 
                     <!-- AutoStart toggle -->
                     <Grid ColumnDefinitions="*,Auto">
