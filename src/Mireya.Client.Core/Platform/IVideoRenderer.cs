@@ -10,6 +10,13 @@ namespace Mireya.Client.Avalonia.Platform;
 public interface IVideoRenderer
 {
     /// <summary>
+    ///     Whether the renderer's control must remain attached after its first use. Native
+    ///     desktop video surfaces cannot be repeatedly detached without creating replacement
+    ///     top-level windows; Android renderers should detach to release platform resources.
+    /// </summary>
+    bool KeepAttachedWhenInactive { get; }
+
+    /// <summary>
     ///     Begin playback of the local video file at <paramref name="path" />.
     /// </summary>
     /// <param name="path">Absolute path to the local video file.</param>
