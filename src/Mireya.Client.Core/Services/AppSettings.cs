@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Mireya.ApiClient.Data;
+using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia.Services;
 
@@ -18,6 +19,7 @@ namespace Mireya.Client.Avalonia.Services;
 /// </summary>
 public sealed class AppSettings
 {
+    private readonly ClientPlatformCapabilities _platformCapabilities;
     private readonly IServiceScopeFactory _scopeFactory;
 
     // ──────────────────────────────────────────────────────────────
@@ -47,9 +49,13 @@ public sealed class AppSettings
 
     // ──────────────────────────────────────────────────────────────
 
-    public AppSettings(IServiceScopeFactory scopeFactory)
+    public AppSettings(
+        IServiceScopeFactory scopeFactory,
+        ClientPlatformCapabilities platformCapabilities
+    )
     {
         _scopeFactory = scopeFactory;
+        _platformCapabilities = platformCapabilities;
     }
 
     /// <summary>
@@ -61,7 +67,8 @@ public sealed class AppSettings
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-        Fullscreen = await GetBoolAsync(db, "Fullscreen", false);
+        Fullscreen = _platformCapabilities.SupportsFullscreen
+            && await GetBoolAsync(db, "Fullscreen", false);
         AutoStart = await GetBoolAsync(db, "AutoStart", false);
 
         // Remove the retired overlay preference during upgrade. Screen Info is now an
@@ -80,7 +87,8 @@ public sealed class AppSettings
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-        await SetValueAsync(db, "Fullscreen", Fullscreen.ToString());
+        if (_platformCapabilities.SupportsFullscreen)
+            await SetValueAsync(db, "Fullscreen", Fullscreen.ToString());
         await SetValueAsync(db, "AutoStart", AutoStart.ToString());
     }
 

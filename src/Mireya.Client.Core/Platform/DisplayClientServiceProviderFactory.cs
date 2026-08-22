@@ -19,20 +19,25 @@ namespace Mireya.Client.Avalonia.Platform;
 /// </summary>
 public static class DisplayClientServiceProviderFactory
 {
-    public static IServiceProvider Build<TAssetViewFactory>(string defaultBackendUrl)
+    public static IServiceProvider Build<TAssetViewFactory>(
+        string defaultBackendUrl,
+        bool supportsFullscreen
+    )
         where TAssetViewFactory : class, IAssetViewFactory
     {
         var services = new ServiceCollection();
-        services.AddDisplayClientServices<TAssetViewFactory>(defaultBackendUrl);
+        services.AddDisplayClientServices<TAssetViewFactory>(defaultBackendUrl, supportsFullscreen);
         return services.BuildServiceProvider();
     }
 
     private static IServiceCollection AddDisplayClientServices<TAssetViewFactory>(
         this IServiceCollection services,
-        string defaultBackendUrl
+        string defaultBackendUrl,
+        bool supportsFullscreen
     )
         where TAssetViewFactory : class, IAssetViewFactory
     {
+        services.AddSingleton(new ClientPlatformCapabilities { SupportsFullscreen = supportsFullscreen });
         services.AddSingleton<AppSettings>();
 
         services.AddLogging(builder =>

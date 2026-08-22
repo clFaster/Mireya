@@ -13,6 +13,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Services;
+using Mireya.Client.Avalonia.Platform;
 using Mireya.Client.Avalonia.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
@@ -24,6 +25,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private readonly ILogger<BackendSelectionViewModel> _logger;
     private readonly Action<BackendInstance> _onBackendSelected;
     private readonly AppSettings _appSettings;
+    private readonly ClientPlatformCapabilities _platformCapabilities;
     private CancellationTokenSource? _statusCts;
 
     [ObservableProperty]
@@ -61,11 +63,14 @@ public partial class BackendSelectionViewModel : ViewModelBase
     [ObservableProperty]
     private bool _autoStart;
 
+    public bool SupportsFullscreen => _platformCapabilities.SupportsFullscreen;
+
     public BackendSelectionViewModel(
         IBackendManager backendManager,
         IApiClientConfiguration apiClientConfiguration,
         ILogger<BackendSelectionViewModel> logger,
         AppSettings appSettings,
+        ClientPlatformCapabilities platformCapabilities,
         Action<BackendInstance> onBackendSelected
     )
     {
@@ -73,6 +78,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
         _apiClientConfiguration = apiClientConfiguration;
         _logger = logger;
         _appSettings = appSettings;
+        _platformCapabilities = platformCapabilities;
         _onBackendSelected = onBackendSelected;
 
         // Mirror current settings into the observable properties
@@ -182,16 +188,24 @@ public partial class BackendSelectionViewModel : ViewModelBase
     {
         try
         {
-            _appSettings.Fullscreen = Fullscreen;
+            if (SupportsFullscreen)
+                _appSettings.Fullscreen = Fullscreen;
             _appSettings.AutoStart = AutoStart;
             await _appSettings.SaveAsync();
-            _logger.LogInformation(
-                "Settings saved — Fullscreen={Fullscreen}, AutoStart={AutoStart}",
-                Fullscreen,
-                AutoStart
-            );
-            // Apply fullscreen immediately — no restart required
-            _appSettings.ApplyFullscreen?.Invoke(Fullscreen);
+            if (SupportsFullscreen)
+            {
+                _logger.LogInformation(
+                    "Settings saved — Fullscreen={Fullscreen}, AutoStart={AutoStart}",
+                    Fullscreen,
+                    AutoStart
+                );
+                // Apply fullscreen immediately — no restart required
+                _appSettings.ApplyFullscreen?.Invoke(Fullscreen);
+            }
+            else
+            {
+                _logger.LogInformation("Settings saved — AutoStart={AutoStart}", AutoStart);
+            }
             SetStatus("Settings saved.", isError: false);
         }
         catch (Exception ex)
