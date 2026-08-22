@@ -22,6 +22,7 @@ public partial class ContentDisplayView : UserControl
     private ContentControl? _videoHost;
     private Control? _websiteControl;
     private Control? _videoControl;
+    private bool _videoRendererHasBeenAttached;
 
     public ContentDisplayView()
     {
@@ -203,8 +204,20 @@ public partial class ContentDisplayView : UserControl
                 _viewModel.CurrentContentType == ContentType.Website ? _websiteControl : null;
 
         if (_videoHost != null)
-            _videoHost.Content =
-                _viewModel.CurrentContentType == ContentType.Video ? _videoControl : null;
+        {
+            var isVideoActive = _viewModel.CurrentContentType == ContentType.Video;
+            if (isVideoActive)
+                _videoRendererHasBeenAttached = true;
+
+            // LibVLCSharp's Avalonia VideoView owns a native surface that must stay parented
+            // to the original host. Detaching and reattaching it for every playlist item can
+            // create a new top-level video window. The host's IsVisible binding still hides
+            // the retained control while non-video content is active. Android opts out and
+            // continues detaching its native player to release resources.
+            var retainInactiveRenderer =
+                _videoRendererHasBeenAttached && _videoRenderer?.KeepAttachedWhenInactive == true;
+            _videoHost.Content = isVideoActive || retainInactiveRenderer ? _videoControl : null;
+        }
     }
 
     private void UpdateOverlayVisibility()

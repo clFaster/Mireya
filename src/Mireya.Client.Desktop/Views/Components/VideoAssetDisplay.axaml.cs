@@ -11,6 +11,8 @@ public partial class VideoAssetDisplay : UserControl, IVideoRenderer
 {
     public event Action<string>? PlaybackEnded;
 
+    public bool KeepAttachedWhenInactive => true;
+
     private LibVLC? _libVlc;
     private MediaPlayer? _mediaPlayer;
     private Media? _currentMedia;

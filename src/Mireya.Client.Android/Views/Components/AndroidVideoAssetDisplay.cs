@@ -19,6 +19,8 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
 {
     public event Action<string>? PlaybackEnded;
 
+    public bool KeepAttachedWhenInactive => false;
+
     private PlayerView? _playerView;
     private IExoPlayer? _player;
     private DispatcherTimer? _playbackCompletionTimer;
