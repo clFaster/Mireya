@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
-using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Generated;
 
 namespace Mireya.ApiClient.Services;
