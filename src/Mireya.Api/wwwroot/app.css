@@ -263,6 +263,22 @@ nav.bg-dark .btn-outline-light:hover {
     border-color: rgba(255, 255, 255, .32);
 }
 
+.app-version {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin: 0 0 .7rem .8rem;
+    color: var(--text-on-ink-soft);
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.app-version i {
+    color: rgba(var(--brand-rgb), .85);
+    font-size: .76rem;
+}
+
 /* ---- Buttons ------------------------------------------------------------- */
 .btn {
     --bs-btn-font-family: var(--font-body);
