@@ -37,7 +37,9 @@ public static class DisplayClientServiceProviderFactory
     )
         where TAssetViewFactory : class, IAssetViewFactory
     {
-        services.AddSingleton(new ClientPlatformCapabilities { SupportsFullscreen = supportsFullscreen });
+        services.AddSingleton(
+            new ClientPlatformCapabilities { SupportsFullscreen = supportsFullscreen }
+        );
         services.AddSingleton<AppSettings>();
 
         services.AddLogging(builder =>

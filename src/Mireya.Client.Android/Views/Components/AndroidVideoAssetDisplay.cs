@@ -1,4 +1,5 @@
 using System;
+using Android.App;
 using AndroidX.Media3.Common;
 using AndroidX.Media3.ExoPlayer;
 using AndroidX.Media3.UI;
@@ -6,7 +7,10 @@ using Avalonia.Android;
 using Avalonia.Controls;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Java.IO;
 using Mireya.Client.Avalonia.Platform;
+using Console = System.Console;
+using Uri = Android.Net.Uri;
 
 namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
 
@@ -17,20 +21,49 @@ namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
 /// </summary>
 public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
 {
+    private string? _currentVideoPath;
+    private (string Path, bool Muted)? _pendingPlay;
+    private DispatcherTimer? _playbackCompletionTimer;
+    private bool _playbackEndedSignaled;
+    private IExoPlayer? _player;
+
+    private PlayerView? _playerView;
     public event Action<string>? PlaybackEnded;
 
     public bool KeepAttachedWhenInactive => false;
 
-    private PlayerView? _playerView;
-    private IExoPlayer? _player;
-    private DispatcherTimer? _playbackCompletionTimer;
-    private (string Path, bool Muted)? _pendingPlay;
-    private string? _currentVideoPath;
-    private bool _playbackEndedSignaled;
+    public void Play(string path, bool muted)
+    {
+        if (_player == null)
+        {
+            _pendingPlay = (path, muted);
+            return;
+        }
+
+        PlayInternal(path, muted);
+    }
+
+    public void Stop()
+    {
+        _pendingPlay = null;
+        _currentVideoPath = null;
+        _playbackEndedSignaled = false;
+        StopPlaybackCompletionPolling();
+
+        try
+        {
+            _player?.Stop();
+            _player?.ClearMediaItems();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to stop Media3 playback: {ex.Message}");
+        }
+    }
 
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
-        var context = global::Android.App.Application.Context;
+        var context = Application.Context;
 
         var player =
             new ExoPlayerBuilder(context).Build()
@@ -89,35 +122,6 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
         base.DestroyNativeControlCore(control);
     }
 
-    public void Play(string path, bool muted)
-    {
-        if (_player == null)
-        {
-            _pendingPlay = (path, muted);
-            return;
-        }
-
-        PlayInternal(path, muted);
-    }
-
-    public void Stop()
-    {
-        _pendingPlay = null;
-        _currentVideoPath = null;
-        _playbackEndedSignaled = false;
-        StopPlaybackCompletionPolling();
-
-        try
-        {
-            _player?.Stop();
-            _player?.ClearMediaItems();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to stop Media3 playback: {ex.Message}");
-        }
-    }
-
     private void PlayInternal(string videoPath, bool muted)
     {
         if (_player == null || string.IsNullOrWhiteSpace(videoPath))
@@ -125,8 +129,8 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
 
         try
         {
-            using var file = new Java.IO.File(videoPath);
-            using var fileUri = global::Android.Net.Uri.FromFile(file);
+            using var file = new File(videoPath);
+            using var fileUri = Uri.FromFile(file);
             using var mediaItem = MediaItem.FromUri(fileUri!);
 
             _player.Volume = muted ? 0f : 1f;
@@ -161,7 +165,10 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
         _playbackCompletionTimer.Start();
     }
 
-    private void StopPlaybackCompletionPolling() => _playbackCompletionTimer?.Stop();
+    private void StopPlaybackCompletionPolling()
+    {
+        _playbackCompletionTimer?.Stop();
+    }
 
     private void OnPlaybackCompletionTimerTick(object? sender, EventArgs e)
     {

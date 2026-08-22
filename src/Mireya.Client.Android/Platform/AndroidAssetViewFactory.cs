@@ -12,7 +12,13 @@ namespace Mireya.Client.Avalonia.AndroidTv.Platform;
 /// </summary>
 public sealed class AndroidAssetViewFactory : IAssetViewFactory
 {
-    public Control CreateWebsiteRenderer() => new AndroidWebsiteAssetDisplay();
+    public Control CreateWebsiteRenderer()
+    {
+        return new AndroidWebsiteAssetDisplay();
+    }
 
-    public Control CreateVideoRenderer() => new AndroidVideoAssetDisplay();
+    public Control CreateVideoRenderer()
+    {
+        return new AndroidVideoAssetDisplay();
+    }
 }

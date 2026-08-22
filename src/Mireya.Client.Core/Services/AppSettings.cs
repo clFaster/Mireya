@@ -67,8 +67,8 @@ public sealed class AppSettings
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LocalDbContext>();
 
-        Fullscreen = _platformCapabilities.SupportsFullscreen
-            && await GetBoolAsync(db, "Fullscreen", false);
+        Fullscreen =
+            _platformCapabilities.SupportsFullscreen && await GetBoolAsync(db, "Fullscreen", false);
         AutoStart = await GetBoolAsync(db, "AutoStart", false);
 
         // Remove the retired overlay preference during upgrade. Screen Info is now an

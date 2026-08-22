@@ -61,7 +61,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         var apiClientConfig = _serviceProvider.GetRequiredService<IApiClientConfiguration>();
         var logger = _serviceProvider.GetRequiredService<ILogger<BackendSelectionViewModel>>();
         var appSettings = _serviceProvider.GetRequiredService<AppSettings>();
-        var platformCapabilities = _serviceProvider.GetRequiredService<ClientPlatformCapabilities>();
+        var platformCapabilities =
+            _serviceProvider.GetRequiredService<ClientPlatformCapabilities>();
 
         CurrentView = new BackendSelectionViewModel(
             backendManager,

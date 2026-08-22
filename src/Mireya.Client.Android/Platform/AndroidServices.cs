@@ -16,7 +16,7 @@ public static class AndroidServices
     {
         return DisplayClientServiceProviderFactory.Build<AndroidAssetViewFactory>(
             App.DefaultBackendUrl,
-            supportsFullscreen: false
+            false
         );
     }
 }
