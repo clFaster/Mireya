@@ -40,6 +40,7 @@ jobs:
         shell: bash
         env:
           REQUESTED_VERSION: ${{ inputs.version }}
+          PROMOTE_STABLE: ${{ github.ref == 'refs/heads/main' }}
         run: |
           version="${REQUESTED_VERSION#v}"
           semver_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
