@@ -224,6 +224,29 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
             }
         });
 
+    [Fact]
+    public Task ShowingTheCurrentItemSwitchesContentImmediately() =>
+        _session.RunAsync(() =>
+        {
+            using var viewModel = CreateViewModel();
+            var item = new PlaylistItem
+            {
+                AssetId = Guid.NewGuid(),
+                AssetName = "Website",
+                AssetType = AssetType.Website,
+                Source = "https://example.com/",
+                DurationSeconds = 10,
+            };
+
+            GetPlaylist(viewModel).Add(item);
+
+            InvokePrivate(viewModel, "ShowCurrentItem");
+
+            Assert.Equal(ContentType.Website, viewModel.CurrentContentType);
+            Assert.Equal(new Uri(item.Source), viewModel.CurrentWebsiteUri);
+            Assert.Equal(item.AssetName, viewModel.CurrentAssetName);
+        });
+
     // ──────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────
@@ -277,6 +300,17 @@ public sealed class ContentDisplayViewModelImageLifetimeTests
         var path = Path.Combine(Path.GetTempPath(), $"mireya-image-{Guid.NewGuid():N}.png");
         File.WriteAllBytes(path, Convert.FromBase64String(base64));
         return path;
+    }
+
+    private static List<PlaylistItem> GetPlaylist(ContentDisplayViewModel viewModel)
+    {
+        var field =
+            typeof(ContentDisplayViewModel).GetField(
+                "_playlist",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            ) ?? throw new InvalidOperationException("The playlist field was not found.");
+
+        return (List<PlaylistItem>)field.GetValue(viewModel)!;
     }
 
     /// <summary>

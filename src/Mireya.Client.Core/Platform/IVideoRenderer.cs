@@ -1,5 +1,3 @@
-using System;
-
 namespace Mireya.Client.Avalonia.Platform;
 
 /// <summary>
@@ -20,12 +18,4 @@ public interface IVideoRenderer
     ///     Stop playback and release the current media.
     /// </summary>
     void Stop();
-
-    /// <summary>
-    ///     Raised once the first frame of the most recently started video has been rendered
-    ///     (ready to be drawn). Used by the transition layer to know when it is safe to reveal
-    ///     the video without showing a black first-frame flash. May be raised from a non-UI
-    ///     thread.
-    /// </summary>
-    event Action? FirstFrameReady;
 }
