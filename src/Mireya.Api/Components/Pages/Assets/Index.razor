@@ -179,7 +179,7 @@ else
     private string _editName = "", _editDescription = "", _editTags = "";
     private int? _editDuration;
     private ImageFit _editImageFit = ImageFit.Contain;
-    private ConfirmDialog _confirmDialog = default!;
+    private ConfirmDialog _confirmDialog = null;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 

@@ -43,6 +43,7 @@ public class ScreenSynchronizationService(
                     .ThenInclude(zc => zc.Campaign)
                         .ThenInclude(c => c.CampaignAssets)
                             .ThenInclude(ca => ca.Asset)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == displayId);
 
         if (display == null)

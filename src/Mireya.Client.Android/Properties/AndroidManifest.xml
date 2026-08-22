@@ -14,6 +14,7 @@
     android:label="Mireya"
     android:icon="@drawable/Icon"
     android:banner="@drawable/banner"
+    android:allowBackup="false"
     android:usesCleartextTraffic="true"
   />
 </manifest>

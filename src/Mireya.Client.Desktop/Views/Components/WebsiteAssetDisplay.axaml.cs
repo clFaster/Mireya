@@ -273,12 +273,12 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
             }
             else if (IsEffectivelyVisible)
             {
-                _loadingPanel!.IsVisible = true;
+                _loadingPanel.IsVisible = true;
                 _browserContainer.IsVisible = true;
                 Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
             }
-            // else: created eagerly while invisible — nothing to display yet;
-            //       OnEffectiveVisibilityChanged will handle it when a URI arrives.
+            // A control created eagerly while invisible stays hidden until a URI arrives and
+            // OnEffectiveVisibilityChanged handles it.
 
             System.Diagnostics.Debug.WriteLine("WebView2 controller created successfully.");
         }
@@ -408,8 +408,8 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
 
             // Hide the controller while loading to prevent a flash of the previous page
             _webViewController.IsVisible = false;
-            _loadingPanel!.IsVisible = true;
-            _browserContainer!.IsVisible = true;
+            _loadingPanel.IsVisible = true;
+            _browserContainer.IsVisible = true;
             _errorPanel!.IsVisible = false;
 
             // Keep WebView2 bounds up-to-date even while hidden

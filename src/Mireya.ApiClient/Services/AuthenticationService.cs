@@ -63,6 +63,7 @@ public class AuthenticationService : IAuthenticationService
             catch (ApiException ex) when (ex.StatusCode is 302 or 401 or 403)
             {
                 _logger.LogInformation(
+                    ex,
                     "Stored token was rejected by backend {BackendId}; login recovery required",
                     backend.Id
                 );
@@ -71,6 +72,7 @@ public class AuthenticationService : IAuthenticationService
             catch (ApiException ex) when (ex.StatusCode == 404)
             {
                 _logger.LogInformation(
+                    ex,
                     "Screen registration no longer exists on backend {BackendId}",
                     backend.Id
                 );
@@ -191,6 +193,7 @@ public class AuthenticationService : IAuthenticationService
                 catch (ApiException ex) when (ex.StatusCode == 401)
                 {
                     _logger.LogWarning(
+                        ex,
                         "Backend {BackendId} no longer accepts the stored screen identity; registering a replacement",
                         backend.Id
                     );
@@ -263,6 +266,7 @@ public class AuthenticationService : IAuthenticationService
         catch (ApiException ex) when (ex.StatusCode is 400 or 401)
         {
             _logger.LogInformation(
+                ex,
                 "Refresh token was rejected for backend {BackendId}; trying the stored password",
                 backendId
             );

@@ -135,7 +135,7 @@ public class ScreenHubService : IScreenHubService
         // powering on with the server), so retry the initial connection with a
         // capped exponential backoff before surfacing a failure to the UI.
         const int maxAttempts = 6;
-        Exception? lastError = null;
+        Exception lastError = new InvalidOperationException("No SignalR connection attempt was made.");
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             if (attempt > 0)
@@ -168,8 +168,7 @@ public class ScreenHubService : IScreenHubService
             "Failed to connect to SignalR hub after {Attempts} attempts",
             maxAttempts
         );
-        if (lastError is not null)
-            throw lastError;
+        throw lastError;
     }
 
     public async Task DisconnectAsync()

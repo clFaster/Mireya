@@ -384,6 +384,7 @@ public class ScreenManagementService(
                 .ThenInclude(ca => ca.Campaign)
                     .ThenInclude(c => c.CampaignAssets)
             .Include(d => d.Zone)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == id);
 
         if (display == null)
@@ -392,6 +393,7 @@ public class ScreenManagementService(
         var allCampaigns = await db
             .Campaigns.Include(c => c.CampaignAssets)
             .Include(c => c.CampaignAssignments)
+            .AsSplitQuery()
             .OrderBy(c => c.Name)
             .ToListAsync();
 

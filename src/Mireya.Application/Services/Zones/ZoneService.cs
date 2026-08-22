@@ -25,6 +25,7 @@ public class ZoneService(
         var zones = await db
             .Zones.Include(z => z.Displays)
             .Include(z => z.ZoneCampaigns)
+            .AsSplitQuery()
             .OrderBy(z => z.Name)
             .ToListAsync();
 
@@ -47,6 +48,7 @@ public class ZoneService(
             .Zones.Include(z => z.Displays)
             .Include(z => z.ZoneCampaigns)
                 .ThenInclude(zc => zc.Campaign)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(z => z.Id == id);
 
         if (zone == null)
@@ -89,6 +91,7 @@ public class ZoneService(
         var zone = await db
             .Zones.Include(z => z.Displays)
             .Include(z => z.ZoneCampaigns)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(z => z.Id == id);
 
         if (zone == null)

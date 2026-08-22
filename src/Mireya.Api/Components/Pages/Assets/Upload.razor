@@ -183,7 +183,15 @@
         public string? ThumbnailUrl { get; private set; }
         public bool IsVideo => File.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
         public bool IsImage => File.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
-        public string KindLabel => IsVideo ? "Video" : IsImage ? "Image" : "File";
+        public string KindLabel => GetKindLabel();
+
+        private string GetKindLabel()
+        {
+            if (IsVideo)
+                return "Video";
+
+            return IsImage ? "Image" : "File";
+        }
 
         public async Task TryLoadThumbnailAsync(long maxSourceBytes)
         {
