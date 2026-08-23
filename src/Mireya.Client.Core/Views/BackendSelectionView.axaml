@@ -231,6 +231,43 @@
                            Foreground="{Binding IsStatusError, Converter={StaticResource ErrorColorConverter}}" />
             </Border>
 
+            <!-- Asset Cache Section -->
+            <Border BorderBrush="#333"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="20"
+                    Background="#1E1E30">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Asset Cache"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="#B0BEC5" />
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Downloaded media"
+                                       FontSize="13"
+                                       FontWeight="Medium"
+                                       Foreground="#E0E0E0" />
+                            <TextBlock Text="{Binding AssetCacheSummary}"
+                                       FontSize="11"
+                                       Foreground="#78909C" />
+                        </StackPanel>
+
+                        <Button Grid.Column="1"
+                                Content="{Binding ClearAssetCacheButtonLabel}"
+                                Command="{Binding ClearAssetCacheCommand}"
+                                MinWidth="110"
+                                Height="36"
+                                Padding="14,6"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                CornerRadius="6"
+                                ToolTip.Tip="Delete downloaded asset files; required media will download again" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <!-- Display Settings Section -->
             <Border BorderBrush="#333"
                     BorderThickness="1"

@@ -63,6 +63,9 @@ public class MainActivity : AvaloniaMainActivity
             return base.DispatchKeyEvent(e);
 
         var root = App.RootViewModel;
+        if (e.Action == KeyEventActions.Down && e.RepeatCount == 0)
+            root?.CancelAutoStart();
+
         var isPrimaryAction =
             e.KeyCode
             is Keycode.DpadCenter
@@ -87,6 +90,9 @@ public class MainActivity : AvaloniaMainActivity
     {
         if (e is null)
             return base.DispatchTouchEvent(e);
+
+        if (e.Action == MotionEventActions.Down)
+            App.RootViewModel?.CancelAutoStart();
 
         if (e.Action == MotionEventActions.Down && App.RootViewModel?.TryOpenScreenInfo() == true)
         {

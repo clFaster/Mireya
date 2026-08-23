@@ -25,6 +25,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private readonly ILogger<BackendSelectionViewModel> _logger;
     private readonly Action<BackendInstance> _onBackendSelected;
     private readonly AppSettings _appSettings;
+    private readonly ILocalAssetSyncService _assetSyncService;
     private readonly ClientPlatformCapabilities _platformCapabilities;
     private CancellationTokenSource? _statusCts;
 
@@ -63,6 +64,20 @@ public partial class BackendSelectionViewModel : ViewModelBase
     [ObservableProperty]
     private bool _autoStart;
 
+    [ObservableProperty]
+    private string _assetCacheSummary = "Calculating…";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearAssetCacheCommand))]
+    private bool _hasCachedAssets;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ClearAssetCacheButtonLabel))]
+    [NotifyCanExecuteChangedFor(nameof(ClearAssetCacheCommand))]
+    private bool _isClearingAssetCache;
+
+    public string ClearAssetCacheButtonLabel => IsClearingAssetCache ? "Clearing…" : "Clear Cache";
+
     public bool SupportsFullscreen => _platformCapabilities.SupportsFullscreen;
 
     public BackendSelectionViewModel(
@@ -71,6 +86,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
         ILogger<BackendSelectionViewModel> logger,
         AppSettings appSettings,
         ClientPlatformCapabilities platformCapabilities,
+        ILocalAssetSyncService assetSyncService,
         Action<BackendInstance> onBackendSelected
     )
     {
@@ -79,6 +95,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
         _logger = logger;
         _appSettings = appSettings;
         _platformCapabilities = platformCapabilities;
+        _assetSyncService = assetSyncService;
         _onBackendSelected = onBackendSelected;
 
         // Mirror current settings into the observable properties
@@ -86,6 +103,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
         _autoStart = appSettings.AutoStart;
 
         _ = LoadBackendsAsync();
+        _ = RefreshAssetCacheInfoAsync();
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -212,6 +230,57 @@ public partial class BackendSelectionViewModel : ViewModelBase
         {
             _logger.LogError(ex, "Failed to save settings");
             SetStatus($"Failed to save settings: {ex.Message}", isError: true);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Asset cache
+    // ──────────────────────────────────────────────────────────────
+
+    private async Task RefreshAssetCacheInfoAsync()
+    {
+        try
+        {
+            var info = await _assetSyncService.GetAssetCacheInfoAsync();
+            AssetCacheSummary =
+                info.FileCount == 0
+                    ? "No downloaded assets"
+                    : $"{info.FileCount} cached asset{(info.FileCount == 1 ? string.Empty : "s")} · {FormatByteSize(info.SizeBytes)}";
+            HasCachedAssets = info.FileCount > 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to inspect asset cache");
+            AssetCacheSummary = "Cache information unavailable";
+            HasCachedAssets = false;
+        }
+    }
+
+    private bool CanClearAssetCache() => HasCachedAssets && !IsClearingAssetCache;
+
+    [RelayCommand(CanExecute = nameof(CanClearAssetCache))]
+    private async Task ClearAssetCacheAsync()
+    {
+        IsClearingAssetCache = true;
+        try
+        {
+            var removed = await _assetSyncService.ClearAssetCacheAsync();
+            AssetCacheSummary = "No downloaded assets";
+            HasCachedAssets = false;
+            SetStatus(
+                $"Cleared {removed.FileCount} cached asset{(removed.FileCount == 1 ? string.Empty : "s")} ({FormatByteSize(removed.SizeBytes)}).",
+                isError: false
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to clear asset cache");
+            SetStatus($"Failed to clear asset cache: {ex.Message}", isError: true);
+            await RefreshAssetCacheInfoAsync();
+        }
+        finally
+        {
+            IsClearingAssetCache = false;
         }
     }
 
@@ -438,4 +507,18 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private static bool IsValidUrl(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
         && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+    private static string FormatByteSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        var size = (double)bytes;
+        var unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+
+        return unit == 0 ? $"{bytes} {units[unit]}" : $"{size:0.#} {units[unit]}";
+    }
 }

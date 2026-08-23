@@ -32,7 +32,7 @@ public sealed class AppSettings
     public bool Fullscreen { get; set; }
 
     /// <summary>
-    /// Skip the server-selection screen: wait 5 s, check the last-used server is
+    /// Skip the server-selection screen: show a 10 s countdown, check the last-used server is
     /// online, and connect automatically. Takes effect on next application launch.
     /// </summary>
     public bool AutoStart { get; set; }

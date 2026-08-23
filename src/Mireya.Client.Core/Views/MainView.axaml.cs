@@ -18,13 +18,15 @@ public partial class MainView : UserControl
         InitializeComponent();
         Focusable = true;
         AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
-        AddHandler(PointerReleasedEvent, OnPointerReleased, RoutingStrategies.Tunnel);
+        AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)
             return;
+
+        viewModel.CancelAutoStart();
 
         var handled = e.Key switch
         {
@@ -37,9 +39,13 @@ public partial class MainView : UserControl
             e.Handled = true;
     }
 
-    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (DataContext is MainWindowViewModel viewModel && viewModel.TryOpenScreenInfo())
+        if (DataContext is not MainWindowViewModel viewModel)
+            return;
+
+        viewModel.CancelAutoStart();
+        if (viewModel.TryOpenScreenInfo())
             e.Handled = true;
     }
 

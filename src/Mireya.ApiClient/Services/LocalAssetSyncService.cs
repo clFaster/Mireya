@@ -8,6 +8,8 @@ using Mireya.Database.Models;
 
 namespace Mireya.ApiClient.Services;
 
+public sealed record AssetCacheInfo(int FileCount, long SizeBytes);
+
 public interface ILocalAssetSyncService
 {
     event Action<Guid, string, int>? OnSyncProgressChanged;
@@ -21,6 +23,8 @@ public interface ILocalAssetSyncService
     Task<List<Guid>> GetMissingAssetIdsAsync(List<Guid> requiredAssetIds);
     Task<bool> IsAssetDownloadedAsync(Guid assetId);
     string GetAssetLocalPath(Guid assetId);
+    Task<AssetCacheInfo> GetAssetCacheInfoAsync(CancellationToken cancellationToken = default);
+    Task<AssetCacheInfo> ClearAssetCacheAsync(CancellationToken cancellationToken = default);
 }
 
 public class LocalAssetSyncService : ILocalAssetSyncService
@@ -37,7 +41,8 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         IBackendManager backendManager,
         IHttpClientFactory httpClientFactory,
         IAccessTokenProvider accessTokenProvider,
-        ILogger<LocalAssetSyncService> logger
+        ILogger<LocalAssetSyncService> logger,
+        string? assetCacheBaseDirectory = null
     )
     {
         _db = db;
@@ -47,7 +52,8 @@ public class LocalAssetSyncService : ILocalAssetSyncService
         _logger = logger;
 
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        _assetCacheBaseDirectory = Path.Combine(appDataPath, "Mireya", "AssetCache");
+        _assetCacheBaseDirectory =
+            assetCacheBaseDirectory ?? Path.Combine(appDataPath, "Mireya", "AssetCache");
         Directory.CreateDirectory(_assetCacheBaseDirectory);
 
         _logger.LogInformation("Asset cache base directory: {Directory}", _assetCacheBaseDirectory);
@@ -156,6 +162,96 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
         var backendCacheDir = Path.Combine(_assetCacheBaseDirectory, backend.Id.ToString());
         return Path.Combine(backendCacheDir, assetId.ToString());
+    }
+
+    public Task<AssetCacheInfo> GetAssetCacheInfoAsync(
+        CancellationToken cancellationToken = default
+    ) => Task.Run(() => CalculateAssetCacheInfo(cancellationToken), cancellationToken);
+
+    public async Task<AssetCacheInfo> ClearAssetCacheAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        var removed = await GetAssetCacheInfoAsync(cancellationToken);
+
+        if (Directory.Exists(_assetCacheBaseDirectory))
+        {
+            foreach (
+                var file in Directory.EnumerateFiles(
+                    _assetCacheBaseDirectory,
+                    "*",
+                    SearchOption.AllDirectories
+                )
+            )
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                File.Delete(file);
+            }
+
+            foreach (
+                var directory in Directory
+                    .EnumerateDirectories(
+                        _assetCacheBaseDirectory,
+                        "*",
+                        SearchOption.AllDirectories
+                    )
+                    .OrderByDescending(path => path.Length)
+                    .ToList()
+            )
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                Directory.Delete(directory, recursive: false);
+            }
+        }
+
+        var downloadedAssets = await _db.DownloadedAssets.ToListAsync(cancellationToken);
+        foreach (var downloadedAsset in downloadedAssets)
+        {
+            downloadedAsset.LocalPath = null;
+            downloadedAsset.FileExtension = null;
+            downloadedAsset.IsDownloaded = false;
+            downloadedAsset.DownloadedAt = null;
+            downloadedAsset.LastCheckedAt = DateTime.UtcNow;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "Cleared {FileCount} cached asset file(s) using {SizeBytes} bytes",
+            removed.FileCount,
+            removed.SizeBytes
+        );
+        return removed;
+    }
+
+    private AssetCacheInfo CalculateAssetCacheInfo(CancellationToken cancellationToken)
+    {
+        if (!Directory.Exists(_assetCacheBaseDirectory))
+            return new AssetCacheInfo(0, 0);
+
+        var fileCount = 0;
+        var sizeBytes = 0L;
+        foreach (
+            var file in Directory.EnumerateFiles(
+                _assetCacheBaseDirectory,
+                "*",
+                SearchOption.AllDirectories
+            )
+        )
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                sizeBytes += new FileInfo(file).Length;
+                fileCount++;
+            }
+            catch (FileNotFoundException)
+            {
+                // A concurrent sync or cleanup removed the file after enumeration.
+            }
+        }
+
+        return new AssetCacheInfo(fileCount, sizeBytes);
     }
 
     private async Task<string> GetAssetCacheDirectoryAsync()

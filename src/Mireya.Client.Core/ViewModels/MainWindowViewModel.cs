@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -16,13 +17,26 @@ namespace Mireya.Client.Avalonia.ViewModels;
 
 public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
+    public const int AutoStartDelaySeconds = 10;
+
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly AppSettings _appSettings;
+    private CancellationTokenSource? _autoStartCts;
     private bool _disposed;
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AutoStartCountdownText))]
+    private int _autoStartSecondsRemaining;
+
+    [ObservableProperty]
+    private bool _isAutoStartPending;
+
+    public string AutoStartCountdownText =>
+        $"Connecting automatically in {AutoStartSecondsRemaining} second{(AutoStartSecondsRemaining == 1 ? string.Empty : "s")}. Press any key to cancel.";
 
     public MainWindowViewModel(
         IServiceProvider serviceProvider,
@@ -42,7 +56,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         // Skip server selection and connect automatically if configured
         if (_appSettings.AutoStart)
         {
-            _ = TryAutoConnectAsync()
+            _autoStartCts = new CancellationTokenSource();
+            _ = TryAutoConnectAsync(_autoStartCts.Token)
                 .ContinueWith(
                     t => _logger.LogError(t.Exception, "Auto-connect task faulted"),
                     TaskContinuationOptions.OnlyOnFaulted
@@ -63,6 +78,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         var appSettings = _serviceProvider.GetRequiredService<AppSettings>();
         var platformCapabilities =
             _serviceProvider.GetRequiredService<ClientPlatformCapabilities>();
+        var assetSyncService = _serviceProvider.GetRequiredService<ILocalAssetSyncService>();
 
         CurrentView = new BackendSelectionViewModel(
             backendManager,
@@ -70,6 +86,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
             logger,
             appSettings,
             platformCapabilities,
+            assetSyncService,
             OnBackendSelected
         );
     }
@@ -132,15 +149,37 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     // Auto-connect (used when AppSettings.AutoStart == true)
     // ──────────────────────────────────────────────────────────────
 
-    private async Task TryAutoConnectAsync()
+    /// <summary>Cancels the pending automatic connection after local user input.</summary>
+    public void CancelAutoStart()
     {
-        _logger.LogInformation("AutoStart: waiting 5 s before connecting...");
-        await Task.Delay(TimeSpan.FromSeconds(5));
+        if (!IsAutoStartPending || _autoStartCts is not { IsCancellationRequested: false })
+            return;
+
+        _logger.LogInformation("AutoStart: cancelled by client input");
+        _autoStartCts.Cancel();
+        IsAutoStartPending = false;
+    }
+
+    private async Task TryAutoConnectAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(
+            "AutoStart: waiting {DelaySeconds} s before connecting...",
+            AutoStartDelaySeconds
+        );
+        IsAutoStartPending = true;
 
         try
         {
+            for (var remaining = AutoStartDelaySeconds; remaining > 0; remaining--)
+            {
+                AutoStartSecondsRemaining = remaining;
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+            IsAutoStartPending = false;
+
             var backendManager = _serviceProvider.GetRequiredService<IBackendManager>();
             var backends = await backendManager.GetAllBackendsAsync();
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (backends.Count == 0)
             {
@@ -153,12 +192,20 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
             _logger.LogInformation("AutoStart: probing {Url}", target.BaseUrl);
 
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var response = await http.GetAsync($"{target.BaseUrl.TrimEnd('/')}/api/info");
+            using var response = await http.GetAsync(
+                $"{target.BaseUrl.TrimEnd('/')}/api/info",
+                cancellationToken
+            );
             var isOnline = false;
             if (response.IsSuccessStatusCode)
             {
-                await using var stream = await response.Content.ReadAsStreamAsync();
-                using var info = await JsonDocument.ParseAsync(stream);
+                await using var stream = await response.Content.ReadAsStreamAsync(
+                    cancellationToken
+                );
+                using var info = await JsonDocument.ParseAsync(
+                    stream,
+                    cancellationToken: cancellationToken
+                );
                 isOnline =
                     info.RootElement.TryGetProperty("application", out var application)
                     && string.Equals(
@@ -178,14 +225,28 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
             var apiConfig = _serviceProvider.GetRequiredService<IApiClientConfiguration>();
             await backendManager.SetCurrentBackendAsync(target.Id);
+            cancellationToken.ThrowIfCancellationRequested();
             await apiConfig.UpdateBaseUrlAsync(target.BaseUrl);
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Switch to content display on the UI thread
-            Dispatcher.UIThread.Post(ShowContentDisplay);
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    ShowContentDisplay();
+            });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug("AutoStart: pending connection cancelled");
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "AutoStart: connection attempt failed");
+        }
+        finally
+        {
+            IsAutoStartPending = false;
         }
     }
 
@@ -207,6 +268,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         _disposed = true;
 
         _logger.LogInformation("Disposing MainWindowViewModel");
+        _autoStartCts?.Cancel();
+        _autoStartCts?.Dispose();
+        _autoStartCts = null;
         DisposeCurrentView();
         CurrentView = null;
 
