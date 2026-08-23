@@ -14,9 +14,8 @@ public class CampaignAssignment
     [Required]
     public Guid CampaignId { get; set; }
 
-    public Guid? ScreenId { get; set; }
-
-    public CampaignAssignmentTargetKind TargetKind { get; set; }
+    [Required]
+    public Guid ScreenId { get; set; }
 
     public bool IsEnabled { get; set; } = true;
 
@@ -96,5 +95,5 @@ public class CampaignAssignment
     public Campaign Campaign { get; set; } = null;
 
     [AllowNull]
-    public Screen? Screen { get; set; }
+    public Screen Screen { get; set; } = null;
 }

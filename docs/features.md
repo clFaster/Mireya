@@ -41,7 +41,6 @@ Campaign behavior includes:
 - Image and website duration control.
 - Video playback based on video duration metadata.
 - Campaign priority, with higher priority campaigns played first.
-- A default fallback campaign that applies when a screen has no other active assignment.
 - Start and end date bounds.
 - Weekly recurrence through selected weekdays.
 - Daily time windows.
@@ -66,7 +65,7 @@ Screen management includes:
 - Now-playing updates.
 
 Once approved, a screen authenticates with the backend, connects to the SignalR hub, receives configuration updates, and starts syncing assigned content.
-Pending and rejected screens receive no campaign or fallback content. Rejecting a connected screen immediately clears its active playlist; an offline screen is revoked when it reconnects.
+Pending and rejected screens receive no campaign content. Rejecting a connected screen immediately clears its active playlist; an offline screen is revoked when it reconnects.
 
 ## Display clients
 

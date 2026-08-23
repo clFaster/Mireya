@@ -46,9 +46,6 @@ These groups require the `Admin` role unless noted.
 | `POST /api/campaign/` | Create a campaign. |
 | `PUT /api/campaign/{id}` | Update campaign details and playlist content. |
 | `DELETE /api/campaign/{id}` | Delete a campaign. |
-| `GET /api/campaign/fallback` | Get the scheduled global-fallback assignment. |
-| `PUT /api/campaign/fallback` | Create or replace the scheduled global-fallback assignment. |
-| `DELETE /api/campaign/fallback` | Remove the global-fallback assignment. |
 
 ### Screen management: `/api/screenmanagement`
 
@@ -72,7 +69,7 @@ These groups require the `Admin` role unless noted.
 | --- | --- | --- |
 | `POST /api/assetsync/status` | `Screen` | Update sync state and progress for an asset. |
 | `GET /api/assetsync/status` | `Screen` | Get sync status for the current screen. |
-| `GET /api/assetsync/campaigns` | `Screen` | Get assigned and fallback campaign assets to pre-cache for the current screen. |
+| `GET /api/assetsync/campaigns` | `Screen` | Get assigned campaign assets to pre-cache for the current screen. |
 | `GET /api/assetsync/{displayId}/status` | `Admin` | Get sync status for a specific display. |
 
 ### Audit: `/api/audit`

@@ -46,17 +46,6 @@ public class CampaignScheduleSyncService(
 
         var utcNow = DateTime.UtcNow;
 
-        var fallbackAssignment = await db
-            .CampaignAssignments.Where(a =>
-                a.TargetKind == Database.Models.CampaignAssignmentTargetKind.GlobalFallback
-            )
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var fallbackActiveCampaignId =
-            fallbackAssignment is not null && fallbackAssignment.IsActiveAt(utcNow)
-                ? fallbackAssignment.CampaignId
-                : (Guid?)null;
-
         var screens = await db
             .Screens.Where(d => d.UserId != null)
             .Include(d => d.CampaignAssignments)
@@ -73,10 +62,7 @@ public class CampaignScheduleSyncService(
                 .Select(a => a.CampaignId)
                 .ToList();
 
-            var signature =
-                activeIds.Count > 0
-                    ? string.Join(",", activeIds)
-                    : $"fallback:{fallbackActiveCampaignId?.ToString() ?? "none"}";
+            var signature = string.Join(",", activeIds);
 
             if (_lastSignatures.TryGetValue(screen.Id, out var previous) && previous == signature)
                 continue;

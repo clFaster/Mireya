@@ -108,17 +108,9 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
         builder.Entity<CampaignAssignment>(entity =>
         {
             entity.HasIndex(e => e.ScreenId);
-            entity
-                .HasIndex(e => new { e.CampaignId, e.ScreenId })
-                .IsUnique()
-                .HasFilter("\"TargetKind\" = 0");
-            entity.HasIndex(e => e.TargetKind).IsUnique().HasFilter("\"TargetKind\" = 1");
+            entity.HasIndex(e => new { e.CampaignId, e.ScreenId }).IsUnique();
             entity.ToTable(table =>
             {
-                table.HasCheckConstraint(
-                    "CK_CampaignAssignments_Target",
-                    "(\"TargetKind\" = 0 AND \"ScreenId\" IS NOT NULL) OR (\"TargetKind\" = 1 AND \"ScreenId\" IS NULL)"
-                );
                 table.HasCheckConstraint(
                     "CK_CampaignAssignments_DateRange",
                     "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\""

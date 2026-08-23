@@ -14,9 +14,6 @@ public interface ICampaignService
     Task<CampaignDetail> UpdateCampaignAsync(Guid id, UpdateCampaignRequest request);
     Task DeleteCampaignAsync(Guid id);
     Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId);
-    Task<CampaignAssignmentDetail?> GetGlobalFallbackAsync();
-    Task<CampaignAssignmentDetail> SetGlobalFallbackAsync(CampaignAssignmentRequest request);
-    Task ClearGlobalFallbackAsync();
 }
 
 public class CampaignService(
@@ -35,10 +32,7 @@ public class CampaignService(
 
         if (screenId.HasValue)
             query = query.Where(c =>
-                c.CampaignAssignments.Any(ca =>
-                    ca.TargetKind == CampaignAssignmentTargetKind.Screen
-                    && ca.ScreenId == screenId.Value
-                )
+                c.CampaignAssignments.Any(ca => ca.ScreenId == screenId.Value)
             );
 
         var campaigns = await query.OrderByDescending(c => c.UpdatedAt).ToListAsync();
@@ -110,13 +104,7 @@ public class CampaignService(
             request.Assets.Count
         );
 
-        var affectedScreenIds = campaign
-            .CampaignAssignments.Where(a => a.ScreenId.HasValue)
-            .Select(a => a.ScreenId!.Value)
-            .ToList();
-        var affectsFallback = campaign.CampaignAssignments.Any(a =>
-            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
-        );
+        var affectedScreenIds = campaign.CampaignAssignments.Select(a => a.ScreenId).ToList();
 
         campaign.Name = request.Name;
         campaign.Description = request.Description;
@@ -132,10 +120,7 @@ public class CampaignService(
             $"Updated campaign '{campaign.Name}'"
         );
 
-        if (affectsFallback)
-            await SyncAllScreensAsync();
-        else
-            await syncService.SyncScreensAsync(affectedScreenIds);
+        await syncService.SyncScreensAsync(affectedScreenIds);
 
         return await GetCampaignAsync(campaign.Id);
     }
@@ -149,13 +134,7 @@ public class CampaignService(
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
-        var affectedScreenIds = campaign
-            .CampaignAssignments.Where(a => a.ScreenId.HasValue)
-            .Select(a => a.ScreenId!.Value)
-            .ToList();
-        var affectsFallback = campaign.CampaignAssignments.Any(a =>
-            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
-        );
+        var affectedScreenIds = campaign.CampaignAssignments.Select(a => a.ScreenId).ToList();
 
         db.Campaigns.Remove(campaign);
         await db.SaveChangesAsync();
@@ -166,10 +145,7 @@ public class CampaignService(
             $"Deleted campaign '{campaign.Name}'"
         );
 
-        if (affectsFallback)
-            await SyncAllScreensAsync();
-        else
-            await syncService.SyncScreensAsync(affectedScreenIds);
+        await syncService.SyncScreensAsync(affectedScreenIds);
     }
 
     public Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId) =>
@@ -179,90 +155,16 @@ public class CampaignService(
             .Distinct()
             .ToListAsync();
 
-    public async Task<CampaignAssignmentDetail?> GetGlobalFallbackAsync()
-    {
-        var assignment = await db
-            .CampaignAssignments.Include(a => a.Campaign)
-            .FirstOrDefaultAsync(a => a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback);
-        return assignment == null
-            ? null
-            : CampaignAssignmentPolicy.ToDetail(assignment, DateTime.UtcNow);
-    }
-
-    public async Task<CampaignAssignmentDetail> SetGlobalFallbackAsync(
-        CampaignAssignmentRequest request
-    )
-    {
-        CampaignAssignmentPolicy.Validate(request);
-        if (!await db.Campaigns.AnyAsync(c => c.Id == request.CampaignId))
-            throw new ArgumentException("Campaign does not exist");
-
-        var assignment = await db.CampaignAssignments.FirstOrDefaultAsync(a =>
-            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
-        );
-        if (assignment == null)
-        {
-            assignment = new CampaignAssignment
-            {
-                CampaignId = request.CampaignId,
-                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
-                ScreenId = null,
-                CreatedAt = DateTime.UtcNow,
-            };
-            db.CampaignAssignments.Add(assignment);
-        }
-        else
-        {
-            assignment.CampaignId = request.CampaignId;
-        }
-
-        CampaignAssignmentPolicy.Apply(assignment, request);
-        await db.SaveChangesAsync();
-        await audit.LogAsync(
-            "Updated",
-            "CampaignAssignment",
-            assignment.Id.ToString(),
-            "Updated the global fallback campaign assignment"
-        );
-        await SyncAllScreensAsync();
-
-        return (await GetGlobalFallbackAsync())!;
-    }
-
-    public async Task ClearGlobalFallbackAsync()
-    {
-        var assignment = await db.CampaignAssignments.FirstOrDefaultAsync(a =>
-            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
-        );
-        if (assignment == null)
-            return;
-
-        db.CampaignAssignments.Remove(assignment);
-        await db.SaveChangesAsync();
-        await audit.LogAsync(
-            "Deleted",
-            "CampaignAssignment",
-            assignment.Id.ToString(),
-            "Removed the global fallback campaign assignment"
-        );
-        await SyncAllScreensAsync();
-    }
-
     private static CampaignSummary MapSummary(Database.Models.Campaign campaign, DateTime utcNow) =>
         new(
             campaign.Id,
             campaign.Name,
             campaign.Description,
             campaign.CampaignAssets.Count,
-            campaign.CampaignAssignments.Count(a =>
-                a.TargetKind == CampaignAssignmentTargetKind.Screen
-            ),
+            campaign.CampaignAssignments.Count,
             campaign.CreatedAt,
             campaign.UpdatedAt,
-            campaign.CampaignAssignments.Count(a => a.IsActiveAt(utcNow)),
-            campaign.CampaignAssignments.Any(a =>
-                a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
-            )
+            campaign.CampaignAssignments.Count(a => a.IsActiveAt(utcNow))
         );
 
     private static CampaignDetail MapDetail(Database.Models.Campaign campaign, DateTime utcNow) =>
@@ -316,12 +218,6 @@ public class CampaignService(
             throw new ArgumentException(
                 $"One or more assets do not exist. Missing asset IDs: {string.Join(", ", missingIds)}"
             );
-    }
-
-    private async Task SyncAllScreensAsync()
-    {
-        var screenIds = await db.Screens.Select(s => s.Id).ToListAsync();
-        await syncService.SyncScreensAsync(screenIds);
     }
 
     private void AddCampaignAssets(Guid campaignId, List<CampaignAssetDto> assets)

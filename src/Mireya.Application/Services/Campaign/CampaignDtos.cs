@@ -36,8 +36,7 @@ public record CampaignSummary(
     int ScreenCount,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    int ActiveAssignmentCount = 0,
-    bool HasGlobalFallback = false
+    int ActiveAssignmentCount = 0
 );
 
 public record CampaignDetail(
@@ -54,10 +53,9 @@ public record CampaignAssignmentDetail(
     Guid Id,
     Guid CampaignId,
     string CampaignName,
-    CampaignAssignmentTargetKind TargetKind,
-    Guid? ScreenId,
-    string? ScreenName,
-    string? ScreenLocation,
+    Guid ScreenId,
+    string ScreenName,
+    string ScreenLocation,
     bool IsEnabled,
     DateTime? StartDateUtc,
     DateTime? EndDateUtc,

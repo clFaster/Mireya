@@ -54,11 +54,7 @@ public class ScreenSynchronizationService(
 
         var campaigns = new List<CampaignDetail>();
         if (screen.ApprovalStatus == ApprovalStatus.Approved)
-        {
             campaigns = BuildCampaignList(screen);
-            if (campaigns.Count == 0)
-                campaigns = await BuildDefaultCampaignListAsync();
-        }
         var config = BuildScreenConfiguration(screen, campaigns);
 
         logger.LogInformation(
@@ -101,32 +97,11 @@ public class ScreenSynchronizationService(
     {
         var utcNow = DateTime.UtcNow;
         return screen
-            .CampaignAssignments.Where(a =>
-                a.TargetKind == CampaignAssignmentTargetKind.Screen && a.IsActiveAt(utcNow)
-            )
+            .CampaignAssignments.Where(a => a.IsActiveAt(utcNow))
             .OrderByDescending(a => a.Priority)
             .ThenBy(a => a.Campaign.Name)
             .Select(a => MapCampaign(a.Campaign))
             .ToList();
-    }
-
-    /// <summary>
-    ///     Builds the playlist from the global default (fallback) campaign, when one is configured and
-    ///     active. Used for screens that have no other active campaign assigned.
-    /// </summary>
-    private async Task<List<CampaignDetail>> BuildDefaultCampaignListAsync()
-    {
-        var utcNow = DateTime.UtcNow;
-        var fallbackAssignment = await db
-            .CampaignAssignments.Include(a => a.Campaign.CampaignAssets)
-                .ThenInclude(ca => ca.Asset)
-            .Where(a => a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback)
-            .FirstOrDefaultAsync();
-
-        if (fallbackAssignment == null || !fallbackAssignment.IsActiveAt(utcNow))
-            return [];
-
-        return [MapCampaign(fallbackAssignment.Campaign)];
     }
 
     private static CampaignDetail MapCampaign(Database.Models.Campaign c) =>

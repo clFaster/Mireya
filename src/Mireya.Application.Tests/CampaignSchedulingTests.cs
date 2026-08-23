@@ -1,7 +1,4 @@
-using Mireya.Application.Services.Audit;
-using Mireya.Application.Services.Campaign;
 using Mireya.Database.Models;
-using NSubstitute;
 
 namespace Mireya.Application.Tests;
 
@@ -35,59 +32,5 @@ public class CampaignSchedulingTests
     {
         var assignment = new CampaignAssignment { IsEnabled = true, EndDateUtc = Now.AddDays(-1) };
         Assert.False(assignment.IsActiveAt(Now));
-    }
-
-    [Fact]
-    public async Task SetGlobalFallback_WithEndBeforeStart_Throws()
-    {
-        using var db = new TestDatabase();
-        var campaign = new Campaign { Name = "Campaign" };
-        db.Context.Campaigns.Add(campaign);
-        await db.Context.SaveChangesAsync();
-        var service = new CampaignService(
-            db.Context,
-            Substitute.For<Application.Services.IScreenSynchronizationService>(),
-            Substitute.For<IAuditService>()
-        );
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.SetGlobalFallbackAsync(
-                new CampaignAssignmentRequest(
-                    campaign.Id,
-                    StartDateUtc: Now,
-                    EndDateUtc: Now.AddDays(-1)
-                )
-            )
-        );
-    }
-
-    [Fact]
-    public async Task SetGlobalFallback_PersistsSchedulingAndPriority()
-    {
-        using var db = new TestDatabase();
-        var campaign = new Campaign { Name = "Campaign" };
-        db.Context.Campaigns.Add(campaign);
-        await db.Context.SaveChangesAsync();
-        var service = new CampaignService(
-            db.Context,
-            Substitute.For<Application.Services.IScreenSynchronizationService>(),
-            Substitute.For<IAuditService>()
-        );
-
-        var created = await service.SetGlobalFallbackAsync(
-            new CampaignAssignmentRequest(
-                campaign.Id,
-                IsEnabled: false,
-                StartDateUtc: Now,
-                EndDateUtc: Now.AddDays(7),
-                Priority: 42
-            )
-        );
-
-        Assert.False(created.IsEnabled);
-        Assert.Equal(Now, created.StartDateUtc);
-        Assert.Equal(Now.AddDays(7), created.EndDateUtc);
-        Assert.Equal(42, created.Priority);
-        Assert.Equal(CampaignAssignmentTargetKind.GlobalFallback, created.TargetKind);
     }
 }

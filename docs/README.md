@@ -20,7 +20,7 @@ Display clients connect to a Mireya backend, register themselves, wait for appro
 ## Current capabilities
 
 - **Assets**: images, videos, and website URLs; upload workflow; thumbnails/poster frames; tags; search/filtering; image fit modes.
-- **Campaigns**: ordered playlists, custom durations, priorities, enable/disable state, default fallback campaign, start/end dates, weekday recurrence, daily time windows, and recurrence time zones.
+- **Campaigns**: ordered playlists, custom durations, priorities, enable/disable state, start/end dates, weekday recurrence, daily time windows, and recurrence time zones.
 - **Screens**: first-run registration, pairing code, approval/rejection, online status, last-seen tracking, shuffle playback, asset sync status, and remote commands.
 - **Reports**: proof-of-play records every asset start reported by a screen and aggregates plays by screen and asset over a selected time window.
 - **Audit log**: mutating admin actions are recorded with actor, target, action, timestamp, and summary.

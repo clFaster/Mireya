@@ -458,9 +458,7 @@ public class ScreenManagementService(
 
         // Update campaign assignments
         var currentAssignments = await db
-            .CampaignAssignments.Where(ca =>
-                ca.TargetKind == CampaignAssignmentTargetKind.Screen && ca.ScreenId == id
-            )
+            .CampaignAssignments.Where(ca => ca.ScreenId == id)
             .ToListAsync();
 
         var toRemove = currentAssignments
@@ -479,7 +477,6 @@ public class ScreenManagementService(
                 {
                     CampaignId = requestAssignment.CampaignId,
                     ScreenId = id,
-                    TargetKind = CampaignAssignmentTargetKind.Screen,
                     CreatedAt = DateTime.UtcNow,
                 };
                 db.CampaignAssignments.Add(assignment);
@@ -576,15 +573,10 @@ public class ScreenManagementService(
                 c.Name,
                 c.Description,
                 c.CampaignAssets.Count,
-                c.CampaignAssignments.Count(a =>
-                    a.TargetKind == CampaignAssignmentTargetKind.Screen
-                ),
+                c.CampaignAssignments.Count,
                 c.CreatedAt,
                 c.UpdatedAt,
-                c.CampaignAssignments.Count(a => a.IsActiveAt(DateTime.UtcNow)),
-                c.CampaignAssignments.Any(a =>
-                    a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
-                )
+                c.CampaignAssignments.Count(a => a.IsActiveAt(DateTime.UtcNow))
             ))
             .ToList();
     }

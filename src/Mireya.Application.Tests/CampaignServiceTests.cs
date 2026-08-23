@@ -43,7 +43,6 @@ public class CampaignServiceTests
             {
                 Campaign = campaign,
                 Screen = screen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
                 StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
                 Priority = 7,
             }
@@ -78,12 +77,7 @@ public class CampaignServiceTests
         db.AddScreen(screen);
         db.Context.Campaigns.Add(campaign);
         db.Context.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                Campaign = campaign,
-                Screen = screen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
-            }
+            new CampaignAssignment { Campaign = campaign, Screen = screen }
         );
         await db.Context.SaveChangesAsync();
 
@@ -97,30 +91,6 @@ public class CampaignServiceTests
             .SyncScreensAsync(
                 Arg.Is<IEnumerable<Guid>>(ids => ids.SequenceEqual(new[] { screen.Id }))
             );
-    }
-
-    [Fact]
-    public async Task SettingGlobalFallback_ReusesSingleAssignment()
-    {
-        using var db = new TestDatabase();
-        var sync = Substitute.For<IScreenSynchronizationService>();
-        var first = new Campaign { Name = "First" };
-        var second = new Campaign { Name = "Second" };
-        db.Context.Campaigns.AddRange(first, second);
-        await db.Context.SaveChangesAsync();
-
-        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        await service.SetGlobalFallbackAsync(new CampaignAssignmentRequest(first.Id));
-        await service.SetGlobalFallbackAsync(
-            new CampaignAssignmentRequest(second.Id, Priority: 12)
-        );
-
-        await using var verify = db.NewContext();
-        var fallback = await verify.CampaignAssignments.SingleAsync(a =>
-            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
-        );
-        Assert.Equal(second.Id, fallback.CampaignId);
-        Assert.Equal(12, fallback.Priority);
     }
 
     [Fact]

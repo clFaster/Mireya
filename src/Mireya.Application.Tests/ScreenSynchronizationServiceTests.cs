@@ -56,108 +56,24 @@ public class ScreenSynchronizationServiceTests
     }
 
     [Fact]
-    public async Task SyncScreen_WithNoActiveCampaign_FallsBackToDefaultCampaign()
+    public async Task SyncScreen_WithNoAssignedCampaign_SendsNoCampaigns()
     {
         using var db = new TestDatabase();
         var screen = NewScreen();
-        var asset = new Asset
-        {
-            Name = "Default Asset",
-            Type = AssetType.Image,
-            Source = "/uploads/d.png",
-        };
-        var defaultCampaign = new Campaign { Name = "House Ads" };
-        defaultCampaign.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
-        defaultCampaign.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
-                IsEnabled = true,
-            }
-        );
         db.AddScreen(screen);
-        db.Context.Campaigns.Add(defaultCampaign);
+        db.Context.Campaigns.Add(new Campaign { Name = "Unassigned" });
         await db.Context.SaveChangesAsync();
 
         var (service, captured) = CreateService(db);
         await service.SyncScreenAsync(screen.Id);
 
-        var config = captured();
-        Assert.NotNull(config);
-        Assert.Single(config!.Campaigns);
-        Assert.Equal(defaultCampaign.Id, config.Campaigns[0].Id);
-    }
-
-    [Fact]
-    public async Task SyncScreen_WithActiveAssignedCampaign_DoesNotUseDefault()
-    {
-        using var db = new TestDatabase();
-        var screen = NewScreen();
-        var asset = new Asset
-        {
-            Name = "Asset",
-            Type = AssetType.Image,
-            Source = "/uploads/a.png",
-        };
-        var assigned = new Campaign { Name = "Assigned" };
-        assigned.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
-        assigned.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                Screen = screen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
-            }
-        );
-        var defaultCampaign = new Campaign { Name = "House Ads" };
-        defaultCampaign.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
-                IsEnabled = true,
-            }
-        );
-        db.AddScreen(screen);
-        db.Context.Campaigns.AddRange(assigned, defaultCampaign);
-        await db.Context.SaveChangesAsync();
-
-        var (service, captured) = CreateService(db);
-        await service.SyncScreenAsync(screen.Id);
-
-        var config = captured();
-        Assert.NotNull(config);
-        Assert.Single(config!.Campaigns);
-        Assert.Equal(assigned.Id, config.Campaigns[0].Id);
-    }
-
-    [Fact]
-    public async Task SyncScreen_WithDisabledDefaultCampaign_SendsNoCampaigns()
-    {
-        using var db = new TestDatabase();
-        var screen = NewScreen();
-        var defaultCampaign = new Campaign { Name = "House Ads" };
-        defaultCampaign.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
-                IsEnabled = false,
-            }
-        );
-        db.AddScreen(screen);
-        db.Context.Campaigns.Add(defaultCampaign);
-        await db.Context.SaveChangesAsync();
-
-        var (service, captured) = CreateService(db);
-        await service.SyncScreenAsync(screen.Id);
-
-        var config = captured();
-        Assert.NotNull(config);
-        Assert.Empty(config!.Campaigns);
+        Assert.Empty(captured()!.Campaigns);
     }
 
     [Theory]
     [InlineData(ApprovalStatus.Pending)]
     [InlineData(ApprovalStatus.Rejected)]
-    public async Task SyncScreen_WithoutApproval_SendsNoAssignedOrFallbackCampaigns(
+    public async Task SyncScreen_WithoutApproval_SendsNoAssignedCampaigns(
         ApprovalStatus approvalStatus
     )
     {
@@ -165,19 +81,9 @@ public class ScreenSynchronizationServiceTests
         var screen = NewScreen();
         screen.ApprovalStatus = approvalStatus;
         var assigned = new Campaign { Name = "Assigned" };
-        assigned.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                Screen = screen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
-            }
-        );
-        var fallback = new Campaign { Name = "Fallback" };
-        fallback.CampaignAssignments.Add(
-            new CampaignAssignment { TargetKind = CampaignAssignmentTargetKind.GlobalFallback }
-        );
+        assigned.CampaignAssignments.Add(new CampaignAssignment { Screen = screen });
         db.AddScreen(screen);
-        db.Context.Campaigns.AddRange(assigned, fallback);
+        db.Context.Campaigns.Add(assigned);
         await db.Context.SaveChangesAsync();
 
         var (service, captured, hub) = CreateServiceWithHub(db);
@@ -216,18 +122,12 @@ public class ScreenSynchronizationServiceTests
             }
         );
         campaign.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                Screen = activeScreen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
-                IsEnabled = true,
-            }
+            new CampaignAssignment { Screen = activeScreen, IsEnabled = true }
         );
         campaign.CampaignAssignments.Add(
             new CampaignAssignment
             {
                 Screen = futureScreen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
                 IsEnabled = true,
                 StartDateUtc = DateTime.UtcNow.AddDays(1),
             }

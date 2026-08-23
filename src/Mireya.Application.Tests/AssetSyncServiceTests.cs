@@ -84,34 +84,23 @@ public class AssetSyncServiceTests
     }
 
     [Fact]
-    public async Task GetCampaignsToSync_IncludesFutureAssignmentsAndGlobalFallback()
+    public async Task GetCampaignsToSync_IncludesFutureAssignments()
     {
         using var db = new TestDatabase();
         var (screen, asset) = Seed(db);
         var scheduled = new Campaign { Name = "Scheduled" };
         scheduled.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
         scheduled.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                Screen = screen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
-                StartDateUtc = DateTime.UtcNow.AddDays(1),
-            }
+            new CampaignAssignment { Screen = screen, StartDateUtc = DateTime.UtcNow.AddDays(1) }
         );
-        var fallback = new Campaign { Name = "Fallback" };
-        fallback.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
-        fallback.CampaignAssignments.Add(
-            new CampaignAssignment { TargetKind = CampaignAssignmentTargetKind.GlobalFallback }
-        );
-        db.Context.Campaigns.AddRange(scheduled, fallback);
+        db.Context.Campaigns.Add(scheduled);
         await db.Context.SaveChangesAsync();
 
         var campaigns = await CreateService(db).GetCampaignsToSyncAsync(screen.Id);
 
-        Assert.Equal(2, campaigns.Count);
-        Assert.Contains(campaigns, c => c.CampaignId == scheduled.Id);
-        Assert.Contains(campaigns, c => c.CampaignId == fallback.Id);
-        Assert.All(campaigns, campaign => Assert.Single(campaign.Assets));
+        var campaign = Assert.Single(campaigns);
+        Assert.Equal(scheduled.Id, campaign.CampaignId);
+        Assert.Single(campaign.Assets);
     }
 
     [Theory]
@@ -126,13 +115,7 @@ public class AssetSyncServiceTests
         screen.ApprovalStatus = approvalStatus;
         var campaign = new Campaign { Name = "Assigned" };
         campaign.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
-        campaign.CampaignAssignments.Add(
-            new CampaignAssignment
-            {
-                Screen = screen,
-                TargetKind = CampaignAssignmentTargetKind.Screen,
-            }
-        );
+        campaign.CampaignAssignments.Add(new CampaignAssignment { Screen = screen });
         db.Context.Campaigns.Add(campaign);
         await db.Context.SaveChangesAsync();
 

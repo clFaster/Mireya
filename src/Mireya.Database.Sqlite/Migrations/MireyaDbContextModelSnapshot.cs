@@ -392,14 +392,11 @@ namespace Mireya.Database.Sqlite.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ScreenId")
+                    b.Property<Guid>("ScreenId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("StartDateUtc")
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("TargetKind")
-                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
@@ -408,13 +405,8 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("ScreenId");
 
-                    b.HasIndex("TargetKind")
-                        .IsUnique()
-                        .HasFilter("\"TargetKind\" = 1");
-
                     b.HasIndex("CampaignId", "ScreenId")
-                        .IsUnique()
-                        .HasFilter("\"TargetKind\" = 0");
+                        .IsUnique();
 
                     b.ToTable("CampaignAssignments", t =>
                         {
@@ -423,8 +415,6 @@ namespace Mireya.Database.Sqlite.Migrations
                             t.HasCheckConstraint("CK_CampaignAssignments_DateRange", "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\"");
 
                             t.HasCheckConstraint("CK_CampaignAssignments_RecurrenceDaysMask_Range", "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127");
-
-                            t.HasCheckConstraint("CK_CampaignAssignments_Target", "(\"TargetKind\" = 0 AND \"ScreenId\" IS NOT NULL) OR (\"TargetKind\" = 1 AND \"ScreenId\" IS NULL)");
                         });
                 });
 
@@ -711,7 +701,8 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.HasOne("Mireya.Database.Models.Screen", "Screen")
                         .WithMany("CampaignAssignments")
                         .HasForeignKey("ScreenId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Campaign");
 

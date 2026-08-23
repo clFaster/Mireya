@@ -75,8 +75,7 @@ erDiagram
     CampaignAssignments {
         guid Id PK
         guid CampaignId FK
-        guid ScreenId FK "nullable for global fallback"
-        int TargetKind "screen or global fallback"
+        guid ScreenId FK
         bool IsEnabled
         datetime StartDateUtc "nullable"
         datetime EndDateUtc "nullable"
@@ -141,7 +140,7 @@ The remaining ASP.NET Core Identity tables are unchanged:
 | `Screens` | identifier unique; user optional but linked to a real user and used by at most one screen; resolutions positive | name, created time, and `(ApprovalStatus, IsActive, CreatedAt)` |
 | `Campaigns` | reusable campaign content has no target-specific playback policy | name and created time |
 | `CampaignAssets` | position unique inside a campaign; positive position and duration | asset and `(CampaignId, Position)` |
-| `CampaignAssignments` | one assignment per campaign/screen; exactly one global fallback at most; target and schedule fields must be valid | screen, filtered `(CampaignId, ScreenId)`, and filtered unique global-fallback target |
+| `CampaignAssignments` | one assignment per campaign/screen; target and schedule fields must be valid | screen and unique `(CampaignId, ScreenId)` |
 | `AssetSyncStatuses` | one state per screen and asset; progress from 0 to 100 | asset, state, and `(ScreenId, AssetId)` |
 | `PlaybackEvents` | screen is enforced; asset is deliberately a logical reference | played time, screen, asset |
 | `AuditLogs` | deliberately stores historical/logical references | time, entity type, actor |
@@ -264,7 +263,6 @@ active for the connected screen while pre-caching assets for upcoming assignment
 | --- | --- | --- |
 | `Display` and `Screen` were mixed | Use `Screen` everywhere in the domain, database, API contract, generated client, UI bindings, and tests | One term prevents mapping mistakes and makes the API easier to understand |
 | Playback schedules were global campaign properties | Move playback policy to target-specific campaign assignments | The same reusable campaign can run on different schedules and priorities on different screens |
-| Global fallback has no screen | Represent it as a global-fallback assignment with a nullable screen | Fallback scheduling follows the same rules without putting playback policy back on the campaign |
 | Current client backend was application-only | Add a partial unique index and switch it transactionally | The cache cannot end up with two active backends |
 | Screen-to-user link was only text | Add a real optional foreign key and a unique index | A screen cannot point to a missing user or share one login with another screen |
 | Screen registration writes a user, role, and screen | Put all three writes in one transaction | A failed registration cannot leave an orphan login behind |

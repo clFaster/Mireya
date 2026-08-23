@@ -228,7 +228,7 @@
                 ThumbnailSource = _availableAssets.FirstOrDefault(av => av.Id == a.AssetId)?.ThumbnailSource,
                 DurationSeconds = a.DurationSeconds,
             }).ToList();
-            _assignedScreenCount = campaign.Assignments.Count(a => a.ScreenId.HasValue);
+            _assignedScreenCount = campaign.Assignments.Count;
         }
 
         _initialSnapshot = CurrentSnapshot();
