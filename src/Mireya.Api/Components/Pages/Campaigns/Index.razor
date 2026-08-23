@@ -8,7 +8,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Campaigns</h1>
-    <a href="/campaigns/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Campaign</a>
+    <div class="d-flex gap-2">
+        <a href="/campaigns/fallback" class="btn btn-outline-secondary">Global fallback</a>
+        <a href="/campaigns/create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Campaign</a>
+    </div>
 </div>
 
 @if (_loading)
@@ -30,7 +33,7 @@ else
     <div class="table-responsive">
         <table class="table table-hover">
             <thead>
-                <tr><th>Name</th><th>Status</th><th>Assets</th><th>Screens</th><th>Updated</th><th></th></tr>
+                <tr><th>Name</th><th>Assignments</th><th>Assets</th><th>Screens</th><th>Updated</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var c in _campaigns)
@@ -38,28 +41,12 @@ else
                     <tr>
                         <td>@c.Name<br /><small class="text-muted">@c.Description</small></td>
                         <td>
-                            @if (!c.IsEnabled)
+                            <span class="badge @(c.ActiveAssignmentCount > 0 ? "bg-success" : "bg-secondary")">
+                                @c.ActiveAssignmentCount active
+                            </span>
+                            @if (c.HasGlobalFallback)
                             {
-                                <span class="badge bg-secondary">Disabled</span>
-                            }
-                            else if (c.IsActive)
-                            {
-                                <span class="badge bg-success">Active</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-warning text-dark">Scheduled</span>
-                            }
-                            @if (c.IsDefault)
-                            {
-                                <span class="badge bg-info text-dark ms-1" title="Shown on screens with no other active campaign">Default</span>
-                            }
-                            @if (c.IsEnabled && (c.StartDateUtc.HasValue || c.EndDateUtc.HasValue))
-                            {
-                                <br />
-                                <small class="text-muted">
-                                    @(c.StartDateUtc?.ToLocalTime().ToString("g") ?? "—") &rarr; @(c.EndDateUtc?.ToLocalTime().ToString("g") ?? "—")
-                                </small>
+                                <span class="badge bg-info text-dark ms-1">Fallback</span>
                             }
                         </td>
                         <td>@c.AssetCount</td>

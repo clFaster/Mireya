@@ -1,0 +1,220 @@
+@page "/campaigns/fallback"
+@attribute [Authorize]
+@inject ICampaignService CampaignService
+@inject NavigationManager Navigation
+@inject ToastService Toast
+
+<PageTitle>Global Fallback - Mireya Admin</PageTitle>
+<h1 class="mb-4">Global fallback assignment</h1>
+
+@if (_loading)
+{
+    <LoadingSpinner />
+}
+else if (_campaigns.Count == 0)
+{
+    <div class="alert alert-info">Create a campaign before configuring a global fallback.</div>
+    <a href="/campaigns" class="btn btn-secondary">Back</a>
+}
+else
+{
+    <div class="card" style="max-width:850px">
+        <div class="card-body">
+            <p class="text-muted">
+                This assignment is shown on any screen that has no active screen-specific campaign.
+            </p>
+            <div class="mb-3">
+                <label class="form-label" for="fallbackCampaign">Campaign</label>
+                <select class="form-select" id="fallbackCampaign" @bind="_model.CampaignId">
+                    @foreach (var campaign in _campaigns)
+                    {
+                        <option value="@campaign.Id">@campaign.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="fallbackEnabled"
+                               @bind="_model.IsEnabled" />
+                        <label class="form-check-label" for="fallbackEnabled">Enabled</label>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label" for="fallbackPriority">Priority</label>
+                    <input class="form-control" type="number" min="0" id="fallbackPriority"
+                           @bind="_model.Priority" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label" for="fallbackStart">Start (UTC)</label>
+                    <input class="form-control" type="datetime-local" id="fallbackStart"
+                           @bind="_model.StartDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label" for="fallbackEnd">End (UTC)</label>
+                    <input class="form-control" type="datetime-local" id="fallbackEnd"
+                           @bind="_model.EndDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
+                </div>
+            </div>
+            <label class="form-label d-block">Days of week</label>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @foreach (var (label, index) in _weekdayLabels.Select((label, index) => (label, index)))
+                {
+                    var dayIndex = index;
+                    <input type="checkbox" class="btn-check" id="fallbackDay_@dayIndex"
+                           checked="@_model.Days[dayIndex]"
+                           @onchange="e => _model.Days[dayIndex] = e.Value is true" />
+                    <label class="btn btn-outline-primary btn-sm" for="fallbackDay_@dayIndex">@label</label>
+                }
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label" for="fallbackDailyStart">Daily start</label>
+                    <input class="form-control" type="time" id="fallbackDailyStart"
+                           @bind="_model.DailyStartTime" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label" for="fallbackDailyEnd">Daily end</label>
+                    <input class="form-control" type="time" id="fallbackDailyEnd"
+                           @bind="_model.DailyEndTime" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" for="fallbackTimezone">Time zone</label>
+                    <select class="form-select" id="fallbackTimezone" @bind="_model.RecurrenceTimeZoneId">
+                        <option value="">UTC</option>
+                        @foreach (var timeZone in _timeZones)
+                        {
+                            <option value="@timeZone.Id">@timeZone.DisplayName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <small class="text-muted d-block mb-4">
+                Leave the dates and recurrence empty for continuous fallback playback. Both daily times must be set together.
+            </small>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_saving">Save fallback</button>
+                @if (_hasExistingFallback)
+                {
+                    <button class="btn btn-outline-danger" @onclick="ClearAsync" disabled="@_saving">Remove fallback</button>
+                }
+                <a href="/campaigns" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly string[] _weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    private static readonly List<TimeZoneInfo> _timeZones =
+        TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.DisplayName).ToList();
+
+    private List<CampaignSummary> _campaigns = [];
+    private readonly FallbackFormModel _model = new();
+    private bool _loading = true;
+    private bool _saving;
+    private bool _hasExistingFallback;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _campaigns = await CampaignService.GetCampaignsAsync();
+        var fallback = await CampaignService.GetGlobalFallbackAsync();
+        if (fallback != null)
+        {
+            _model.Load(fallback);
+            _hasExistingFallback = true;
+        }
+        else if (_campaigns.Count > 0)
+        {
+            _model.CampaignId = _campaigns[0].Id;
+        }
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        try
+        {
+            await CampaignService.SetGlobalFallbackAsync(_model.ToRequest());
+            Toast.ShowSuccess("Global fallback saved.");
+            Navigation.NavigateTo("/campaigns");
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError(ex.Message);
+            _saving = false;
+        }
+    }
+
+    private async Task ClearAsync()
+    {
+        _saving = true;
+        try
+        {
+            await CampaignService.ClearGlobalFallbackAsync();
+            Toast.ShowSuccess("Global fallback removed.");
+            Navigation.NavigateTo("/campaigns");
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError(ex.Message);
+            _saving = false;
+        }
+    }
+
+    private sealed class FallbackFormModel
+    {
+        public Guid CampaignId { get; set; }
+        public bool IsEnabled { get; set; } = true;
+        public DateTime? StartDateUtc { get; set; }
+        public DateTime? EndDateUtc { get; set; }
+        public int Priority { get; set; }
+        public bool[] Days { get; } = new bool[7];
+        public TimeOnly? DailyStartTime { get; set; }
+        public TimeOnly? DailyEndTime { get; set; }
+        public string RecurrenceTimeZoneId { get; set; } = "";
+
+        public void Load(CampaignAssignmentDetail detail)
+        {
+            CampaignId = detail.CampaignId;
+            IsEnabled = detail.IsEnabled;
+            StartDateUtc = detail.StartDateUtc;
+            EndDateUtc = detail.EndDateUtc;
+            Priority = detail.Priority;
+            DailyStartTime = detail.DailyStartTime;
+            DailyEndTime = detail.DailyEndTime;
+            RecurrenceTimeZoneId = detail.RecurrenceTimeZoneId ?? "";
+            for (var i = 0; i < 7; i++)
+                Days[i] = detail.RecurrenceDaysMask is > 0
+                    && (detail.RecurrenceDaysMask.Value & (1 << i)) != 0;
+        }
+
+        public CampaignAssignmentRequest ToRequest() =>
+            new(
+                CampaignId,
+                IsEnabled,
+                NormalizeUtc(StartDateUtc),
+                NormalizeUtc(EndDateUtc),
+                Priority,
+                BuildDaysMask(),
+                DailyStartTime,
+                DailyEndTime,
+                string.IsNullOrWhiteSpace(RecurrenceTimeZoneId)
+                    ? null
+                    : RecurrenceTimeZoneId
+            );
+
+        private int? BuildDaysMask()
+        {
+            var mask = 0;
+            for (var i = 0; i < 7; i++)
+                if (Days[i])
+                    mask |= 1 << i;
+            return mask;
+        }
+
+        private static DateTime? NormalizeUtc(DateTime? value) =>
+            value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
+    }
+}

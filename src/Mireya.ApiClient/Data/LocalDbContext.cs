@@ -126,21 +126,6 @@ public class LocalDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Name);
             entity.Property(e => e.Name).HasMaxLength(200);
-            entity.ToTable(table =>
-            {
-                table.HasCheckConstraint(
-                    "CK_Campaigns_DateRange",
-                    "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\""
-                );
-                table.HasCheckConstraint(
-                    "CK_Campaigns_RecurrenceDaysMask_Range",
-                    "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127"
-                );
-                table.HasCheckConstraint(
-                    "CK_Campaigns_DailyWindow_Complete",
-                    "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)"
-                );
-            });
         });
 
         // Configure CampaignAsset - using server model

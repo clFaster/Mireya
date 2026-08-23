@@ -2,43 +2,32 @@ using Mireya.Database.Models;
 
 namespace Mireya.Application.Services.Campaign;
 
-// Request DTOs
 public record CreateCampaignRequest(
     string Name,
     string? Description,
-    List<CampaignAssetDto> Assets,
-    List<Guid> ScreenIds,
-    bool IsEnabled = true,
-    DateTime? StartDateUtc = null,
-    DateTime? EndDateUtc = null,
-    int Priority = 0,
-    bool IsDefault = false,
-    int? RecurrenceDaysMask = null,
-    TimeOnly? DailyStartTime = null,
-    TimeOnly? DailyEndTime = null,
-    string? RecurrenceTimeZoneId = null
+    List<CampaignAssetDto> Assets
 );
 
 public record UpdateCampaignRequest(
     string Name,
     string? Description,
-    List<CampaignAssetDto> Assets,
-    // null = leave screen assignments unchanged; a list (incl. empty) = set assignments to exactly this set
-    List<Guid>? ScreenIds,
+    List<CampaignAssetDto> Assets
+);
+
+public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
+
+public record CampaignAssignmentRequest(
+    Guid CampaignId,
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
     int Priority = 0,
-    bool IsDefault = false,
     int? RecurrenceDaysMask = null,
     TimeOnly? DailyStartTime = null,
     TimeOnly? DailyEndTime = null,
     string? RecurrenceTimeZoneId = null
 );
 
-public record CampaignAssetDto(Guid AssetId, int Position, int? DurationSeconds);
-
-// Response DTOs
 public record CampaignSummary(
     Guid Id,
     string Name,
@@ -47,12 +36,8 @@ public record CampaignSummary(
     int ScreenCount,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    bool IsEnabled,
-    DateTime? StartDateUtc,
-    DateTime? EndDateUtc,
-    bool IsActive,
-    int Priority = 0,
-    bool IsDefault = false
+    int ActiveAssignmentCount = 0,
+    bool HasGlobalFallback = false
 );
 
 public record CampaignDetail(
@@ -60,18 +45,28 @@ public record CampaignDetail(
     string Name,
     string? Description,
     List<CampaignAssetDetail> Assets,
-    List<ScreenInfo> Screens,
+    List<CampaignAssignmentDetail> Assignments,
     DateTime CreatedAt,
-    DateTime UpdatedAt,
-    bool IsEnabled = true,
-    DateTime? StartDateUtc = null,
-    DateTime? EndDateUtc = null,
-    int Priority = 0,
-    bool IsDefault = false,
-    int? RecurrenceDaysMask = null,
-    TimeOnly? DailyStartTime = null,
-    TimeOnly? DailyEndTime = null,
-    string? RecurrenceTimeZoneId = null
+    DateTime UpdatedAt
+);
+
+public record CampaignAssignmentDetail(
+    Guid Id,
+    Guid CampaignId,
+    string CampaignName,
+    CampaignAssignmentTargetKind TargetKind,
+    Guid? ScreenId,
+    string? ScreenName,
+    string? ScreenLocation,
+    bool IsEnabled,
+    DateTime? StartDateUtc,
+    DateTime? EndDateUtc,
+    int Priority,
+    int? RecurrenceDaysMask,
+    TimeOnly? DailyStartTime,
+    TimeOnly? DailyEndTime,
+    string? RecurrenceTimeZoneId,
+    bool IsActive
 );
 
 public record CampaignAssetDetail(
@@ -82,9 +77,7 @@ public record CampaignAssetDetail(
     string Source,
     int Position,
     int? DurationSeconds,
-    int ResolvedDuration, // Calculated: use DurationSeconds or asset's duration or default
-    bool IsMuted, // Whether video audio should be muted
-    ImageFit ImageFit = ImageFit.Contain // How an image is fitted to the screen
+    int ResolvedDuration,
+    bool IsMuted,
+    ImageFit ImageFit = ImageFit.Contain
 );
-
-public record ScreenInfo(Guid Id, string Name, string Location);

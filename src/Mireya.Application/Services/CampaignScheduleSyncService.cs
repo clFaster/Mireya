@@ -46,34 +46,15 @@ public class CampaignScheduleSyncService(
 
         var utcNow = DateTime.UtcNow;
 
-        var defaultCampaign = await db
-            .Campaigns.Where(c => c.IsDefault)
-            .Select(c => new
-            {
-                c.Id,
-                c.IsEnabled,
-                c.StartDateUtc,
-                c.EndDateUtc,
-                c.RecurrenceDaysMask,
-                c.DailyStartTime,
-                c.DailyEndTime,
-                c.RecurrenceTimeZoneId,
-            })
+        var fallbackAssignment = await db
+            .CampaignAssignments.Where(a =>
+                a.TargetKind == Database.Models.CampaignAssignmentTargetKind.GlobalFallback
+            )
             .FirstOrDefaultAsync(cancellationToken);
 
-        var defaultActiveId =
-            defaultCampaign is not null
-            && new Database.Models.Campaign
-            {
-                IsEnabled = defaultCampaign.IsEnabled,
-                StartDateUtc = defaultCampaign.StartDateUtc,
-                EndDateUtc = defaultCampaign.EndDateUtc,
-                RecurrenceDaysMask = defaultCampaign.RecurrenceDaysMask,
-                DailyStartTime = defaultCampaign.DailyStartTime,
-                DailyEndTime = defaultCampaign.DailyEndTime,
-                RecurrenceTimeZoneId = defaultCampaign.RecurrenceTimeZoneId,
-            }.IsActiveAt(utcNow)
-                ? defaultCampaign.Id
+        var fallbackActiveCampaignId =
+            fallbackAssignment is not null && fallbackAssignment.IsActiveAt(utcNow)
+                ? fallbackAssignment.CampaignId
                 : (Guid?)null;
 
         var screens = await db
@@ -86,19 +67,16 @@ public class CampaignScheduleSyncService(
         foreach (var screen in screens)
         {
             var activeIds = screen
-                .CampaignAssignments.Select(ca => ca.Campaign)
-                .GroupBy(c => c.Id)
-                .Select(g => g.First())
-                .Where(c => c.IsActiveAt(utcNow))
-                .OrderByDescending(c => c.Priority)
-                .ThenBy(c => c.Name)
-                .Select(c => c.Id)
+                .CampaignAssignments.Where(a => a.IsActiveAt(utcNow))
+                .OrderByDescending(a => a.Priority)
+                .ThenBy(a => a.Campaign.Name)
+                .Select(a => a.CampaignId)
                 .ToList();
 
             var signature =
                 activeIds.Count > 0
                     ? string.Join(",", activeIds)
-                    : $"default:{defaultActiveId?.ToString() ?? "none"}";
+                    : $"fallback:{fallbackActiveCampaignId?.ToString() ?? "none"}";
 
             if (_lastSignatures.TryGetValue(screen.Id, out var previous) && previous == signature)
                 continue;

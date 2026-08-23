@@ -66,7 +66,7 @@ public class ScreenSynchronizationService(
         );
 
         await hubContext.SendConfigurationUpdateAsync(screen.UserId, config);
-        await NotifyAssetSyncAsync(screen, screen.UserId, campaigns);
+        await NotifyAssetSyncAsync(screen, screen.UserId);
     }
 
     public async Task<Guid?> GetScreenIdByUserIdAsync(string userId)
@@ -96,16 +96,15 @@ public class ScreenSynchronizationService(
     private static List<CampaignDetail> BuildCampaignList(Screen screen)
     {
         var utcNow = DateTime.UtcNow;
-        return EffectiveCampaigns(screen)
-            .Where(c => c.IsActiveAt(utcNow))
-            .OrderByDescending(c => c.Priority)
-            .ThenBy(c => c.Name)
-            .Select(MapCampaign)
+        return screen
+            .CampaignAssignments.Where(a =>
+                a.TargetKind == CampaignAssignmentTargetKind.Screen && a.IsActiveAt(utcNow)
+            )
+            .OrderByDescending(a => a.Priority)
+            .ThenBy(a => a.Campaign.Name)
+            .Select(a => MapCampaign(a.Campaign))
             .ToList();
     }
-
-    private static IEnumerable<Database.Models.Campaign> EffectiveCampaigns(Screen screen) =>
-        screen.CampaignAssignments.Select(ca => ca.Campaign);
 
     /// <summary>
     ///     Builds the playlist from the global default (fallback) campaign, when one is configured and
@@ -114,16 +113,16 @@ public class ScreenSynchronizationService(
     private async Task<List<CampaignDetail>> BuildDefaultCampaignListAsync()
     {
         var utcNow = DateTime.UtcNow;
-        var defaultCampaign = await db
-            .Campaigns.Include(c => c.CampaignAssets)
+        var fallbackAssignment = await db
+            .CampaignAssignments.Include(a => a.Campaign.CampaignAssets)
                 .ThenInclude(ca => ca.Asset)
-            .Where(c => c.IsDefault)
+            .Where(a => a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback)
             .FirstOrDefaultAsync();
 
-        if (defaultCampaign == null || !defaultCampaign.IsActiveAt(utcNow))
+        if (fallbackAssignment == null || !fallbackAssignment.IsActiveAt(utcNow))
             return [];
 
-        return [MapCampaign(defaultCampaign)];
+        return [MapCampaign(fallbackAssignment.Campaign)];
     }
 
     private static CampaignDetail MapCampaign(Database.Models.Campaign c) =>
@@ -167,13 +166,10 @@ public class ScreenSynchronizationService(
             Campaigns = campaigns,
         };
 
-    private async Task NotifyAssetSyncAsync(
-        Screen screen,
-        string userId,
-        List<CampaignDetail> campaigns
-    )
+    private async Task NotifyAssetSyncAsync(Screen screen, string userId)
     {
-        var allAssetIds = campaigns
+        var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(screen.Id);
+        var allAssetIds = campaignsToSync
             .SelectMany(c => c.Assets)
             .Select(a => a.AssetId)
             .Distinct()
@@ -182,7 +178,6 @@ public class ScreenSynchronizationService(
         await assetSyncService.CleanupSyncStatusAsync(screen.Id, allAssetIds);
         await assetSyncService.InitializeSyncStatusForScreenAsync(screen.Id, allAssetIds);
 
-        var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(screen.Id);
         await hubContext.StartAssetSyncAsync(userId, campaignsToSync);
 
         logger.LogInformation(

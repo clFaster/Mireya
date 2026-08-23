@@ -82,4 +82,35 @@ public class AssetSyncServiceTests
         Assert.Equal(SyncState.Downloaded, status.SyncState);
         Assert.Equal(100, status.Progress);
     }
+
+    [Fact]
+    public async Task GetCampaignsToSync_IncludesFutureAssignmentsAndGlobalFallback()
+    {
+        using var db = new TestDatabase();
+        var (screen, asset) = Seed(db);
+        var scheduled = new Campaign { Name = "Scheduled" };
+        scheduled.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
+        scheduled.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Screen = screen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+                StartDateUtc = DateTime.UtcNow.AddDays(1),
+            }
+        );
+        var fallback = new Campaign { Name = "Fallback" };
+        fallback.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
+        fallback.CampaignAssignments.Add(
+            new CampaignAssignment { TargetKind = CampaignAssignmentTargetKind.GlobalFallback }
+        );
+        db.Context.Campaigns.AddRange(scheduled, fallback);
+        await db.Context.SaveChangesAsync();
+
+        var campaigns = await CreateService(db).GetCampaignsToSyncAsync(screen.Id);
+
+        Assert.Equal(2, campaigns.Count);
+        Assert.Contains(campaigns, c => c.CampaignId == scheduled.Id);
+        Assert.Contains(campaigns, c => c.CampaignId == fallback.Id);
+        Assert.All(campaigns, campaign => Assert.Single(campaign.Assets));
+    }
 }

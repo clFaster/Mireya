@@ -12,10 +12,50 @@ public class CampaignEndpoints : ICarterModule
         var group = app.MapGroup("/api/campaign").RequireAuthorization(Roles.Admin);
 
         group.MapGet("/", HandleGetCampaignsAsync);
+        group
+            .MapGet("/fallback", HandleGetGlobalFallbackAsync)
+            .Produces<CampaignAssignmentDetail>()
+            .Produces(StatusCodes.Status204NoContent);
+        group
+            .MapPut("/fallback", HandleSetGlobalFallbackAsync)
+            .Produces<CampaignAssignmentDetail>()
+            .Produces(StatusCodes.Status400BadRequest);
+        group.MapDelete("/fallback", HandleClearGlobalFallbackAsync);
         group.MapGet("/{id:guid}", HandleGetCampaignAsync);
         group.MapPost("/", HandleCreateCampaignAsync);
         group.MapPut("/{id:guid}", HandleUpdateCampaignAsync);
         group.MapDelete("/{id:guid}", HandleDeleteCampaignAsync);
+    }
+
+    private static async Task<IResult> HandleGetGlobalFallbackAsync(
+        ICampaignService campaignService
+    )
+    {
+        var assignment = await campaignService.GetGlobalFallbackAsync();
+        return assignment == null ? Results.NoContent() : Results.Ok(assignment);
+    }
+
+    private static async Task<IResult> HandleSetGlobalFallbackAsync(
+        [FromBody] CampaignAssignmentRequest request,
+        ICampaignService campaignService
+    )
+    {
+        try
+        {
+            return Results.Ok(await campaignService.SetGlobalFallbackAsync(request));
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> HandleClearGlobalFallbackAsync(
+        ICampaignService campaignService
+    )
+    {
+        await campaignService.ClearGlobalFallbackAsync();
+        return Results.NoContent();
     }
 
     private static async Task<IResult> HandleGetCampaignsAsync(

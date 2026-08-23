@@ -39,6 +39,13 @@ public class LocalDbMigrationTests
                 Assert.Equal(0L, command.ExecuteScalar());
 
                 command.CommandText =
+                    "SELECT COUNT(*) FROM pragma_table_info('Campaigns') "
+                    + "WHERE name IN ('IsEnabled', 'StartDateUtc', 'EndDateUtc', 'Priority', "
+                    + "'IsDefault', 'RecurrenceDaysMask', 'DailyStartTime', 'DailyEndTime', "
+                    + "'RecurrenceTimeZoneId')";
+                Assert.Equal(0L, command.ExecuteScalar());
+
+                command.CommandText =
                     "SELECT COUNT(*) FROM pragma_index_list('CampaignAssets') "
                     + "WHERE name = 'IX_CampaignAssets_CampaignId_Position' AND [unique] = 1";
                 Assert.Equal(1L, command.ExecuteScalar());

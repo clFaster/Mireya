@@ -44,8 +44,11 @@ These groups require the `Admin` role unless noted.
 | `GET /api/campaign/` | List campaigns. |
 | `GET /api/campaign/{id}` | Get campaign details. |
 | `POST /api/campaign/` | Create a campaign. |
-| `PUT /api/campaign/{id}` | Update campaign details, playlist, schedule, and assignments. |
+| `PUT /api/campaign/{id}` | Update campaign details and playlist content. |
 | `DELETE /api/campaign/{id}` | Delete a campaign. |
+| `GET /api/campaign/fallback` | Get the scheduled global-fallback assignment. |
+| `PUT /api/campaign/fallback` | Create or replace the scheduled global-fallback assignment. |
+| `DELETE /api/campaign/fallback` | Remove the global-fallback assignment. |
 
 ### Screen management: `/api/screenmanagement`
 
@@ -55,7 +58,9 @@ These groups require the `Admin` role unless noted.
 | `GET /api/screenmanagement/bonjour` | `Screen` | Let an authenticated screen fetch its current screen identity/status. |
 | `GET /api/screenmanagement/` | `Admin` | List screens. |
 | `GET /api/screenmanagement/{id}` | `Admin` | Get screen details. |
-| `PUT /api/screenmanagement/{id}` | `Admin` | Update screen metadata, assignments, zone, and playback settings. |
+| `PUT /api/screenmanagement/{id}` | `Admin` | Update screen metadata and playback settings. |
+| `GET /api/screenmanagement/{id}/campaign-assignments` | `Admin` | Get this screen's campaign assignments and schedules. |
+| `PUT /api/screenmanagement/{id}/campaign-assignments` | `Admin` | Replace this screen's assignments and per-assignment schedules. |
 | `POST /api/screenmanagement/{id}/approve` | `Admin` | Approve a pending screen and provision screen access. |
 | `POST /api/screenmanagement/{id}/reject` | `Admin` | Reject a pending screen. |
 | `POST /api/screenmanagement/{id}/command` | `Admin` | Send a remote command to a connected screen. |
@@ -67,7 +72,7 @@ These groups require the `Admin` role unless noted.
 | --- | --- | --- |
 | `POST /api/assetsync/status` | `Screen` | Update sync state and progress for an asset. |
 | `GET /api/assetsync/status` | `Screen` | Get sync status for the current screen. |
-| `GET /api/assetsync/campaigns` | `Screen` | Get active campaign and asset download information for the current screen. |
+| `GET /api/assetsync/campaigns` | `Screen` | Get assigned and fallback campaign assets to pre-cache for the current screen. |
 | `GET /api/assetsync/{displayId}/status` | `Admin` | Get sync status for a specific display. |
 
 ### Audit: `/api/audit`

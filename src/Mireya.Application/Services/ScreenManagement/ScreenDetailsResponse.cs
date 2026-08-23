@@ -28,6 +28,6 @@ public class ScreenDetailsResponse
 /// </summary>
 public class ScreenWithCampaignsResponse : ScreenDetailsResponse
 {
-    public List<CampaignSummary> AssignedCampaigns { get; set; } = [];
+    public List<CampaignAssignmentDetail> CampaignAssignments { get; set; } = [];
     public List<CampaignSummary> AllCampaigns { get; set; } = [];
 }

@@ -7,18 +7,23 @@
 <PageTitle>Edit Screen - Mireya Admin</PageTitle>
 <h1 class="mb-4">Edit Screen</h1>
 
-@if (_screen == null) { <LoadingSpinner /> }
+@if (_screen == null)
+{
+    <LoadingSpinner />
+}
 else
 {
-    <div class="card" style="max-width:600px">
+    <div class="card" style="max-width:960px">
         <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label">Name</label>
-                <input class="form-control" @bind="_name" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Location</label>
-                <input class="form-control" @bind="_location" />
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="_name" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Location</label>
+                    <input class="form-control" @bind="_location" />
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Description</label>
@@ -29,42 +34,122 @@ else
                        @bind="_shufflePlayback" />
                 <label class="form-check-label" for="shuffle">Shuffle playback order</label>
             </div>
-            <small class="text-muted d-block mb-2">
+            <small class="text-muted d-block mb-4">
                 When on, this screen plays its assets in a random order instead of the configured campaign order.
             </small>
 
-            <div class="d-flex justify-content-between align-items-center mt-4">
-                <h6 class="mb-0">Campaign Assignments</h6>
-                <small class="text-muted">@_selectedCampaignIds.Count of @_screen.AllCampaigns.Count selected</small>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Campaign assignments</h5>
+                <small class="text-muted">@_assignments.Count of @_screen.AllCampaigns.Count assigned</small>
             </div>
+            <p class="text-muted small mt-1">
+                Each assignment has its own playback priority and schedule for this screen.
+            </p>
             @if (_screen.AllCampaigns.Count > 8)
             {
-                <input class="form-control form-control-sm my-2" placeholder="Search campaigns..."
+                <input class="form-control form-control-sm mb-3" placeholder="Search campaigns..."
                        @bind="_campaignSearch" @bind:event="oninput" aria-label="Search campaigns" />
             }
-            <div class="mt-2" style="max-height:320px;overflow-y:auto">
-                @{
-                    var visibleCampaigns = string.IsNullOrWhiteSpace(_campaignSearch)
-                        ? _screen.AllCampaigns
-                        : _screen.AllCampaigns
-                            .Where(c => c.Name.Contains(_campaignSearch, StringComparison.OrdinalIgnoreCase))
-                            .ToList();
-                }
-                @if (visibleCampaigns.Count == 0)
-                {
-                    <p class="text-muted small mb-0">No campaigns match "@_campaignSearch".</p>
-                }
-                @foreach (var campaign in visibleCampaigns)
-                {
-                    var assigned = _selectedCampaignIds.Contains(campaign.Id);
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="c_@campaign.Id"
-                               checked="@assigned"
-                               @onchange="e => ToggleCampaign(campaign.Id, e.Value is true)" />
-                        <label class="form-check-label" for="c_@campaign.Id">@campaign.Name</label>
+
+            @{
+                var visibleCampaigns = string.IsNullOrWhiteSpace(_campaignSearch)
+                    ? _screen.AllCampaigns
+                    : _screen.AllCampaigns
+                        .Where(c => c.Name.Contains(_campaignSearch, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+            }
+            @if (visibleCampaigns.Count == 0)
+            {
+                <p class="text-muted small">No campaigns match "@_campaignSearch".</p>
+            }
+            @foreach (var campaign in visibleCampaigns)
+            {
+                var assigned = _assignments.TryGetValue(campaign.Id, out var assignment);
+                <div class="border rounded mb-3">
+                    <div class="p-3 d-flex justify-content-between align-items-center bg-light rounded-top">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="c_@campaign.Id"
+                                   checked="@assigned"
+                                   @onchange="e => ToggleCampaign(campaign.Id, e.Value is true)" />
+                            <label class="form-check-label fw-semibold" for="c_@campaign.Id">@campaign.Name</label>
+                        </div>
+                        @if (assigned && assignment!.IsActiveNow())
+                        {
+                            <span class="badge bg-success">Active now</span>
+                        }
+                        else if (assigned)
+                        {
+                            <span class="badge bg-secondary">Inactive now</span>
+                        }
                     </div>
-                }
-            </div>
+                    @if (assigned)
+                    {
+                        var form = assignment!;
+                        <div class="p-3">
+                            <div class="row align-items-end">
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                               id="enabled_@campaign.Id" @bind="form.IsEnabled" />
+                                        <label class="form-check-label" for="enabled_@campaign.Id">Enabled</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label" for="priority_@campaign.Id">Priority</label>
+                                    <input class="form-control" type="number" min="0" id="priority_@campaign.Id"
+                                           @bind="form.Priority" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label" for="start_@campaign.Id">Start (UTC)</label>
+                                    <input class="form-control" type="datetime-local" id="start_@campaign.Id"
+                                           @bind="form.StartDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label" for="end_@campaign.Id">End (UTC)</label>
+                                    <input class="form-control" type="datetime-local" id="end_@campaign.Id"
+                                           @bind="form.EndDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
+                                </div>
+                            </div>
+                            <label class="form-label d-block">Days of week</label>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                @foreach (var (label, index) in _weekdayLabels.Select((label, index) => (label, index)))
+                                {
+                                    var dayIndex = index;
+                                    <input type="checkbox" class="btn-check" id="day_@(campaign.Id)_@dayIndex"
+                                           checked="@form.Days[dayIndex]"
+                                           @onchange="e => form.Days[dayIndex] = e.Value is true" />
+                                    <label class="btn btn-outline-primary btn-sm" for="day_@(campaign.Id)_@dayIndex">@label</label>
+                                }
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label" for="dailyStart_@campaign.Id">Daily start</label>
+                                    <input class="form-control" type="time" id="dailyStart_@campaign.Id"
+                                           @bind="form.DailyStartTime" />
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label" for="dailyEnd_@campaign.Id">Daily end</label>
+                                    <input class="form-control" type="time" id="dailyEnd_@campaign.Id"
+                                           @bind="form.DailyEndTime" />
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="form-label" for="timezone_@campaign.Id">Time zone</label>
+                                    <select class="form-select" id="timezone_@campaign.Id" @bind="form.RecurrenceTimeZoneId">
+                                        <option value="">UTC</option>
+                                        @foreach (var timeZone in _timeZones)
+                                        {
+                                            <option value="@timeZone.Id">@timeZone.DisplayName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                Leave the dates and recurrence empty for continuous playback. Both daily times must be set together.
+                            </small>
+                        </div>
+                    }
+                </div>
+            }
 
             <div class="mt-4 d-flex gap-2">
                 <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_saving">
@@ -82,8 +167,13 @@ else
 
 @code {
     [Parameter] public Guid Id { get; set; }
+
+    private static readonly string[] _weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    private static readonly List<TimeZoneInfo> _timeZones =
+        TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.DisplayName).ToList();
+
     private ScreenWithCampaignsResponse? _screen;
-    private HashSet<Guid> _selectedCampaignIds = [];
+    private readonly Dictionary<Guid, AssignmentFormModel> _assignments = [];
     private string _name = string.Empty;
     private string _location = string.Empty;
     private string? _description;
@@ -98,18 +188,23 @@ else
         _location = _screen.Location;
         _description = _screen.Description;
         _shufflePlayback = _screen.ShufflePlayback;
-        _selectedCampaignIds = _screen.AssignedCampaigns.Select(c => c.Id).ToHashSet();
+        foreach (var assignment in _screen.CampaignAssignments)
+            _assignments[assignment.CampaignId] = AssignmentFormModel.FromDetail(assignment);
     }
 
-    private void ToggleCampaign(Guid id, bool selected)
+    private void ToggleCampaign(Guid campaignId, bool selected)
     {
-        if (selected) _selectedCampaignIds.Add(id);
-        else _selectedCampaignIds.Remove(id);
+        if (selected)
+            _assignments.TryAdd(campaignId, new AssignmentFormModel(campaignId));
+        else
+            _assignments.Remove(campaignId);
     }
 
     private async Task SaveAsync()
     {
-        if (_screen == null) return;
+        if (_screen == null)
+            return;
+
         _saving = true;
         try
         {
@@ -120,10 +215,90 @@ else
                 Location = _location,
                 ShufflePlayback = _shufflePlayback,
             };
-            await ScreenManagementService.UpdateScreenWithCampaignsAsync(Id, request, _selectedCampaignIds.ToList());
+            var assignments = _assignments.Values.Select(a => a.ToRequest()).ToList();
+            await ScreenManagementService.UpdateScreenWithCampaignsAsync(Id, request, assignments);
             Toast.ShowSuccess("Screen saved.");
             Navigation.NavigateTo($"/screens/{Id}");
         }
-        catch (Exception ex) { Toast.ShowError(ex.Message); _saving = false; }
+        catch (Exception ex)
+        {
+            Toast.ShowError(ex.Message);
+            _saving = false;
+        }
+    }
+
+    private sealed class AssignmentFormModel(Guid campaignId)
+    {
+        public Guid CampaignId { get; } = campaignId;
+        public bool IsEnabled { get; set; } = true;
+        public DateTime? StartDateUtc { get; set; }
+        public DateTime? EndDateUtc { get; set; }
+        public int Priority { get; set; }
+        public bool[] Days { get; } = new bool[7];
+        public TimeOnly? DailyStartTime { get; set; }
+        public TimeOnly? DailyEndTime { get; set; }
+        public string RecurrenceTimeZoneId { get; set; } = "";
+
+        public static AssignmentFormModel FromDetail(CampaignAssignmentDetail detail)
+        {
+            var model = new AssignmentFormModel(detail.CampaignId)
+            {
+                IsEnabled = detail.IsEnabled,
+                StartDateUtc = detail.StartDateUtc,
+                EndDateUtc = detail.EndDateUtc,
+                Priority = detail.Priority,
+                DailyStartTime = detail.DailyStartTime,
+                DailyEndTime = detail.DailyEndTime,
+                RecurrenceTimeZoneId = detail.RecurrenceTimeZoneId ?? "",
+            };
+            for (var i = 0; i < 7; i++)
+                model.Days[i] = detail.RecurrenceDaysMask is > 0
+                    && (detail.RecurrenceDaysMask.Value & (1 << i)) != 0;
+            return model;
+        }
+
+        public CampaignAssignmentRequest ToRequest() =>
+            new(
+                CampaignId,
+                IsEnabled,
+                NormalizeUtc(StartDateUtc),
+                NormalizeUtc(EndDateUtc),
+                Priority,
+                BuildDaysMask(),
+                DailyStartTime,
+                DailyEndTime,
+                string.IsNullOrWhiteSpace(RecurrenceTimeZoneId)
+                    ? null
+                    : RecurrenceTimeZoneId
+            );
+
+        public bool IsActiveNow()
+        {
+            var request = ToRequest();
+            var assignment = new Mireya.Database.Models.CampaignAssignment
+            {
+                IsEnabled = request.IsEnabled,
+                StartDateUtc = request.StartDateUtc,
+                EndDateUtc = request.EndDateUtc,
+                Priority = request.Priority,
+                RecurrenceDaysMask = request.RecurrenceDaysMask,
+                DailyStartTime = request.DailyStartTime,
+                DailyEndTime = request.DailyEndTime,
+                RecurrenceTimeZoneId = request.RecurrenceTimeZoneId,
+            };
+            return assignment.IsActiveAt(DateTime.UtcNow);
+        }
+
+        private int? BuildDaysMask()
+        {
+            var mask = 0;
+            for (var i = 0; i < 7; i++)
+                if (Days[i])
+                    mask |= 1 << i;
+            return mask;
+        }
+
+        private static DateTime? NormalizeUtc(DateTime? value) =>
+            value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
     }
 }

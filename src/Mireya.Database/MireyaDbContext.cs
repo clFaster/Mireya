@@ -75,22 +75,6 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
         {
             entity.HasIndex(e => e.Name);
             entity.HasIndex(e => e.CreatedAt);
-            entity.HasIndex(e => e.IsDefault).IsUnique().HasFilter("\"IsDefault\"");
-            entity.ToTable(table =>
-            {
-                table.HasCheckConstraint(
-                    "CK_Campaigns_DateRange",
-                    "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\""
-                );
-                table.HasCheckConstraint(
-                    "CK_Campaigns_RecurrenceDaysMask_Range",
-                    "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127"
-                );
-                table.HasCheckConstraint(
-                    "CK_Campaigns_DailyWindow_Complete",
-                    "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)"
-                );
-            });
         });
 
         // Configure CampaignAsset entity
@@ -124,7 +108,30 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
         builder.Entity<CampaignAssignment>(entity =>
         {
             entity.HasIndex(e => e.ScreenId);
-            entity.HasIndex(e => new { e.CampaignId, e.ScreenId }).IsUnique();
+            entity
+                .HasIndex(e => new { e.CampaignId, e.ScreenId })
+                .IsUnique()
+                .HasFilter("\"TargetKind\" = 0");
+            entity.HasIndex(e => e.TargetKind).IsUnique().HasFilter("\"TargetKind\" = 1");
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_CampaignAssignments_Target",
+                    "(\"TargetKind\" = 0 AND \"ScreenId\" IS NOT NULL) OR (\"TargetKind\" = 1 AND \"ScreenId\" IS NULL)"
+                );
+                table.HasCheckConstraint(
+                    "CK_CampaignAssignments_DateRange",
+                    "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\""
+                );
+                table.HasCheckConstraint(
+                    "CK_CampaignAssignments_RecurrenceDaysMask_Range",
+                    "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127"
+                );
+                table.HasCheckConstraint(
+                    "CK_CampaignAssignments_DailyWindow_Complete",
+                    "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)"
+                );
+            });
 
             entity
                 .HasOne(ca => ca.Campaign)

@@ -304,41 +304,13 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<TimeOnly?>("DailyEndTime")
-                        .HasColumnType("TEXT");
-
-                    b.Property<TimeOnly?>("DailyStartTime")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("EndDateUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("RecurrenceDaysMask")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("RecurrenceTimeZoneId")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("StartDateUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -348,20 +320,9 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("CreatedAt");
 
-                    b.HasIndex("IsDefault")
-                        .IsUnique()
-                        .HasFilter("\"IsDefault\"");
-
                     b.HasIndex("Name");
 
-                    b.ToTable("Campaigns", t =>
-                        {
-                            t.HasCheckConstraint("CK_Campaigns_DailyWindow_Complete", "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)");
-
-                            t.HasCheckConstraint("CK_Campaigns_DateRange", "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\"");
-
-                            t.HasCheckConstraint("CK_Campaigns_RecurrenceDaysMask_Range", "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127");
-                        });
+                    b.ToTable("Campaigns");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.CampaignAsset", b =>
@@ -409,17 +370,62 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("ScreenId")
+                    b.Property<TimeOnly?>("DailyEndTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeOnly?>("DailyStartTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EndDateUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RecurrenceDaysMask")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RecurrenceTimeZoneId")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ScreenId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("StartDateUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TargetKind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ScreenId");
 
-                    b.HasIndex("CampaignId", "ScreenId")
-                        .IsUnique();
+                    b.HasIndex("TargetKind")
+                        .IsUnique()
+                        .HasFilter("\"TargetKind\" = 1");
 
-                    b.ToTable("CampaignAssignments");
+                    b.HasIndex("CampaignId", "ScreenId")
+                        .IsUnique()
+                        .HasFilter("\"TargetKind\" = 0");
+
+                    b.ToTable("CampaignAssignments", t =>
+                        {
+                            t.HasCheckConstraint("CK_CampaignAssignments_DailyWindow_Complete", "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_CampaignAssignments_DateRange", "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\"");
+
+                            t.HasCheckConstraint("CK_CampaignAssignments_RecurrenceDaysMask_Range", "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127");
+
+                            t.HasCheckConstraint("CK_CampaignAssignments_Target", "(\"TargetKind\" = 0 AND \"ScreenId\" IS NOT NULL) OR (\"TargetKind\" = 1 AND \"ScreenId\" IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.PlaybackEvent", b =>
@@ -705,8 +711,7 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.HasOne("Mireya.Database.Models.Screen", "Screen")
                         .WithMany("CampaignAssignments")
                         .HasForeignKey("ScreenId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Campaign");
 

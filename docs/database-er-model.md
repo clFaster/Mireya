@@ -62,15 +62,6 @@ erDiagram
         string Description "nullable"
         datetime CreatedAt
         datetime UpdatedAt
-        bool IsEnabled
-        datetime StartDateUtc "nullable"
-        datetime EndDateUtc "nullable"
-        int Priority
-        bool IsDefault "at most one true"
-        int RecurrenceDaysMask "nullable, 0 to 127"
-        time DailyStartTime "nullable pair"
-        time DailyEndTime "nullable pair"
-        string RecurrenceTimeZoneId "nullable"
     }
 
     CampaignAssets {
@@ -84,8 +75,18 @@ erDiagram
     CampaignAssignments {
         guid Id PK
         guid CampaignId FK
-        guid ScreenId FK
+        guid ScreenId FK "nullable for global fallback"
+        int TargetKind "screen or global fallback"
+        bool IsEnabled
+        datetime StartDateUtc "nullable"
+        datetime EndDateUtc "nullable"
+        int Priority
+        int RecurrenceDaysMask "nullable, 0 to 127"
+        time DailyStartTime "nullable pair"
+        time DailyEndTime "nullable pair"
+        string RecurrenceTimeZoneId "nullable"
         datetime CreatedAt
+        datetime UpdatedAt
     }
 
     AssetSyncStatuses {
@@ -138,9 +139,9 @@ The remaining ASP.NET Core Identity tables are unchanged:
 | Table | Database rule | Important indexes |
 | --- | --- | --- |
 | `Screens` | identifier unique; user optional but linked to a real user and used by at most one screen; resolutions positive | name, created time, and `(ApprovalStatus, IsActive, CreatedAt)` |
-| `Campaigns` | at most one default; valid date range; daily times both set or both empty; weekday mask in range | name, created time, partial unique default index |
+| `Campaigns` | reusable campaign content has no target-specific playback policy | name and created time |
 | `CampaignAssets` | position unique inside a campaign; positive position and duration | asset and `(CampaignId, Position)` |
-| `CampaignAssignments` | a campaign can be assigned to a screen only once | screen and `(CampaignId, ScreenId)` |
+| `CampaignAssignments` | one assignment per campaign/screen; exactly one global fallback at most; target and schedule fields must be valid | screen, filtered `(CampaignId, ScreenId)`, and filtered unique global-fallback target |
 | `AssetSyncStatuses` | one state per screen and asset; progress from 0 to 100 | asset, state, and `(ScreenId, AssetId)` |
 | `PlaybackEvents` | screen is enforced; asset is deliberately a logical reference | played time, screen, asset |
 | `AuditLogs` | deliberately stores historical/logical references | time, entity type, actor |
@@ -153,7 +154,8 @@ independent so that history is not silently erased.
 
 The client database is a cache, not a second copy of the whole server database. It
 therefore contains only data required for backend selection, authentication, content
-synchronization, downloads, scheduling, and local settings.
+synchronization, downloads, and local settings. Assignment schedules are evaluated by
+the server and are not persisted in the client cache.
 
 ```mermaid
 erDiagram
@@ -222,14 +224,6 @@ erDiagram
     Campaigns {
         guid Id PK
         string Name
-        bool IsEnabled
-        datetime StartDateUtc "nullable"
-        datetime EndDateUtc "nullable"
-        int Priority
-        bool IsDefault "one per backend is allowed"
-        int RecurrenceDaysMask "nullable, 0 to 127"
-        time DailyStartTime "nullable pair"
-        time DailyEndTime "nullable pair"
         datetime UpdatedAt
     }
 
@@ -257,19 +251,20 @@ instead of renaming them. This reduces the client schema from 11 to 9 tables.
 | --- | --- | --- |
 | `BackendInstances` | URL unique; at most one current backend | partial unique current-backend index |
 | `CampaignAssets` | position unique inside a campaign; positive position and duration | asset and `(CampaignId, Position)` |
-| `Campaigns` | valid date range, paired daily times, weekday mask in range | name |
+| `Campaigns` | cached content metadata only | name |
 | `Assets` | non-negative size and positive duration | type |
 | `DownloadedAssets` | backend is enforced; asset remains a logical cache reference | downloaded state |
 
-The client does **not** enforce one global default campaign. It can cache several
-backends, and each backend may legitimately supply its own default campaign.
+The client does not persist campaign assignments. The server sends only the campaigns
+active for the connected screen while pre-caching assets for upcoming assignments.
 
 ## Decisions in simple words
 
 | Finding | Best decision | Why |
 | --- | --- | --- |
 | `Display` and `Screen` were mixed | Use `Screen` everywhere in the domain, database, API contract, generated client, UI bindings, and tests | One term prevents mapping mistakes and makes the API easier to understand |
-| API default campaign was application-only | Add a partial unique index and switch defaults transactionally | The database now protects the rule even during concurrent requests |
+| Playback schedules were global campaign properties | Move playback policy to target-specific campaign assignments | The same reusable campaign can run on different schedules and priorities on different screens |
+| Global fallback has no screen | Represent it as a global-fallback assignment with a nullable screen | Fallback scheduling follows the same rules without putting playback policy back on the campaign |
 | Current client backend was application-only | Add a partial unique index and switch it transactionally | The cache cannot end up with two active backends |
 | Screen-to-user link was only text | Add a real optional foreign key and a unique index | A screen cannot point to a missing user or share one login with another screen |
 | Screen registration writes a user, role, and screen | Put all three writes in one transaction | A failed registration cannot leave an orphan login behind |

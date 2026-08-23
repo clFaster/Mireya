@@ -14,6 +14,9 @@ public interface ICampaignService
     Task<CampaignDetail> UpdateCampaignAsync(Guid id, UpdateCampaignRequest request);
     Task DeleteCampaignAsync(Guid id);
     Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId);
+    Task<CampaignAssignmentDetail?> GetGlobalFallbackAsync();
+    Task<CampaignAssignmentDetail> SetGlobalFallbackAsync(CampaignAssignmentRequest request);
+    Task ClearGlobalFallbackAsync();
 }
 
 public class CampaignService(
@@ -32,28 +35,15 @@ public class CampaignService(
 
         if (screenId.HasValue)
             query = query.Where(c =>
-                c.CampaignAssignments.Any(ca => ca.ScreenId == screenId.Value)
+                c.CampaignAssignments.Any(ca =>
+                    ca.TargetKind == CampaignAssignmentTargetKind.Screen
+                    && ca.ScreenId == screenId.Value
+                )
             );
 
         var campaigns = await query.OrderByDescending(c => c.UpdatedAt).ToListAsync();
-
-        return campaigns
-            .Select(c => new CampaignSummary(
-                c.Id,
-                c.Name,
-                c.Description,
-                c.CampaignAssets.Count,
-                c.CampaignAssignments.Count,
-                c.CreatedAt,
-                c.UpdatedAt,
-                c.IsEnabled,
-                c.StartDateUtc,
-                c.EndDateUtc,
-                c.IsActiveAt(DateTime.UtcNow),
-                c.Priority,
-                c.IsDefault
-            ))
-            .ToList();
+        var utcNow = DateTime.UtcNow;
+        return campaigns.Select(c => MapSummary(c, utcNow)).ToList();
     }
 
     public async Task<CampaignDetail> GetCampaignAsync(Guid id)
@@ -69,67 +59,16 @@ public class CampaignService(
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
-        var assets = campaign
-            .CampaignAssets.OrderBy(ca => ca.Position)
-            .Select(ca => new CampaignAssetDetail(
-                ca.Id,
-                ca.AssetId,
-                ca.Asset.Name,
-                ca.Asset.Type,
-                ca.Asset.Source,
-                ca.Position,
-                ca.DurationSeconds,
-                AssetDurationResolver.Resolve(ca.Asset, ca.DurationSeconds),
-                ca.Asset.IsMuted,
-                ca.Asset.ImageFit
-            ))
-            .ToList();
-
-        var screens = campaign
-            .CampaignAssignments.Select(ca => new ScreenInfo(
-                ca.Screen.Id,
-                ca.Screen.Name,
-                ca.Screen.Location
-            ))
-            .ToList();
-
-        return new CampaignDetail(
-            campaign.Id,
-            campaign.Name,
-            campaign.Description,
-            assets,
-            screens,
-            campaign.CreatedAt,
-            campaign.UpdatedAt,
-            campaign.IsEnabled,
-            campaign.StartDateUtc,
-            campaign.EndDateUtc,
-            campaign.Priority,
-            campaign.IsDefault,
-            campaign.RecurrenceDaysMask,
-            campaign.DailyStartTime,
-            campaign.DailyEndTime,
-            campaign.RecurrenceTimeZoneId
-        );
+        return MapDetail(campaign, DateTime.UtcNow);
     }
 
     public async Task<CampaignDetail> CreateCampaignAsync(CreateCampaignRequest request)
     {
         ValidateCampaignRequest(request.Name, request.Assets);
-        ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
-        ValidateRecurrence(
-            request.DailyStartTime,
-            request.DailyEndTime,
-            request.RecurrenceTimeZoneId
-        );
-
         await VerifyAssetsExistAsync(
             request.Assets.Select(a => a.AssetId).Distinct().ToList(),
             request.Assets.Count
         );
-
-        if (request.ScreenIds.Any())
-            await VerifyScreensExistAsync(request.ScreenIds);
 
         var campaign = new Database.Models.Campaign
         {
@@ -137,26 +76,11 @@ public class CampaignService(
             Description = request.Description,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsEnabled = request.IsEnabled,
-            StartDateUtc = request.StartDateUtc,
-            EndDateUtc = request.EndDateUtc,
-            Priority = request.Priority,
-            IsDefault = request.IsDefault,
-            RecurrenceDaysMask = NormalizeDaysMask(request.RecurrenceDaysMask),
-            DailyStartTime = request.DailyStartTime,
-            DailyEndTime = request.DailyEndTime,
-            RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId)
-                ? null
-                : request.RecurrenceTimeZoneId,
         };
 
         db.Campaigns.Add(campaign);
         AddCampaignAssets(campaign.Id, request.Assets);
-        AddCampaignAssignments(campaign.Id, request.ScreenIds);
-
-        await SaveWithSingleDefaultAsync(campaign, request.IsDefault);
-
-        var campaignDetail = await GetCampaignAsync(campaign.Id);
+        await db.SaveChangesAsync();
 
         await audit.LogAsync(
             "Created",
@@ -165,24 +89,12 @@ public class CampaignService(
             $"Created campaign '{campaign.Name}'"
         );
 
-        // A new default campaign affects every screen that currently has nothing active.
-        if (request.IsDefault)
-            await SyncAllScreensAsync();
-        else
-            await syncService.SyncScreensAsync(request.ScreenIds);
-
-        return campaignDetail;
+        return await GetCampaignAsync(campaign.Id);
     }
 
     public async Task<CampaignDetail> UpdateCampaignAsync(Guid id, UpdateCampaignRequest request)
     {
         ValidateCampaignRequest(request.Name, request.Assets);
-        ValidateSchedule(request.StartDateUtc, request.EndDateUtc);
-        ValidateRecurrence(
-            request.DailyStartTime,
-            request.DailyEndTime,
-            request.RecurrenceTimeZoneId
-        );
 
         var campaign = await db
             .Campaigns.Include(c => c.CampaignAssets)
@@ -193,49 +105,25 @@ public class CampaignService(
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
-        var oldScreenIds = campaign.CampaignAssignments.Select(ca => ca.ScreenId).ToList();
-        var defaultChanged = campaign.IsDefault != request.IsDefault;
-
         await VerifyAssetsExistAsync(
             request.Assets.Select(a => a.AssetId).Distinct().ToList(),
             request.Assets.Count
         );
 
-        if (request.ScreenIds is { Count: > 0 })
-            await VerifyScreensExistAsync(request.ScreenIds);
+        var affectedScreenIds = campaign
+            .CampaignAssignments.Where(a => a.ScreenId.HasValue)
+            .Select(a => a.ScreenId!.Value)
+            .ToList();
+        var affectsFallback = campaign.CampaignAssignments.Any(a =>
+            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+        );
 
         campaign.Name = request.Name;
         campaign.Description = request.Description;
         campaign.UpdatedAt = DateTime.UtcNow;
-        campaign.IsEnabled = request.IsEnabled;
-        campaign.StartDateUtc = request.StartDateUtc;
-        campaign.EndDateUtc = request.EndDateUtc;
-        campaign.Priority = request.Priority;
-        campaign.IsDefault = request.IsDefault;
-        campaign.RecurrenceDaysMask = NormalizeDaysMask(request.RecurrenceDaysMask);
-        campaign.DailyStartTime = request.DailyStartTime;
-        campaign.DailyEndTime = request.DailyEndTime;
-        campaign.RecurrenceTimeZoneId = string.IsNullOrWhiteSpace(request.RecurrenceTimeZoneId)
-            ? null
-            : request.RecurrenceTimeZoneId;
-
         db.CampaignAssets.RemoveRange(campaign.CampaignAssets);
         AddCampaignAssets(campaign.Id, request.Assets);
-
-        // Only modify screen assignments when explicitly provided.
-        // null => leave assignments untouched (e.g. campaign content edits).
-        // non-null list (incl. empty) => set assignments to exactly this set.
-        var affectedScreenIds = oldScreenIds;
-        if (request.ScreenIds is not null)
-        {
-            db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
-            AddCampaignAssignments(campaign.Id, request.ScreenIds);
-            affectedScreenIds = oldScreenIds.Union(request.ScreenIds).ToList();
-        }
-
-        await SaveWithSingleDefaultAsync(campaign, request.IsDefault);
-
-        var campaignDetail = await GetCampaignAsync(campaign.Id);
+        await db.SaveChangesAsync();
 
         await audit.LogAsync(
             "Updated",
@@ -244,14 +132,12 @@ public class CampaignService(
             $"Updated campaign '{campaign.Name}'"
         );
 
-        // Changing the default designation (or editing the default campaign's content)
-        // can affect any screen that relies on the fallback, so re-sync everything.
-        if (defaultChanged || campaign.IsDefault)
+        if (affectsFallback)
             await SyncAllScreensAsync();
         else
             await syncService.SyncScreensAsync(affectedScreenIds);
 
-        return campaignDetail;
+        return await GetCampaignAsync(campaign.Id);
     }
 
     public async Task DeleteCampaignAsync(Guid id)
@@ -263,12 +149,16 @@ public class CampaignService(
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
-        // Collect affected screens before deletion (cascade will remove assignments)
-        var affectedScreenIds = campaign.CampaignAssignments.Select(ca => ca.ScreenId).ToList();
+        var affectedScreenIds = campaign
+            .CampaignAssignments.Where(a => a.ScreenId.HasValue)
+            .Select(a => a.ScreenId!.Value)
+            .ToList();
+        var affectsFallback = campaign.CampaignAssignments.Any(a =>
+            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+        );
 
         db.Campaigns.Remove(campaign);
         await db.SaveChangesAsync();
-
         await audit.LogAsync(
             "Deleted",
             "Campaign",
@@ -276,145 +166,175 @@ public class CampaignService(
             $"Deleted campaign '{campaign.Name}'"
         );
 
-        // Notify affected screens so they stop showing deleted campaign content
-        if (affectedScreenIds.Count > 0)
+        if (affectsFallback)
+            await SyncAllScreensAsync();
+        else
             await syncService.SyncScreensAsync(affectedScreenIds);
     }
 
-    public async Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId)
-    {
-        return await db
+    public Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId) =>
+        db
             .CampaignAssets.Where(ca => ca.AssetId == assetId)
             .Select(ca => ca.CampaignId)
             .Distinct()
             .ToListAsync();
+
+    public async Task<CampaignAssignmentDetail?> GetGlobalFallbackAsync()
+    {
+        var assignment = await db
+            .CampaignAssignments.Include(a => a.Campaign)
+            .FirstOrDefaultAsync(a => a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback);
+        return assignment == null
+            ? null
+            : CampaignAssignmentPolicy.ToDetail(assignment, DateTime.UtcNow);
     }
+
+    public async Task<CampaignAssignmentDetail> SetGlobalFallbackAsync(
+        CampaignAssignmentRequest request
+    )
+    {
+        CampaignAssignmentPolicy.Validate(request);
+        if (!await db.Campaigns.AnyAsync(c => c.Id == request.CampaignId))
+            throw new ArgumentException("Campaign does not exist");
+
+        var assignment = await db.CampaignAssignments.FirstOrDefaultAsync(a =>
+            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+        );
+        if (assignment == null)
+        {
+            assignment = new CampaignAssignment
+            {
+                CampaignId = request.CampaignId,
+                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
+                ScreenId = null,
+                CreatedAt = DateTime.UtcNow,
+            };
+            db.CampaignAssignments.Add(assignment);
+        }
+        else
+        {
+            assignment.CampaignId = request.CampaignId;
+        }
+
+        CampaignAssignmentPolicy.Apply(assignment, request);
+        await db.SaveChangesAsync();
+        await audit.LogAsync(
+            "Updated",
+            "CampaignAssignment",
+            assignment.Id.ToString(),
+            "Updated the global fallback campaign assignment"
+        );
+        await SyncAllScreensAsync();
+
+        return (await GetGlobalFallbackAsync())!;
+    }
+
+    public async Task ClearGlobalFallbackAsync()
+    {
+        var assignment = await db.CampaignAssignments.FirstOrDefaultAsync(a =>
+            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+        );
+        if (assignment == null)
+            return;
+
+        db.CampaignAssignments.Remove(assignment);
+        await db.SaveChangesAsync();
+        await audit.LogAsync(
+            "Deleted",
+            "CampaignAssignment",
+            assignment.Id.ToString(),
+            "Removed the global fallback campaign assignment"
+        );
+        await SyncAllScreensAsync();
+    }
+
+    private static CampaignSummary MapSummary(Database.Models.Campaign campaign, DateTime utcNow) =>
+        new(
+            campaign.Id,
+            campaign.Name,
+            campaign.Description,
+            campaign.CampaignAssets.Count,
+            campaign.CampaignAssignments.Count(a =>
+                a.TargetKind == CampaignAssignmentTargetKind.Screen
+            ),
+            campaign.CreatedAt,
+            campaign.UpdatedAt,
+            campaign.CampaignAssignments.Count(a => a.IsActiveAt(utcNow)),
+            campaign.CampaignAssignments.Any(a =>
+                a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+            )
+        );
+
+    private static CampaignDetail MapDetail(Database.Models.Campaign campaign, DateTime utcNow) =>
+        new(
+            campaign.Id,
+            campaign.Name,
+            campaign.Description,
+            campaign
+                .CampaignAssets.OrderBy(ca => ca.Position)
+                .Select(ca => new CampaignAssetDetail(
+                    ca.Id,
+                    ca.AssetId,
+                    ca.Asset.Name,
+                    ca.Asset.Type,
+                    ca.Asset.Source,
+                    ca.Position,
+                    ca.DurationSeconds,
+                    AssetDurationResolver.Resolve(ca.Asset, ca.DurationSeconds),
+                    ca.Asset.IsMuted,
+                    ca.Asset.ImageFit
+                ))
+                .ToList(),
+            campaign
+                .CampaignAssignments.Select(a => CampaignAssignmentPolicy.ToDetail(a, utcNow))
+                .ToList(),
+            campaign.CreatedAt,
+            campaign.UpdatedAt
+        );
 
     private static void ValidateCampaignRequest(string name, List<CampaignAssetDto> assets)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Campaign name is required");
-
         if (assets.Any(a => a.Position <= 0))
             throw new ArgumentException("Asset positions must be positive integers");
-
-        if (assets.Any(a => a.DurationSeconds.HasValue && a.DurationSeconds.Value <= 0))
+        if (assets.Any(a => a.DurationSeconds is <= 0))
             throw new ArgumentException("Duration must be positive if provided");
     }
 
-    private static void ValidateSchedule(DateTime? startDateUtc, DateTime? endDateUtc)
+    private async Task VerifyAssetsExistAsync(List<Guid> assetIds, int requestedCount)
     {
-        if (startDateUtc.HasValue && endDateUtc.HasValue && endDateUtc.Value < startDateUtc.Value)
-            throw new ArgumentException(
-                "Campaign end date must not be earlier than its start date"
-            );
-    }
-
-    private static void ValidateRecurrence(TimeOnly? start, TimeOnly? end, string? timeZoneId)
-    {
-        if (start.HasValue != end.HasValue)
-            throw new ArgumentException(
-                "Daily start and end time must both be set or both be empty"
-            );
-
-        if (!string.IsNullOrWhiteSpace(timeZoneId))
-        {
-            try
-            {
-                TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-            }
-            catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
-            {
-                throw new ArgumentException($"Unknown time zone '{timeZoneId}'");
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Normalises a weekday bitmask: 0 (no days) or 127 (all days) both mean "every day" (null).
-    /// </summary>
-    private static int? NormalizeDaysMask(int? mask) =>
-        mask is null or 0 or 0b111_1111 ? null : mask & 0b111_1111;
-
-    private async Task VerifyAssetsExistAsync(List<Guid> assetIds, int totalRequestedCount)
-    {
-        if (assetIds.Count != totalRequestedCount)
+        if (assetIds.Count != requestedCount)
             throw new ArgumentException("Duplicate assets are not allowed in a campaign");
 
-        var existingAssets = await db.Assets.Where(a => assetIds.Contains(a.Id)).ToListAsync();
-        if (existingAssets.Count != assetIds.Count)
-        {
-            var missingIds = assetIds.Except(existingAssets.Select(a => a.Id)).ToList();
+        var existingIds = await db
+            .Assets.Where(a => assetIds.Contains(a.Id))
+            .Select(a => a.Id)
+            .ToListAsync();
+        var missingIds = assetIds.Except(existingIds).ToList();
+        if (missingIds.Count > 0)
             throw new ArgumentException(
                 $"One or more assets do not exist. Missing asset IDs: {string.Join(", ", missingIds)}"
             );
-        }
-    }
-
-    private async Task VerifyScreensExistAsync(List<Guid> screenIds)
-    {
-        var existingScreens = await db.Screens.Where(d => screenIds.Contains(d.Id)).CountAsync();
-        if (existingScreens != screenIds.Distinct().Count())
-            throw new ArgumentException("One or more screens do not exist");
-    }
-
-    private async Task ClearOtherDefaultsAsync(Guid keepCampaignId)
-    {
-        var otherDefaults = await db
-            .Campaigns.Where(c => c.IsDefault && c.Id != keepCampaignId)
-            .ToListAsync();
-        foreach (var other in otherDefaults)
-            other.IsDefault = false;
-    }
-
-    private async Task SaveWithSingleDefaultAsync(
-        Database.Models.Campaign campaign,
-        bool shouldBeDefault
-    )
-    {
-        if (!shouldBeDefault)
-        {
-            await db.SaveChangesAsync();
-            return;
-        }
-
-        // Two saves inside one transaction avoid a temporary unique-index conflict
-        // while switching the default from one campaign to another.
-        await using var transaction = await db.Database.BeginTransactionAsync();
-        campaign.IsDefault = false;
-        await ClearOtherDefaultsAsync(campaign.Id);
-        await db.SaveChangesAsync();
-
-        campaign.IsDefault = true;
-        await db.SaveChangesAsync();
-        await transaction.CommitAsync();
     }
 
     private async Task SyncAllScreensAsync()
     {
-        var screenIds = await db.Screens.Select(d => d.Id).ToListAsync();
+        var screenIds = await db.Screens.Select(s => s.Id).ToListAsync();
         await syncService.SyncScreensAsync(screenIds);
     }
 
     private void AddCampaignAssets(Guid campaignId, List<CampaignAssetDto> assets)
     {
-        foreach (var assetDto in assets)
+        foreach (var asset in assets)
             db.CampaignAssets.Add(
                 new CampaignAsset
                 {
                     CampaignId = campaignId,
-                    AssetId = assetDto.AssetId,
-                    Position = assetDto.Position,
-                    DurationSeconds = assetDto.DurationSeconds,
+                    AssetId = asset.AssetId,
+                    Position = asset.Position,
+                    DurationSeconds = asset.DurationSeconds,
                 }
-            );
-    }
-
-    private void AddCampaignAssignments(Guid campaignId, List<Guid> screenIds)
-    {
-        foreach (var screenId in screenIds)
-            db.CampaignAssignments.Add(
-                new CampaignAssignment { CampaignId = campaignId, ScreenId = screenId }
             );
     }
 }

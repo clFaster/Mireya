@@ -28,168 +28,123 @@ public class CampaignServiceTests
         };
 
     [Fact]
-    public async Task UpdateCampaign_WithNullScreenIds_PreservesExistingAssignments()
+    public async Task UpdateCampaign_PreservesExistingAssignmentSchedule()
     {
         using var db = new TestDatabase();
         var sync = Substitute.For<IScreenSynchronizationService>();
-
         var asset = NewAsset();
         var screen = NewScreen();
+        var campaign = new Campaign { Name = "Campaign" };
         db.Context.Assets.Add(asset);
         db.AddScreen(screen);
+        db.Context.Campaigns.Add(campaign);
+        db.Context.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Campaign = campaign,
+                Screen = screen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+                StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                Priority = 7,
+            }
+        );
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(
-            new CreateCampaignRequest(
-                "Campaign A",
-                null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                [screen.Id]
-            )
-        );
-
-        // Update content only, passing null ScreenIds (campaign editor behaviour)
         await service.UpdateCampaignAsync(
-            created.Id,
+            campaign.Id,
             new UpdateCampaignRequest(
-                "Campaign A renamed",
-                "desc",
-                [new CampaignAssetDto(asset.Id, 1, 9)],
-                null
+                "Renamed",
+                "Description",
+                [new CampaignAssetDto(asset.Id, 1, 5)]
             )
         );
 
         await using var verify = db.NewContext();
-        var assignments = await verify
-            .CampaignAssignments.Where(ca => ca.CampaignId == created.Id)
-            .ToListAsync();
-
-        Assert.Single(assignments);
-        Assert.Equal(screen.Id, assignments[0].ScreenId);
+        var assignment = await verify.CampaignAssignments.SingleAsync();
+        Assert.Equal(7, assignment.Priority);
+        Assert.Equal(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), assignment.StartDateUtc);
     }
 
     [Fact]
-    public async Task UpdateCampaign_WithEmptyScreenIds_UnassignsAll()
+    public async Task UpdateCampaign_SyncsDirectlyAssignedScreens()
     {
         using var db = new TestDatabase();
         var sync = Substitute.For<IScreenSynchronizationService>();
-
         var asset = NewAsset();
         var screen = NewScreen();
+        var campaign = new Campaign { Name = "Campaign" };
         db.Context.Assets.Add(asset);
         db.AddScreen(screen);
+        db.Context.Campaigns.Add(campaign);
+        db.Context.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Campaign = campaign,
+                Screen = screen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+            }
+        );
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(
-            new CreateCampaignRequest(
-                "Campaign B",
-                null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                [screen.Id]
-            )
-        );
-
         await service.UpdateCampaignAsync(
-            created.Id,
-            new UpdateCampaignRequest(
-                "Campaign B",
-                null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                []
-            )
+            campaign.Id,
+            new UpdateCampaignRequest("Campaign", null, [new CampaignAssetDto(asset.Id, 1, 5)])
         );
 
-        await using var verify = db.NewContext();
-        var count = await verify.CampaignAssignments.CountAsync(ca => ca.CampaignId == created.Id);
-
-        Assert.Equal(0, count);
-    }
-
-    [Fact]
-    public async Task UpdateCampaign_WithScreenIds_SyncsAffectedScreens()
-    {
-        using var db = new TestDatabase();
-        var sync = Substitute.For<IScreenSynchronizationService>();
-
-        var asset = NewAsset();
-        var oldScreen = NewScreen("Old");
-        var newScreen = NewScreen("New");
-        db.Context.Assets.Add(asset);
-        db.AddScreen(oldScreen);
-        db.AddScreen(newScreen);
-        await db.Context.SaveChangesAsync();
-
-        var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-        var created = await service.CreateCampaignAsync(
-            new CreateCampaignRequest(
-                "Campaign C",
-                null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                [oldScreen.Id]
-            )
-        );
-
-        sync.ClearReceivedCalls();
-
-        await service.UpdateCampaignAsync(
-            created.Id,
-            new UpdateCampaignRequest(
-                "Campaign C",
-                null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                [newScreen.Id]
-            )
-        );
-
-        // Both old (removed) and new (added) screens must be re-synced
         await sync.Received(1)
             .SyncScreensAsync(
-                Arg.Is<IEnumerable<Guid>>(ids =>
-                    ids.Contains(oldScreen.Id) && ids.Contains(newScreen.Id)
-                )
+                Arg.Is<IEnumerable<Guid>>(ids => ids.SequenceEqual(new[] { screen.Id }))
             );
     }
 
     [Fact]
-    public async Task SettingDefault_ClearsDefaultOnOtherCampaigns()
+    public async Task SettingGlobalFallback_ReusesSingleAssignment()
     {
         using var db = new TestDatabase();
         var sync = Substitute.For<IScreenSynchronizationService>();
-
-        var asset = NewAsset();
-        db.Context.Assets.Add(asset);
+        var first = new Campaign { Name = "First" };
+        var second = new Campaign { Name = "Second" };
+        db.Context.Campaigns.AddRange(first, second);
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
-
-        var first = await service.CreateCampaignAsync(
-            new CreateCampaignRequest(
-                "First Default",
-                null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                [],
-                IsDefault: true
-            )
-        );
-
-        var second = await service.CreateCampaignAsync(
-            new CreateCampaignRequest(
-                "Second Default",
-                null,
-                [new CampaignAssetDto(asset.Id, 1, 5)],
-                [],
-                IsDefault: true
-            )
+        await service.SetGlobalFallbackAsync(new CampaignAssignmentRequest(first.Id));
+        await service.SetGlobalFallbackAsync(
+            new CampaignAssignmentRequest(second.Id, Priority: 12)
         );
 
         await using var verify = db.NewContext();
-        var firstReloaded = await verify.Campaigns.FindAsync(first.Id);
-        var secondReloaded = await verify.Campaigns.FindAsync(second.Id);
+        var fallback = await verify.CampaignAssignments.SingleAsync(a =>
+            a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+        );
+        Assert.Equal(second.Id, fallback.CampaignId);
+        Assert.Equal(12, fallback.Priority);
+    }
 
-        Assert.False(firstReloaded!.IsDefault);
-        Assert.True(secondReloaded!.IsDefault);
-        Assert.Equal(1, await verify.Campaigns.CountAsync(c => c.IsDefault));
+    [Fact]
+    public async Task CreateCampaign_DoesNotCreatePlaybackAssignments()
+    {
+        using var db = new TestDatabase();
+        var asset = NewAsset();
+        db.Context.Assets.Add(asset);
+        await db.Context.SaveChangesAsync();
+        var service = new CampaignService(
+            db.Context,
+            Substitute.For<IScreenSynchronizationService>(),
+            Substitute.For<IAuditService>()
+        );
+
+        var campaign = await service.CreateCampaignAsync(
+            new CreateCampaignRequest(
+                "Reusable content",
+                null,
+                [new CampaignAssetDto(asset.Id, 1, 5)]
+            )
+        );
+
+        Assert.Empty(campaign.Assignments);
+        Assert.Equal(0, await db.Context.CampaignAssignments.CountAsync());
     }
 }

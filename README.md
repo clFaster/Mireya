@@ -10,7 +10,7 @@ Mireya is an open digital-signage platform with a web admin backend and lightwei
 
 - **Backend and admin UI**: ASP.NET Core, Carter minimal APIs, Blazor Server admin interface, ASP.NET Identity, OpenAPI via NSwag, and SignalR for live screen updates.
 - **Assets**: image, video, and website assets
-- **Campaigns**: ordered playlists, per-item durations, enable/disable state
+- **Campaigns**: reusable ordered playlists with per-item durations; screen assignments own enable state, priority, and scheduling
 - **Screens**: first-run screen registration, admin approval/rejection, screen details, direct campaign assignment, online status
 - **Display clients**: shared Avalonia client core with desktop and Android TV heads. Clients store backend configuration, register with the backend, reconnect automatically, sync campaign assets, cache media locally, and play scheduled content.
 - **Remote control**: restart, reload, identify, next, and previous commands are pushed to connected screens over SignalR.

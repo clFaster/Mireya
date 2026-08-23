@@ -3,6 +3,7 @@ using Carter;
 using Microsoft.AspNetCore.Mvc;
 using Mireya.Application.Constants;
 using Mireya.Application.Services;
+using Mireya.Application.Services.Campaign;
 using Mireya.Application.Services.ScreenManagement;
 using Mireya.Database.Models;
 
@@ -25,6 +26,15 @@ public class ScreenManagementEndpoints : ICarterModule
         adminGroup.MapGet("/", HandleGetScreensAsync);
         adminGroup.MapGet("/{id:guid}", HandleGetScreenByIdAsync);
         adminGroup.MapPut("/{id:guid}", HandleUpdateScreenAsync);
+        adminGroup
+            .MapGet("/{id:guid}/campaign-assignments", HandleGetAssignmentsAsync)
+            .Produces<List<CampaignAssignmentDetail>>()
+            .Produces(StatusCodes.Status404NotFound);
+        adminGroup
+            .MapPut("/{id:guid}/campaign-assignments", HandleUpdateAssignmentsAsync)
+            .Produces<List<CampaignAssignmentDetail>>()
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
         adminGroup.MapPost("/{id:guid}/approve", HandleApproveScreenAsync);
         adminGroup.MapPost("/{id:guid}/reject", HandleRejectScreenAsync);
         adminGroup.MapPost("/{id:guid}/command", HandleSendCommandAsync);
@@ -154,6 +164,49 @@ public class ScreenManagementEndpoints : ICarterModule
             id,
             logger
         );
+
+    private sealed record UpdateAssignmentsRequest(List<CampaignAssignmentRequest> Assignments);
+
+    private static async Task<IResult> HandleGetAssignmentsAsync(
+        Guid id,
+        IScreenManagementService screenManagementService
+    )
+    {
+        try
+        {
+            var screen = await screenManagementService.GetScreenWithCampaignsAsync(id);
+            return Results.Ok(screen.CampaignAssignments);
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound(new { error = $"Screen with ID {id} not found" });
+        }
+    }
+
+    private static async Task<IResult> HandleUpdateAssignmentsAsync(
+        Guid id,
+        [FromBody] UpdateAssignmentsRequest request,
+        IScreenManagementService screenManagementService
+    )
+    {
+        try
+        {
+            await screenManagementService.UpdateScreenCampaignAssignmentsAsync(
+                id,
+                request.Assignments
+            );
+            var screen = await screenManagementService.GetScreenWithCampaignsAsync(id);
+            return Results.Ok(screen.CampaignAssignments);
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound(new { error = $"Screen with ID {id} not found" });
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new { error = ex.Message });
+        }
+    }
 
     private static Task<IResult> HandleApproveScreenAsync(
         Guid id,

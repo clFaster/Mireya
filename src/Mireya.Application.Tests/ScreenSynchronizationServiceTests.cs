@@ -66,13 +66,15 @@ public class ScreenSynchronizationServiceTests
             Type = AssetType.Image,
             Source = "/uploads/d.png",
         };
-        var defaultCampaign = new Campaign
-        {
-            Name = "House Ads",
-            IsDefault = true,
-            IsEnabled = true,
-        };
+        var defaultCampaign = new Campaign { Name = "House Ads" };
         defaultCampaign.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
+        defaultCampaign.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
+                IsEnabled = true,
+            }
+        );
         db.AddScreen(screen);
         db.Context.Campaigns.Add(defaultCampaign);
         await db.Context.SaveChangesAsync();
@@ -97,15 +99,23 @@ public class ScreenSynchronizationServiceTests
             Type = AssetType.Image,
             Source = "/uploads/a.png",
         };
-        var assigned = new Campaign { Name = "Assigned", IsEnabled = true };
+        var assigned = new Campaign { Name = "Assigned" };
         assigned.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
-        assigned.CampaignAssignments.Add(new CampaignAssignment { Screen = screen });
-        var defaultCampaign = new Campaign
-        {
-            Name = "House Ads",
-            IsDefault = true,
-            IsEnabled = true,
-        };
+        assigned.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Screen = screen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+            }
+        );
+        var defaultCampaign = new Campaign { Name = "House Ads" };
+        defaultCampaign.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
+                IsEnabled = true,
+            }
+        );
         db.AddScreen(screen);
         db.Context.Campaigns.AddRange(assigned, defaultCampaign);
         await db.Context.SaveChangesAsync();
@@ -124,12 +134,14 @@ public class ScreenSynchronizationServiceTests
     {
         using var db = new TestDatabase();
         var screen = NewScreen();
-        var defaultCampaign = new Campaign
-        {
-            Name = "House Ads",
-            IsDefault = true,
-            IsEnabled = false,
-        };
+        var defaultCampaign = new Campaign { Name = "House Ads" };
+        defaultCampaign.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                TargetKind = CampaignAssignmentTargetKind.GlobalFallback,
+                IsEnabled = false,
+            }
+        );
         db.AddScreen(screen);
         db.Context.Campaigns.Add(defaultCampaign);
         await db.Context.SaveChangesAsync();
@@ -140,6 +152,57 @@ public class ScreenSynchronizationServiceTests
         var config = captured();
         Assert.NotNull(config);
         Assert.Empty(config!.Campaigns);
+    }
+
+    [Fact]
+    public async Task SameCampaign_CanBeActiveOnOneScreenAndScheduledOnAnother()
+    {
+        using var db = new TestDatabase();
+        var activeScreen = NewScreen();
+        activeScreen.Name = "Active";
+        var futureScreen = NewScreen();
+        futureScreen.Name = "Future";
+        var campaign = new Campaign { Name = "Reusable" };
+        campaign.CampaignAssets.Add(
+            new CampaignAsset
+            {
+                Asset = new Asset
+                {
+                    Name = "Asset",
+                    Type = AssetType.Image,
+                    Source = "/uploads/a.png",
+                },
+                Position = 1,
+            }
+        );
+        campaign.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Screen = activeScreen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+                IsEnabled = true,
+            }
+        );
+        campaign.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Screen = futureScreen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+                IsEnabled = true,
+                StartDateUtc = DateTime.UtcNow.AddDays(1),
+            }
+        );
+        db.AddScreen(activeScreen);
+        db.AddScreen(futureScreen);
+        db.Context.Campaigns.Add(campaign);
+        await db.Context.SaveChangesAsync();
+
+        var (service, captured) = CreateService(db);
+        await service.SyncScreenAsync(activeScreen.Id);
+        Assert.Single(captured()!.Campaigns);
+
+        await service.SyncScreenAsync(futureScreen.Id);
+        Assert.Empty(captured()!.Campaigns);
     }
 
     [Fact]

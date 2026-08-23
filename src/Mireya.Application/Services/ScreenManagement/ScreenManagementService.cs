@@ -72,8 +72,10 @@ public interface IScreenManagementService
     Task UpdateScreenWithCampaignsAsync(
         Guid id,
         UpdateScreenRequest request,
-        List<Guid> campaignIds
+        List<CampaignAssignmentRequest> assignments
     );
+
+    Task UpdateScreenCampaignAssignmentsAsync(Guid id, List<CampaignAssignmentRequest> assignments);
 
     /// <summary>
     ///     Gets all approved screens, optionally filtering by active status
@@ -405,19 +407,18 @@ public class ScreenManagementService(
 
         var utcNow = DateTime.UtcNow;
         var response = MapToDetailsResponse(screen);
-        var assignedCampaigns = MapCampaignSummaries(
-            screen.CampaignAssignments.Select(ca => ca.Campaign),
-            utcNow
-        );
-        var allCampaignSummaries = MapCampaignSummaries(allCampaigns, utcNow);
+        var assignments = screen
+            .CampaignAssignments.Select(a => CampaignAssignmentPolicy.ToDetail(a, utcNow))
+            .ToList();
+        var allCampaignSummaries = MapCampaignSummaries(allCampaigns);
 
-        return MapToScreenWithCampaignsResponse(response, assignedCampaigns, allCampaignSummaries);
+        return MapToScreenWithCampaignsResponse(response, assignments, allCampaignSummaries);
     }
 
     public async Task UpdateScreenWithCampaignsAsync(
         Guid id,
         UpdateScreenRequest request,
-        List<Guid> campaignIds
+        List<CampaignAssignmentRequest> assignments
     )
     {
         var screen = await db.Screens.FindAsync(id);
@@ -437,7 +438,12 @@ public class ScreenManagementService(
         screen.UpdatedAt = DateTime.UtcNow;
 
         // Validate that all requested campaigns exist before changing assignments
-        var distinctCampaignIds = campaignIds.Distinct().ToList();
+        var distinctCampaignIds = assignments.Select(a => a.CampaignId).Distinct().ToList();
+        if (distinctCampaignIds.Count != assignments.Count)
+            throw new ArgumentException("A campaign can only be assigned to a screen once");
+        foreach (var assignment in assignments)
+            CampaignAssignmentPolicy.Validate(assignment);
+
         if (distinctCampaignIds.Count > 0)
         {
             var existingCount = await db.Campaigns.CountAsync(c =>
@@ -449,41 +455,57 @@ public class ScreenManagementService(
 
         // Update campaign assignments
         var currentAssignments = await db
-            .CampaignAssignments.Where(ca => ca.ScreenId == id)
+            .CampaignAssignments.Where(ca =>
+                ca.TargetKind == CampaignAssignmentTargetKind.Screen && ca.ScreenId == id
+            )
             .ToListAsync();
 
         var toRemove = currentAssignments
-            .Where(ca => !campaignIds.Contains(ca.CampaignId))
+            .Where(ca => !distinctCampaignIds.Contains(ca.CampaignId))
             .ToList();
         db.CampaignAssignments.RemoveRange(toRemove);
 
-        var existingCampaignIds = currentAssignments.Select(ca => ca.CampaignId).ToHashSet();
-        foreach (var campaignId in campaignIds.Where(cid => !existingCampaignIds.Contains(cid)))
-            db.CampaignAssignments.Add(
-                new CampaignAssignment
+        var assignmentsByCampaign = currentAssignments.ToDictionary(a => a.CampaignId);
+        foreach (var requestAssignment in assignments)
+        {
+            if (
+                !assignmentsByCampaign.TryGetValue(requestAssignment.CampaignId, out var assignment)
+            )
+            {
+                assignment = new CampaignAssignment
                 {
-                    CampaignId = campaignId,
+                    CampaignId = requestAssignment.CampaignId,
                     ScreenId = id,
+                    TargetKind = CampaignAssignmentTargetKind.Screen,
                     CreatedAt = DateTime.UtcNow,
-                }
-            );
+                };
+                db.CampaignAssignments.Add(assignment);
+            }
+
+            CampaignAssignmentPolicy.Apply(assignment, requestAssignment);
+        }
 
         await db.SaveChangesAsync();
         logger.LogInformation(
             "Screen {ScreenId} updated with {CampaignCount} campaigns",
             screen.Id,
-            campaignIds.Count
+            assignments.Count
         );
 
         await audit.LogAsync(
             "Updated",
             ScreenAuditEntity,
             screen.Id.ToString(),
-            $"Updated screen '{screen.Name}' ({campaignIds.Count} campaign(s) assigned)"
+            $"Updated screen '{screen.Name}' ({assignments.Count} campaign(s) assigned)"
         );
 
         await syncService.SyncScreenAsync(screen.Id);
     }
+
+    public Task UpdateScreenCampaignAssignmentsAsync(
+        Guid id,
+        List<CampaignAssignmentRequest> assignments
+    ) => UpdateScreenWithCampaignsAsync(id, new UpdateScreenRequest(), assignments);
 
     public async Task<List<ScreenDetailsResponse>> GetApprovedScreensAsync(bool includeOffline)
     {
@@ -516,7 +538,7 @@ public class ScreenManagementService(
 
     private static ScreenWithCampaignsResponse MapToScreenWithCampaignsResponse(
         ScreenDetailsResponse response,
-        List<CampaignSummary> assignedCampaigns,
+        List<CampaignAssignmentDetail> assignments,
         List<CampaignSummary> allCampaigns
     )
     {
@@ -536,14 +558,13 @@ public class ScreenManagementService(
             ShufflePlayback = response.ShufflePlayback,
             CreatedAt = response.CreatedAt,
             UpdatedAt = response.UpdatedAt,
-            AssignedCampaigns = assignedCampaigns,
+            CampaignAssignments = assignments,
             AllCampaigns = allCampaigns,
         };
     }
 
     private static List<CampaignSummary> MapCampaignSummaries(
-        IEnumerable<Database.Models.Campaign> campaigns,
-        DateTime utcNow
+        IEnumerable<Database.Models.Campaign> campaigns
     )
     {
         return campaigns
@@ -552,14 +573,15 @@ public class ScreenManagementService(
                 c.Name,
                 c.Description,
                 c.CampaignAssets.Count,
-                c.CampaignAssignments.Count,
+                c.CampaignAssignments.Count(a =>
+                    a.TargetKind == CampaignAssignmentTargetKind.Screen
+                ),
                 c.CreatedAt,
                 c.UpdatedAt,
-                c.IsEnabled,
-                c.StartDateUtc,
-                c.EndDateUtc,
-                c.IsActiveAt(utcNow),
-                c.Priority
+                c.CampaignAssignments.Count(a => a.IsActiveAt(DateTime.UtcNow)),
+                c.CampaignAssignments.Any(a =>
+                    a.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+                )
             ))
             .ToList();
     }

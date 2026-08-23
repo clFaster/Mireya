@@ -139,11 +139,16 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
     public async Task<List<CampaignSyncInfo>> GetCampaignsToSyncAsync(Guid screenId)
     {
         var campaigns = await db
-            .CampaignAssignments.Where(ca => ca.ScreenId == screenId)
+            .CampaignAssignments.Where(ca =>
+                (ca.TargetKind == CampaignAssignmentTargetKind.Screen && ca.ScreenId == screenId)
+                || ca.TargetKind == CampaignAssignmentTargetKind.GlobalFallback
+            )
             .Include(ca => ca.Campaign.CampaignAssets)
                 .ThenInclude(ca => ca.Asset)
             .Select(ca => ca.Campaign)
             .ToListAsync();
+
+        campaigns = campaigns.GroupBy(c => c.Id).Select(group => group.First()).ToList();
 
         var result = new List<CampaignSyncInfo>();
 
