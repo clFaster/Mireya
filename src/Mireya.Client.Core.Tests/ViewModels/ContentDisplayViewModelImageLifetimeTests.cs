@@ -14,8 +14,8 @@ namespace Mireya.Client.Core.Tests.ViewModels;
 ///     memory, so every transition away from image content has to dispose the bitmap it
 ///     releases instead of only dropping the managed reference.
 /// </summary>
+[Collection(HeadlessSessionCollection.Name)]
 public sealed class ContentDisplayViewModelImageLifetimeTests
-    : IClassFixture<HeadlessSessionFixture>
 {
     // Smallest possible valid PNG (1x1, fully transparent).
     private const string OnePixelPngBase64 =

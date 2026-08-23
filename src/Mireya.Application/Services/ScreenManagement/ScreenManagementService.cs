@@ -346,6 +346,9 @@ public class ScreenManagementService(
 
         await db.SaveChangesAsync();
 
+        // Immediately revoke any active playlist on a connected screen.
+        await syncService.SyncScreenAsync(screen.Id);
+
         logger.LogInformation("Screen {ScreenId} rejected", screen.Id);
 
         await audit.LogAsync(

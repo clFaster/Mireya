@@ -375,7 +375,33 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             config.Campaigns.Count
         );
 
-        // Store the configuration but DON'T build playlist yet - wait for assets to sync
+        var approved = string.Equals(
+            config.ApprovalStatus,
+            "Approved",
+            StringComparison.OrdinalIgnoreCase
+        );
+        if (!approved)
+        {
+            _pendingConfiguration = null;
+            var rejected = string.Equals(
+                config.ApprovalStatus,
+                "Rejected",
+                StringComparison.OrdinalIgnoreCase
+            );
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ResetPlaybackState();
+                IsAwaitingApproval = true;
+                ScreenName = config.ScreenName;
+                ApprovalStatusText = rejected
+                    ? "This screen was rejected. Please contact your administrator."
+                    : "Waiting for an administrator to approve this screen…";
+                StatusText = ApprovalStatusText;
+            });
+            return;
+        }
+
+        // Store the approved configuration but DON'T build the playlist yet - wait for assets to sync.
         _pendingConfiguration = config;
 
         Dispatcher.UIThread.InvokeAsync(() =>
@@ -463,8 +489,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     {
         _logger.LogInformation("Building playlist from configuration");
 
-        _playlist.Clear();
-        _currentIndex = 0;
+        ResetPlaybackState();
 
         foreach (var campaign in config.Campaigns)
         {
@@ -492,6 +517,24 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             CurrentContentType = ContentType.None;
             ClearCurrentImage();
         }
+    }
+
+    private void ResetPlaybackState()
+    {
+        _advanceTimer?.Stop();
+        VideoStopRequested?.Invoke();
+        _playlist.Clear();
+        _currentIndex = 0;
+        TotalAssets = 0;
+        CurrentAssetName = "";
+        CurrentCampaignName = "";
+        CurrentAssetPosition = 0;
+        CurrentContentType = ContentType.None;
+        CurrentVideoPath = null;
+        CurrentVideoUri = null;
+        CurrentWebsiteUrl = null;
+        CurrentWebsiteUri = null;
+        ClearCurrentImage();
     }
 
     private void ShufflePlaylist()

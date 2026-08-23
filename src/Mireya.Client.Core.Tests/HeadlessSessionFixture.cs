@@ -2,6 +2,12 @@ using Avalonia.Headless;
 
 namespace Mireya.Client.Core.Tests;
 
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class HeadlessSessionCollection : ICollectionFixture<HeadlessSessionFixture>
+{
+    public const string Name = "Headless Avalonia";
+}
+
 /// <summary>
 ///     Shares a single headless Avalonia session between the tests of a class. Avalonia can
 ///     only be initialized once per process and owns its own UI thread, so test bodies that
@@ -24,6 +30,9 @@ public sealed class HeadlessSessionFixture : IDisposable
 
         return _session.Dispatch(dispatched, CancellationToken.None);
     }
+
+    public Task RunAsync(Func<Task> testBody) =>
+        _session.Dispatch(testBody, CancellationToken.None);
 
     public void Dispose() => _session.Dispose();
 }

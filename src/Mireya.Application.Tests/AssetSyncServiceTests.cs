@@ -113,4 +113,31 @@ public class AssetSyncServiceTests
         Assert.Contains(campaigns, c => c.CampaignId == fallback.Id);
         Assert.All(campaigns, campaign => Assert.Single(campaign.Assets));
     }
+
+    [Theory]
+    [InlineData(ApprovalStatus.Pending)]
+    [InlineData(ApprovalStatus.Rejected)]
+    public async Task GetCampaignsToSync_WithoutApproval_ReturnsNoCampaigns(
+        ApprovalStatus approvalStatus
+    )
+    {
+        using var db = new TestDatabase();
+        var (screen, asset) = Seed(db);
+        screen.ApprovalStatus = approvalStatus;
+        var campaign = new Campaign { Name = "Assigned" };
+        campaign.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
+        campaign.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Screen = screen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+            }
+        );
+        db.Context.Campaigns.Add(campaign);
+        await db.Context.SaveChangesAsync();
+
+        var campaigns = await CreateService(db).GetCampaignsToSyncAsync(screen.Id);
+
+        Assert.Empty(campaigns);
+    }
 }

@@ -66,6 +66,7 @@ Screen management includes:
 - Now-playing updates.
 
 Once approved, a screen authenticates with the backend, connects to the SignalR hub, receives configuration updates, and starts syncing assigned content.
+Pending and rejected screens receive no campaign or fallback content. Rejecting a connected screen immediately clears its active playlist; an offline screen is revoked when it reconnects.
 
 ## Display clients
 

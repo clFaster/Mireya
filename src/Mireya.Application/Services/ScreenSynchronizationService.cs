@@ -52,9 +52,13 @@ public class ScreenSynchronizationService(
             return;
         }
 
-        var campaigns = BuildCampaignList(screen);
-        if (campaigns.Count == 0)
-            campaigns = await BuildDefaultCampaignListAsync();
+        var campaigns = new List<CampaignDetail>();
+        if (screen.ApprovalStatus == ApprovalStatus.Approved)
+        {
+            campaigns = BuildCampaignList(screen);
+            if (campaigns.Count == 0)
+                campaigns = await BuildDefaultCampaignListAsync();
+        }
         var config = BuildScreenConfiguration(screen, campaigns);
 
         logger.LogInformation(

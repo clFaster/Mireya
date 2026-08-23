@@ -154,6 +154,46 @@ public class ScreenSynchronizationServiceTests
         Assert.Empty(config!.Campaigns);
     }
 
+    [Theory]
+    [InlineData(ApprovalStatus.Pending)]
+    [InlineData(ApprovalStatus.Rejected)]
+    public async Task SyncScreen_WithoutApproval_SendsNoAssignedOrFallbackCampaigns(
+        ApprovalStatus approvalStatus
+    )
+    {
+        using var db = new TestDatabase();
+        var screen = NewScreen();
+        screen.ApprovalStatus = approvalStatus;
+        var assigned = new Campaign { Name = "Assigned" };
+        assigned.CampaignAssignments.Add(
+            new CampaignAssignment
+            {
+                Screen = screen,
+                TargetKind = CampaignAssignmentTargetKind.Screen,
+            }
+        );
+        var fallback = new Campaign { Name = "Fallback" };
+        fallback.CampaignAssignments.Add(
+            new CampaignAssignment { TargetKind = CampaignAssignmentTargetKind.GlobalFallback }
+        );
+        db.AddScreen(screen);
+        db.Context.Campaigns.AddRange(assigned, fallback);
+        await db.Context.SaveChangesAsync();
+
+        var (service, captured, hub) = CreateServiceWithHub(db);
+        await service.SyncScreenAsync(screen.Id);
+
+        var config = captured();
+        Assert.NotNull(config);
+        Assert.Equal(approvalStatus.ToString(), config!.ApprovalStatus);
+        Assert.Empty(config.Campaigns);
+        await hub.Received(1)
+            .StartAssetSyncAsync(
+                screen.UserId!,
+                Arg.Is<List<CampaignSyncInfo>>(campaigns => campaigns.Count == 0)
+            );
+    }
+
     [Fact]
     public async Task SameCampaign_CanBeActiveOnOneScreenAndScheduledOnAnother()
     {

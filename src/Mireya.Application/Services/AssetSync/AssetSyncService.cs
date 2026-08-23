@@ -138,6 +138,12 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
 
     public async Task<List<CampaignSyncInfo>> GetCampaignsToSyncAsync(Guid screenId)
     {
+        var isApproved = await db.Screens.AnyAsync(screen =>
+            screen.Id == screenId && screen.ApprovalStatus == ApprovalStatus.Approved
+        );
+        if (!isApproved)
+            return [];
+
         var campaigns = await db
             .CampaignAssignments.Where(ca =>
                 (ca.TargetKind == CampaignAssignmentTargetKind.Screen && ca.ScreenId == screenId)
