@@ -46,20 +46,12 @@ public partial class ContentDisplayView : UserControl
             return;
 
         _websiteHost = this.FindControl<ContentControl>("WebsiteHost");
-        if (_websiteHost != null)
-        {
-            _websiteControl = factory.CreateWebsiteRenderer();
-            if (_websiteControl is IWebsiteRenderer websiteRenderer)
-                _websiteRenderer = websiteRenderer;
-        }
+        _websiteControl = _websiteHost is null ? null : factory.CreateWebsiteRenderer();
+        _websiteRenderer = _websiteControl as IWebsiteRenderer;
 
         _videoHost = this.FindControl<ContentControl>("VideoHost");
-        if (_videoHost != null)
-        {
-            _videoControl = factory.CreateVideoRenderer();
-            if (_videoControl is IVideoRenderer videoRenderer)
-                _videoRenderer = videoRenderer;
-        }
+        _videoControl = _videoHost is null ? null : factory.CreateVideoRenderer();
+        _videoRenderer = _videoControl as IVideoRenderer;
     }
 
     // ──────────────────────────────────────────────────────────────
