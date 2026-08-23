@@ -72,7 +72,7 @@ public class ScreenSynchronizationService(
         );
 
         await hubContext.SendConfigurationUpdateAsync(display.UserId, config);
-        await NotifyAssetSyncAsync(display, campaigns);
+        await NotifyAssetSyncAsync(display, display.UserId, campaigns);
     }
 
     public async Task<Guid?> GetDisplayIdByUserIdAsync(string userId)
@@ -181,7 +181,11 @@ public class ScreenSynchronizationService(
             Campaigns = campaigns,
         };
 
-    private async Task NotifyAssetSyncAsync(Display display, List<CampaignDetail> campaigns)
+    private async Task NotifyAssetSyncAsync(
+        Display display,
+        string userId,
+        List<CampaignDetail> campaigns
+    )
     {
         var allAssetIds = campaigns
             .SelectMany(c => c.Assets)
@@ -193,7 +197,7 @@ public class ScreenSynchronizationService(
         await assetSyncService.InitializeSyncStatusForDisplayAsync(display.Id, allAssetIds);
 
         var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(display.Id);
-        await hubContext.StartAssetSyncAsync(display.UserId!, campaignsToSync);
+        await hubContext.StartAssetSyncAsync(userId, campaignsToSync);
 
         logger.LogInformation(
             "NOTIFY SYNC: {CampaignCount} campaigns, {AssetCount} assets",

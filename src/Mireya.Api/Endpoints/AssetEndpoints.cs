@@ -8,11 +8,21 @@ namespace Mireya.Api.Endpoints;
 
 public class AssetEndpoints : ICarterModule
 {
+    private const long MaxAssetUploadRequestBytes = 100 * 1024 * 1024; // 100 MB
+
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/assets").RequireAuthorization(Roles.Admin);
 
-        group.MapPost("/upload", HandleUploadAsync).DisableAntiforgery();
+        group.MapPost("/upload", HandleUploadAsync)
+            .DisableAntiforgery()
+            .WithMetadata(
+                new RequestSizeLimitAttribute(MaxAssetUploadRequestBytes),
+                new RequestFormLimitsAttribute
+                {
+                    MultipartBodyLengthLimit = MaxAssetUploadRequestBytes,
+                }
+            );
         group.MapGet("/", HandleGetAssetsAsync);
         group.MapDelete("/{id:guid}", HandleDeleteAsync);
         group.MapPut("/{id:guid}/metadata", HandleUpdateMetadataAsync);
