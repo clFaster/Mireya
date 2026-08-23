@@ -381,7 +381,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         });
     }
 
-    private async void OnStartAssetSync(List<Mireya.ApiClient.Models.CampaignSyncInfo> campaigns)
+    private async Task OnStartAssetSync(List<Mireya.ApiClient.Models.CampaignSyncInfo> campaigns)
     {
         _logger.LogInformation("Starting asset sync for {Count} campaigns", campaigns.Count);
 

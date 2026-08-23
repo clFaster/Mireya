@@ -30,7 +30,7 @@ public static class LoginEndpoints
                         return Results.Redirect(safeUrl);
                     }
 
-                    return Results.Redirect($"/login?error=invalid");
+                    return Results.Redirect("/login?error=invalid");
                 }
             )
             .AllowAnonymous();

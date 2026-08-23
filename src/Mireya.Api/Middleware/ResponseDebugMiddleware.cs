@@ -92,7 +92,7 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
                 logger.LogWarning(
                     "Unauthorized Access Details | IsAuthenticated: {IsAuthenticated} | "
                         + "AuthScheme: {AuthScheme} | Claims: {Claims}",
-                    context.User?.Identity?.IsAuthenticated ?? false,
+                    context.User?.Identity?.IsAuthenticated == true,
                     context.User?.Identity?.AuthenticationType ?? "None",
                     context.User?.Claims?.Select(c => $"{c.Type}={c.Value}").Take(5)
                 );
