@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Mireya.Database.Models;
 
@@ -29,6 +30,9 @@ public class CampaignAsset
     public int? DurationSeconds { get; set; }
 
     // Navigation properties
-    public Campaign Campaign { get; set; } = null!;
-    public Asset Asset { get; set; } = null!;
+    [AllowNull]
+    public Campaign Campaign { get; set; } = null;
+
+    [AllowNull]
+    public Asset Asset { get; set; } = null;
 }

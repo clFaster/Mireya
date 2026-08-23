@@ -26,7 +26,9 @@ public static class LoginEndpoints
                     if (result.Succeeded)
                     {
                         // Validate returnUrl to prevent open redirect attacks
-                        var safeUrl = IsLocalUrl(returnUrl) ? returnUrl! : "/";
+                        var safeUrl = returnUrl is { } localUrl && IsLocalUrl(localUrl)
+                            ? localUrl
+                            : "/";
                         return Results.Redirect(safeUrl);
                     }
 

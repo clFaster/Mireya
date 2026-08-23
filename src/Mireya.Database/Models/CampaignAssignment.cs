@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Mireya.Database.Models;
 
@@ -19,6 +20,9 @@ public class CampaignAssignment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    public Campaign Campaign { get; set; } = null!;
-    public Display Display { get; set; } = null!;
+    [AllowNull]
+    public Campaign Campaign { get; set; } = null;
+
+    [AllowNull]
+    public Display Display { get; set; } = null;
 }

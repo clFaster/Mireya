@@ -27,6 +27,7 @@ public class CampaignService(
         var query = db
             .Campaigns.Include(c => c.CampaignAssets)
             .Include(c => c.CampaignAssignments)
+            .AsSplitQuery()
             .AsQueryable();
 
         if (displayId.HasValue)
@@ -62,6 +63,7 @@ public class CampaignService(
                 .ThenInclude(ca => ca.Asset)
             .Include(c => c.CampaignAssignments)
                 .ThenInclude(ca => ca.Display)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (campaign == null)
@@ -188,6 +190,7 @@ public class CampaignService(
         var campaign = await db
             .Campaigns.Include(c => c.CampaignAssets)
             .Include(c => c.CampaignAssignments)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id);
 
         if (campaign == null)

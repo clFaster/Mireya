@@ -39,7 +39,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
     private bool _isVerifyingServer;
 
     /// <summary>Label shown on the Add Server button; changes while verification is in progress.</summary>
-    public string AddButtonLabel => IsVerifyingServer ? "Checking…" : "Add Server";
+    public string AddButtonLabel => this.IsVerifyingServer ? "Checking…" : "Add Server";
 
     partial void OnIsVerifyingServerChanged(bool value) =>
         OnPropertyChanged(nameof(AddButtonLabel));
@@ -98,12 +98,12 @@ public partial class BackendSelectionViewModel : ViewModelBase
     )
     {
         if (oldValue != null)
-            oldValue.PropertyChanged -= OnSelectedItemPropertyChanged;
+            oldValue.PropertyChanged -= this.OnSelectedItemPropertyChanged;
 
         if (newValue != null)
-            newValue.PropertyChanged += OnSelectedItemPropertyChanged;
+            newValue.PropertyChanged += this.OnSelectedItemPropertyChanged;
 
-        ConnectCommand.NotifyCanExecuteChanged();
+        this.ConnectCommand.NotifyCanExecuteChanged();
     }
 
     private void OnSelectedItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -113,7 +113,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
             is nameof(BackendItemViewModel.IsOnline)
                 or nameof(BackendItemViewModel.IsCheckingOnline)
         )
-            ConnectCommand.NotifyCanExecuteChanged();
+            this.ConnectCommand.NotifyCanExecuteChanged();
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -332,7 +332,7 @@ public partial class BackendSelectionViewModel : ViewModelBase
     // Connect — only allowed when the selected server is online
     // ──────────────────────────────────────────────────────────────
 
-    private bool CanConnect() => SelectedBackend is { IsOnline: true };
+    private bool CanConnect() => this.SelectedBackend is { IsOnline: true };
 
     [RelayCommand(CanExecute = nameof(CanConnect))]
     private async Task ConnectAsync()

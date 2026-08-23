@@ -80,8 +80,7 @@ public class CampaignScheduleSyncService(
             .Displays.Where(d => d.UserId != null)
             .Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
-            .Include(d => d.Zone)
-                .ThenInclude(z => z!.ZoneCampaigns)
+            .Include(d => d.Zone.ZoneCampaigns)
                     .ThenInclude(zc => zc.Campaign)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);

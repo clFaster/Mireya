@@ -64,7 +64,7 @@ public class SettingsService : ISettingsService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error saving settings to {Path}", _settingsFilePath);
-            throw;
+            throw new InvalidOperationException($"Unable to save settings to '{_settingsFilePath}'.", ex);
         }
     }
 

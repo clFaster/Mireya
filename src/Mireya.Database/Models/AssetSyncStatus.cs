@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Mireya.Database.Models;
 
@@ -41,8 +42,11 @@ public class AssetSyncStatus
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    public Display Display { get; set; } = null!;
-    public Asset Asset { get; set; } = null!;
+    [AllowNull]
+    public Display Display { get; set; } = null;
+
+    [AllowNull]
+    public Asset Asset { get; set; } = null;
 }
 
 public enum SyncState

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -259,7 +260,8 @@ public class BackendAsset
 
     public Guid AssetId { get; set; }
 
-    public Asset Asset { get; set; } = null!;
+    [AllowNull]
+    public Asset Asset { get; set; } = null;
 
     public DateTime SyncedAt { get; set; } = DateTime.UtcNow;
 }
@@ -273,7 +275,8 @@ public class BackendCampaign
 
     public Guid CampaignId { get; set; }
 
-    public Campaign Campaign { get; set; } = null!;
+    [AllowNull]
+    public Campaign Campaign { get; set; } = null;
 
     public DateTime SyncedAt { get; set; } = DateTime.UtcNow;
 }

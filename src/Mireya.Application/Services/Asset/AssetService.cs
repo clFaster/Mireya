@@ -29,6 +29,7 @@ public interface IAssetService
 public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditService audit)
     : IAssetService
 {
+    private const string AssetAuditEntity = "Asset";
     private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
     private const long MaxVideoSizeBytes = 100 * 1024 * 1024; // 100 MB
     private static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
@@ -62,7 +63,7 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
         await audit.LogAsync(
             "Uploaded",
-            "Asset",
+            AssetAuditEntity,
             null,
             $"Uploaded {assets.Count} asset(s): {string.Join(", ", assets.Select(a => a.Name))}"
         );
@@ -374,7 +375,7 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
         db.Assets.Remove(asset);
         await db.SaveChangesAsync();
 
-        await audit.LogAsync("Deleted", "Asset", id.ToString(), $"Deleted asset '{asset.Name}'");
+        await audit.LogAsync("Deleted", AssetAuditEntity, id.ToString(), $"Deleted asset '{asset.Name}'");
     }
 
     public async Task<Database.Models.Asset> UpdateAssetMetadataAsync(
@@ -413,7 +414,7 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
         await audit.LogAsync(
             "Updated",
-            "Asset",
+            AssetAuditEntity,
             id.ToString(),
             $"Updated metadata for asset '{asset.Name}'"
         );
@@ -478,7 +479,7 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
 
         await audit.LogAsync(
             "Created",
-            "Asset",
+            AssetAuditEntity,
             asset.Id.ToString(),
             $"Created website asset '{asset.Name}'"
         );

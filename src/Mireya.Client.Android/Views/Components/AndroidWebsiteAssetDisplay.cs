@@ -67,7 +67,7 @@ public sealed class AndroidWebsiteAssetDisplay : NativeControlHost, IWebsiteRend
         {
             try
             {
-                if (webView?.PeerReference.IsValid is true)
+                if (webView?.PeerReference.IsValid ?? false)
                 {
                     webView.StopLoading();
                     webView.SetWebViewClient(new WebViewClient());

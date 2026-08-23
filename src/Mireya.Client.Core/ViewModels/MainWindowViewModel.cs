@@ -96,12 +96,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>Whether the primary input can currently control the playback Screen Info page.</summary>
-    public bool CanHandleScreenInfoInput => CurrentView is ContentDisplayViewModel;
+    public bool CanHandleScreenInfoInput => this.CurrentView is ContentDisplayViewModel;
 
     /// <summary>Opens Screen Info while playback is active.</summary>
     public bool TryOpenScreenInfo()
     {
-        if (CurrentView is not ContentDisplayViewModel content || content.IsScreenInfoVisible)
+        if (this.CurrentView is not ContentDisplayViewModel content || content.IsScreenInfoVisible)
             return false;
 
         content.ShowScreenInfo();
@@ -111,7 +111,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// <summary>Toggles Screen Info from a keyboard or TV remote primary action.</summary>
     public bool TryToggleScreenInfo()
     {
-        if (CurrentView is not ContentDisplayViewModel content)
+        if (this.CurrentView is not ContentDisplayViewModel content)
             return false;
 
         content.ToggleScreenInfo();
@@ -121,7 +121,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     /// <summary>Closes Screen Info for Escape, Android Back, or equivalent navigation.</summary>
     public bool TryCloseScreenInfo()
     {
-        if (CurrentView is not ContentDisplayViewModel { IsScreenInfoVisible: true } content)
+        if (this.CurrentView is not ContentDisplayViewModel { IsScreenInfoVisible: true } content)
             return false;
 
         content.HideScreenInfo();

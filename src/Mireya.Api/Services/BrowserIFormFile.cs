@@ -31,7 +31,7 @@ public class BrowserIFormFile(IBrowserFile file) : IFormFile
     public async Task CopyToAsync(Stream target, CancellationToken cancellationToken = default)
     {
         ValidateFileSize();
-        await using var stream = file.OpenReadStream(MaxFileSize);
+        await using var stream = file.OpenReadStream(MaxFileSize, cancellationToken);
         await stream.CopyToAsync(target, cancellationToken);
     }
 

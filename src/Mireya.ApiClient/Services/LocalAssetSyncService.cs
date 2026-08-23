@@ -407,8 +407,9 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             ctx.BackendId
         );
 
-        var downloadedAsset = await _db.DownloadedAssets.FirstOrDefaultAsync(da =>
-            da.BackendInstanceId == ctx.BackendId && da.AssetId == ctx.Asset.AssetId
+        var downloadedAsset = await _db.DownloadedAssets.FirstOrDefaultAsync(
+            da => da.BackendInstanceId == ctx.BackendId && da.AssetId == ctx.Asset.AssetId,
+            cancellationToken
         );
 
         if (
@@ -422,7 +423,7 @@ public class LocalAssetSyncService : ILocalAssetSyncService
                 localPath
             );
             downloadedAsset.LastCheckedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
             return false;
         }
 

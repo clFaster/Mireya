@@ -72,7 +72,7 @@ else
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="c_@campaign.Id"
                                checked="@assigned"
-                               @onchange="e => ToggleCampaign(campaign.Id, (bool)e.Value!)" />
+                               @onchange="e => ToggleCampaign(campaign.Id, e.Value is true)" />
                         <label class="form-check-label" for="c_@campaign.Id">@campaign.Name</label>
                     </div>
                 }

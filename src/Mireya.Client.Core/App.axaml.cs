@@ -20,7 +20,8 @@ public class App : Application
     ///     Default backend URL used for unattended/kiosk deployments when neither the
     ///     <c>MIREYA_BACKEND_URL</c> environment variable nor a stored URL is present.
     /// </summary>
-    public const string DefaultBackendUrl = "http://localhost:5000";
+    public static string DefaultBackendUrl =>
+        new UriBuilder(Uri.UriSchemeHttp, "localhost", 5000).Uri.GetLeftPart(UriPartial.Authority);
 
     /// <summary>
     ///     The composition root, supplied by the active platform head (Desktop, Android, …).
@@ -65,82 +66,66 @@ public class App : Application
         var (serviceProvider, appSettings, mainViewModel) = InitializeCore();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            // Ensure the application shuts down when the main window is closed
-            desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-
-            // Create main window with dependency-injected ViewModel
-            var mainWindow = new MainWindow { DataContext = mainViewModel };
-            desktop.MainWindow = mainWindow;
-
-            // Apply fullscreen / kiosk mode if configured
-            if (appSettings.Fullscreen)
-            {
-                mainWindow.WindowState = WindowState.FullScreen;
-            }
-
-            // Wire the immediate-apply callback so the settings UI can toggle
-            // fullscreen without a restart.  The callback is always invoked from the
-            // UI thread (RelayCommand preserves the Avalonia SynchronizationContext).
-            appSettings.ApplyFullscreen = fullscreen =>
-                mainWindow.WindowState = fullscreen ? WindowState.FullScreen : WindowState.Normal;
-
-            // Gracefully shut down services when the application exits:
-            // 1. Disconnect SignalR (stops auto-reconnect background threads)
-            // 2. Dispose the DI container (disposes all singletons/scoped services)
-            desktop.Exit += (_, _) =>
-            {
-                Log.Information("Application exiting, shutting down services...");
-
-                try
-                {
-                    // Disconnect SignalR first to stop auto-reconnect threads.
-                    // Use a timeout to prevent hanging on unresponsive connections.
-                    var hubService = serviceProvider.GetRequiredService<IScreenHubService>();
-                    hubService.DisconnectAsync().Wait(TimeSpan.FromSeconds(3));
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Error disconnecting SignalR during shutdown");
-                }
-
-                try
-                {
-                    // Dispose the service provider with a timeout to prevent hanging
-                    if (serviceProvider is IAsyncDisposable asyncDisposable)
-                    {
-                        asyncDisposable.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(3));
-                    }
-                    else if (serviceProvider is IDisposable disposable)
-                    {
-                        disposable.Dispose();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Error disposing services during shutdown");
-                }
-
-                Log.Information("Shutdown complete");
-                Log.CloseAndFlush();
-            };
-        }
+            ConfigureDesktopLifetime(desktop, serviceProvider, appSettings, mainViewModel);
         else if (ApplicationLifetime is IActivityApplicationLifetime activity)
-        {
-            // Preferred Android lifetime (Avalonia 12). The MainView is recreated by the
-            // factory whenever the hosting activity is recreated, always bound to the same
-            // dependency-injected root ViewModel.
             activity.MainViewFactory = () => new MainView { DataContext = mainViewModel };
-        }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
-        {
-            // Fallback single-view lifetime (other mobile/embedded platforms). Hosts a
-            // single root control instead of a Window. Fullscreen is implicit, so the
-            // desktop-only fullscreen toggle and Exit handlers are not wired here.
             singleView.MainView = new MainView { DataContext = mainViewModel };
-        }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void ConfigureDesktopLifetime(
+        IClassicDesktopStyleApplicationLifetime desktop,
+        IServiceProvider serviceProvider,
+        AppSettings appSettings,
+        MainWindowViewModel mainViewModel
+    )
+    {
+        // Ensure the application shuts down when the main window is closed
+        desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+
+        // Create main window with dependency-injected ViewModel
+        var mainWindow = new MainWindow { DataContext = mainViewModel };
+        desktop.MainWindow = mainWindow;
+
+        if (appSettings.Fullscreen)
+            mainWindow.WindowState = WindowState.FullScreen;
+
+        appSettings.ApplyFullscreen = fullscreen =>
+            mainWindow.WindowState = fullscreen ? WindowState.FullScreen : WindowState.Normal;
+
+        desktop.Exit += (_, _) => ShutdownServices(serviceProvider);
+    }
+
+    private static void ShutdownServices(IServiceProvider serviceProvider)
+    {
+        Log.Information("Application exiting, shutting down services...");
+
+        try
+        {
+            var hubService = serviceProvider.GetRequiredService<IScreenHubService>();
+            hubService.DisconnectAsync().Wait(TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error disconnecting SignalR during shutdown");
+        }
+
+        try
+        {
+            if (serviceProvider is IAsyncDisposable asyncDisposable)
+                asyncDisposable.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(3));
+            else if (serviceProvider is IDisposable disposable)
+                disposable.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error disposing services during shutdown");
+        }
+
+        Log.Information("Shutdown complete");
+        Log.CloseAndFlush();
     }
 
     /// <summary>

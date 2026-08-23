@@ -276,24 +276,8 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             );
 
             await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                PairingCode = FormatPairingCode(info.ScreenIdentifier);
-                if (!string.IsNullOrWhiteSpace(info.ScreenName))
-                    DisplayName = info.ScreenName;
-
-                if (approved)
-                {
-                    IsAwaitingApproval = false;
-                }
-                else
-                {
-                    IsAwaitingApproval = true;
-                    ApprovalStatusText = rejected
-                        ? "This screen was rejected. Please contact your administrator."
-                        : "Waiting for an administrator to approve this screen…";
-                    StatusText = ApprovalStatusText;
-                }
-            });
+                ApplyApprovalStatus(info.ScreenIdentifier, info.ScreenName, approved, rejected)
+            );
 
             if (approved)
             {
@@ -312,6 +296,27 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5));
+        }
+    }
+
+    private void ApplyApprovalStatus(
+        string? screenIdentifier,
+        string? screenName,
+        bool approved,
+        bool rejected
+    )
+    {
+        PairingCode = FormatPairingCode(screenIdentifier);
+        if (!string.IsNullOrWhiteSpace(screenName))
+            DisplayName = screenName;
+
+        IsAwaitingApproval = !approved;
+        if (!approved)
+        {
+            ApprovalStatusText = rejected
+                ? "This screen was rejected. Please contact your administrator."
+                : "Waiting for an administrator to approve this screen…";
+            StatusText = ApprovalStatusText;
         }
     }
 
@@ -341,9 +346,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     {
         Dispatcher.UIThread.Post(() =>
         {
-            ConnectionStatus = "Reconnecting...";
-            ConnectionIndicatorColor = Brushes.Gold;
-            StatusText = "Connection lost, reconnecting...";
+            this.ConnectionStatus = "Reconnecting...";
+            this.ConnectionIndicatorColor = Brushes.Gold;
+            this.StatusText = "Connection lost, reconnecting...";
         });
     }
 
@@ -356,9 +361,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     {
         Dispatcher.UIThread.Post(() =>
         {
-            ConnectionStatus = "Disconnected ✗";
-            ConnectionIndicatorColor = Brushes.OrangeRed;
-            StatusText = "Disconnected from server";
+            this.ConnectionStatus = "Disconnected ✗";
+            this.ConnectionIndicatorColor = Brushes.OrangeRed;
+            this.StatusText = "Disconnected from server";
         });
     }
 
@@ -525,7 +530,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             AssetId = asset.AssetId,
             AssetName = asset.AssetName,
             AssetType = asset.AssetType,
-            LocalPath = hasLocalFile ? localPath! : string.Empty,
+            LocalPath = hasLocalFile ? localPath : string.Empty,
             Source = asset.Source,
             DurationSeconds = asset.ResolvedDuration,
             Position = asset.Position,
@@ -658,11 +663,11 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         // the last usable rendition. Once the new bitmap is cached, SetCurrentImage disposes
         // a stale currently displayed bitmap because the cache no longer owns it.
         var bitmap = DecodeForDisplay(item.LocalPath);
-        if (_decodedImageCache.Remove(item.AssetId, out var stale))
-        {
-            if (!ReferenceEquals(stale.Bitmap, CurrentImage))
-                stale.Bitmap.Dispose();
-        }
+        if (
+            _decodedImageCache.Remove(item.AssetId, out var stale)
+            && !ReferenceEquals(stale.Bitmap, CurrentImage)
+        )
+            stale.Bitmap.Dispose();
 
         _decodedImageCache[item.AssetId] = new CachedImageEntry(
             bitmap,
@@ -720,12 +725,12 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     /// </summary>
     private void FadeInImage()
     {
-        CurrentImageOpacity = 0;
+        this.CurrentImageOpacity = 0;
         // Use Default (lowest foreground) priority rather than Background: Background work
         // is starved on Android under the continuous render loop, which would leave the
         // image stuck at opacity 0 (invisible). Default still defers to the next dispatcher
         // cycle so the Opacity transition animates the fade-in.
-        Dispatcher.UIThread.Post(() => CurrentImageOpacity = 1, DispatcherPriority.Default);
+        Dispatcher.UIThread.Post(() => this.CurrentImageOpacity = 1, DispatcherPriority.Default);
     }
 
     /// <summary>
@@ -740,13 +745,13 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     /// </summary>
     private void SetCurrentImage(Bitmap? image)
     {
-        var oldImage = CurrentImage;
+        var oldImage = this.CurrentImage;
         if (ReferenceEquals(oldImage, image))
             return;
 
         // Unbind first so the control never draws a bitmap that is about to be disposed,
         // then release the native memory of an image not retained by the bounded cache.
-        CurrentImage = image;
+        this.CurrentImage = image;
         if (oldImage is not null && !IsCachedImage(oldImage))
             oldImage.Dispose();
     }

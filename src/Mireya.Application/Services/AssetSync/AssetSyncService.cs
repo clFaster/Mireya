@@ -140,8 +140,7 @@ public class AssetSyncService(MireyaDbContext db, ILogger<AssetSyncService> logg
     {
         var campaigns = await db
             .CampaignAssignments.Where(ca => ca.DisplayId == displayId)
-            .Include(ca => ca.Campaign)
-                .ThenInclude(c => c.CampaignAssets)
+            .Include(ca => ca.Campaign.CampaignAssets)
                     .ThenInclude(ca => ca.Asset)
             .Select(ca => ca.Campaign)
             .ToListAsync();

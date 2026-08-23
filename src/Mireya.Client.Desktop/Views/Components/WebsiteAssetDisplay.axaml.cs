@@ -228,57 +228,8 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
                 _cachedParentHwnd
             );
 
-            // Flash fix C: hide immediately after creation so the HWND never shows
-            // the default white background while we finish configuring it.
-            _webViewController.IsVisible = false;
-
-            // Black background prevents the white flash while a new page loads
-            _webViewController.DefaultBackgroundColor = System.Drawing.Color.Black;
-
-            // Block all keyboard shortcuts so the display cannot be keyboard-controlled
-            _webViewController.AcceleratorKeyPressed += OnAcceleratorKeyPressed;
-
-            // Configure
-            var settings = _webViewController.CoreWebView2.Settings;
-            settings.IsScriptEnabled = true;
-            settings.IsStatusBarEnabled = false;
-            settings.AreDefaultContextMenusEnabled = false;
-            settings.IsZoomControlEnabled = false;
-
-            _browserContainer.SizeChanged += (_, _) =>
-            {
-                if (IsEffectivelyVisible)
-                    UpdateWebViewBounds();
-            };
-
-            this.LayoutUpdated += (_, _) =>
-            {
-                if (IsEffectivelyVisible && _webViewController != null)
-                    UpdateWebViewBounds();
-            };
-
-            _isInitialized = true;
-
-            _errorPanel!.IsVisible = false;
-
-            // If there is a URI waiting, navigate immediately (NavigateInternal manages
-            // loading/controller visibility).  Otherwise only show the loading indicator
-            // if the control is already visible (eager creation = control not yet shown).
-            if (_pendingUri != null)
-            {
-                var uri = _pendingUri;
-                _pendingUri = null;
-                _browserContainer.IsVisible = true;
-                NavigateInternal(uri);
-            }
-            else if (IsEffectivelyVisible)
-            {
-                _loadingPanel.IsVisible = true;
-                _browserContainer.IsVisible = true;
-                Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
-            }
-            // A control created eagerly while invisible stays hidden until a URI arrives and
-            // OnEffectiveVisibilityChanged handles it.
+            ConfigureWebViewController();
+            ShowInitialContent();
 
             System.Diagnostics.Debug.WriteLine("WebView2 controller created successfully.");
         }
@@ -292,6 +243,52 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
         finally
         {
             _isCreating = false;
+        }
+    }
+
+    private void ConfigureWebViewController()
+    {
+        _webViewController.IsVisible = false;
+        _webViewController.DefaultBackgroundColor = System.Drawing.Color.Black;
+        _webViewController.AcceleratorKeyPressed += OnAcceleratorKeyPressed;
+
+        var settings = _webViewController.CoreWebView2.Settings;
+        settings.IsScriptEnabled = true;
+        settings.IsStatusBarEnabled = false;
+        settings.AreDefaultContextMenusEnabled = false;
+        settings.IsZoomControlEnabled = false;
+
+        _browserContainer.SizeChanged += (_, _) =>
+        {
+            if (IsEffectivelyVisible)
+                UpdateWebViewBounds();
+        };
+
+        LayoutUpdated += (_, _) =>
+        {
+            if (IsEffectivelyVisible && _webViewController != null)
+                UpdateWebViewBounds();
+        };
+
+        _isInitialized = true;
+    }
+
+    private void ShowInitialContent()
+    {
+        _errorPanel.IsVisible = false;
+
+        if (_pendingUri != null)
+        {
+            var uri = _pendingUri;
+            _pendingUri = null;
+            _browserContainer.IsVisible = true;
+            NavigateInternal(uri);
+        }
+        else if (IsEffectivelyVisible)
+        {
+            _loadingPanel.IsVisible = true;
+            _browserContainer.IsVisible = true;
+            Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);
         }
     }
 
@@ -410,7 +407,7 @@ public partial class WebsiteAssetDisplay : UserControl, IWebsiteRenderer
             _webViewController.IsVisible = false;
             _loadingPanel.IsVisible = true;
             _browserContainer.IsVisible = true;
-            _errorPanel!.IsVisible = false;
+            _errorPanel.IsVisible = false;
 
             // Keep WebView2 bounds up-to-date even while hidden
             Dispatcher.UIThread.Post(UpdateWebViewBounds, DispatcherPriority.Render);

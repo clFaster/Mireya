@@ -87,7 +87,7 @@
                                 var dayIndex = index;
                                 <input type="checkbox" class="btn-check" id="day-@dayIndex" autocomplete="off"
                                        checked="@_model.Days[dayIndex]"
-                                       @onchange="e => _model.Days[dayIndex] = (bool)e.Value!" />
+                                       @onchange="e => _model.Days[dayIndex] = e.Value is true" />
                                 <label class="btn btn-outline-primary btn-sm" for="day-@dayIndex">@label</label>
                             }
                         </div>

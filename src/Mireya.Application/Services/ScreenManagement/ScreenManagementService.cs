@@ -95,6 +95,8 @@ public class ScreenManagementService(
     IAuditService audit
 ) : IScreenManagementService
 {
+    private const string ScreenAuditEntity = "Screen";
+
     public async Task<RegisterScreenResponse> RegisterScreenAsync(RegisterScreenRequest request)
     {
         // Create a user account for the screen immediately
@@ -316,7 +318,7 @@ public class ScreenManagementService(
 
         await audit.LogAsync(
             "Approved",
-            "Screen",
+            ScreenAuditEntity,
             display.Id.ToString(),
             $"Approved screen '{display.Name}'"
         );
@@ -340,7 +342,7 @@ public class ScreenManagementService(
 
         await audit.LogAsync(
             "Rejected",
-            "Screen",
+            ScreenAuditEntity,
             display.Id.ToString(),
             $"Rejected screen '{display.Name}'"
         );
@@ -381,8 +383,7 @@ public class ScreenManagementService(
     {
         var display = await db
             .Displays.Include(d => d.CampaignAssignments)
-                .ThenInclude(ca => ca.Campaign)
-                    .ThenInclude(c => c.CampaignAssets)
+                .ThenInclude(ca => ca.Campaign.CampaignAssets)
             .Include(d => d.Zone)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == id);
@@ -474,7 +475,7 @@ public class ScreenManagementService(
 
         await audit.LogAsync(
             "Updated",
-            "Screen",
+            ScreenAuditEntity,
             display.Id.ToString(),
             $"Updated screen '{display.Name}' ({campaignIds.Count} campaign(s) assigned)"
         );
@@ -504,7 +505,7 @@ public class ScreenManagementService(
         var delivered = await syncService.SendCommandAsync(id, command);
         await audit.LogAsync(
             "Command",
-            "Screen",
+            ScreenAuditEntity,
             id.ToString(),
             $"Sent command '{command}' to screen '{display.Name}'{(delivered ? "" : " (screen offline)")}"
         );

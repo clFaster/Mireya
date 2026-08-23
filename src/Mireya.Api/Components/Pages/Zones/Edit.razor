@@ -134,7 +134,7 @@ else
         {
             try
             {
-                var zone = await ZoneService.GetZoneAsync(Id!.Value);
+                var zone = await ZoneService.GetZoneAsync(Id.Value);
                 _model.Name = zone.Name;
                 _model.Description = zone.Description;
                 _members = zone.Screens;
@@ -165,7 +165,7 @@ else
             var campaignIds = _selectedCampaignIds.ToList();
             if (IsEdit)
             {
-                await ZoneService.UpdateZoneAsync(Id!.Value,
+                await ZoneService.UpdateZoneAsync(Id.Value,
                     new UpdateZoneRequest(_model.Name, _model.Description, campaignIds));
                 Toast.ShowSuccess($"Zone \"{_model.Name}\" updated.");
             }

@@ -35,13 +35,10 @@ public class ScreenSynchronizationService(
     {
         var display = await db
             .Displays.Include(d => d.CampaignAssignments)
-                .ThenInclude(ca => ca.Campaign)
-                    .ThenInclude(c => c.CampaignAssets)
+                .ThenInclude(ca => ca.Campaign.CampaignAssets)
                         .ThenInclude(ca => ca.Asset)
-            .Include(d => d.Zone)
-                .ThenInclude(z => z!.ZoneCampaigns)
-                    .ThenInclude(zc => zc.Campaign)
-                        .ThenInclude(c => c.CampaignAssets)
+            .Include(d => d.Zone.ZoneCampaigns)
+                .ThenInclude(zc => zc.Campaign.CampaignAssets)
                             .ThenInclude(ca => ca.Asset)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == displayId);

@@ -38,7 +38,7 @@ public class ResponseDebugMiddleware(RequestDelegate next, ILogger<ResponseDebug
 
             // Copy the response back to the original stream
             responseBody.Seek(0, SeekOrigin.Begin);
-            await responseBody.CopyToAsync(originalBodyStream);
+            await responseBody.CopyToAsync(originalBodyStream, context.RequestAborted);
         }
         finally
         {

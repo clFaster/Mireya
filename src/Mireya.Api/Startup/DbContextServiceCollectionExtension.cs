@@ -13,13 +13,13 @@ public static class DbContextServiceCollectionExtension
         if (provider == Provider.Sqlite.Name)
             services.AddDbContext<MireyaDbContext>(options =>
                 options.UseSqlite(
-                    config.GetConnectionString(Provider.Sqlite.Name)!,
+                    config.GetConnectionString(Provider.Sqlite.Name),
                     x => x.MigrationsAssembly(Provider.Sqlite.Assembly)
                 )
             );
         else if (provider == Provider.Postgres.Name)
         {
-            var connectionString = config.GetConnectionString(Provider.Postgres.Name)!;
+            var connectionString = config.GetConnectionString(Provider.Postgres.Name);
             var npgsqlBuilder = new NpgsqlConnectionStringBuilder(connectionString);
 
             // Only override SSL mode if not already specified in the connection string

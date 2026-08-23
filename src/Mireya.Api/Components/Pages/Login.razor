@@ -60,8 +60,8 @@
             return;
         }
 
-        _formAction = IsLocalUrl(ReturnUrl)
-            ? $"/auth/login?returnUrl={Uri.EscapeDataString(ReturnUrl!)}"
+        _formAction = ReturnUrl is { } returnUrl && IsLocalUrl(returnUrl)
+            ? $"/auth/login?returnUrl={Uri.EscapeDataString(returnUrl)}"
             : "/auth/login";
     }
 
@@ -71,11 +71,11 @@
     /// </summary>
     private static string GetSafeRedirectUrl(string? url)
     {
-        if (!IsLocalUrl(url))
+        if (url is not { } localUrl || !IsLocalUrl(localUrl))
             return "/";
 
         // Construct a new string from the validated URI to break taint tracking
-        var uri = new Uri(url!, UriKind.Relative);
+        var uri = new Uri(localUrl, UriKind.Relative);
         return uri.ToString();
     }
 
