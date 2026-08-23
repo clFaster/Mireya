@@ -216,16 +216,21 @@ public class AuthenticationService : IAuthenticationService
         if (!string.IsNullOrEmpty(credential.RefreshToken))
             response = await TryRefreshAsync(credential.RefreshToken, backendId);
 
-        if (
-            response == null
-            && !string.IsNullOrEmpty(credential.Username)
-            && !string.IsNullOrEmpty(credential.Password)
-        )
-            response = await TryLoginWithPasswordAsync(
-                credential.Username,
-                credential.Password,
-                backendId
-            );
+        if (response == null)
+        {
+            if (
+                credential is
+                {
+                    Username: { Length: > 0 } storedUsername,
+                    Password: { Length: > 0 } storedPassword,
+                }
+            )
+                response = await TryLoginWithPasswordAsync(
+                    storedUsername,
+                    storedPassword,
+                    backendId
+                );
+        }
 
         if (response != null)
             return (response, null);
@@ -269,15 +274,17 @@ public class AuthenticationService : IAuthenticationService
 
         var replacement = await _credentials.GetCredentialsAsync(backendId);
         if (
-            replacement == null
-            || string.IsNullOrEmpty(replacement.Username)
-            || string.IsNullOrEmpty(replacement.Password)
+            replacement
+            is not {
+                Username: { Length: > 0 } replacementUsername,
+                Password: { Length: > 0 } replacementPassword,
+            }
         )
         {
             return (null, "Replacement registration did not persist credentials.");
         }
 
-        var response = await LoginWithPasswordAsync(replacement.Username, replacement.Password);
+        var response = await LoginWithPasswordAsync(replacementUsername, replacementPassword);
         return (response, null);
     }
 

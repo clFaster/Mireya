@@ -14,10 +14,10 @@ public partial class BackendItemViewModel : ViewModelBase
     public IAsyncRelayCommand DeleteCommand { get; }
 
     [ObservableProperty]
-    private bool _isOnline;
+    public partial bool IsOnline { get; set; }
 
     [ObservableProperty]
-    private bool _isCheckingOnline = true; // Start in "checking" state
+    public partial bool IsCheckingOnline { get; set; } = true;
 
     /// <summary>
     /// A brush reflecting the current online/checking state:
