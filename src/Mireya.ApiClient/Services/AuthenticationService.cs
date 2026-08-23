@@ -385,7 +385,7 @@ public class AuthenticationService : IAuthenticationService
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                $"Logout failed for backend. See inner exception for details.",
+                "Logout failed for backend. See inner exception for details.",
                 ex
             );
         }

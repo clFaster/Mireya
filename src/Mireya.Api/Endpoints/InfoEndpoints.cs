@@ -1,4 +1,3 @@
-using System.Reflection;
 using Carter;
 
 namespace Mireya.Api.Endpoints;
@@ -18,7 +17,7 @@ public class InfoEndpoints : ICarterModule
                 () =>
                 {
                     var version =
-                        Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+                        typeof(InfoEndpoints).Assembly.GetName().Version?.ToString() ?? "unknown";
                     return Results.Ok(new ApiInfoResponse(ApplicationName, version));
                 }
             )

@@ -23,14 +23,19 @@ public partial class BackendItemViewModel : ViewModelBase
     /// A brush reflecting the current online/checking state:
     /// yellow = checking, green = online, dark grey = offline.
     /// </summary>
-    public IBrush StatusDotBrush =>
-        IsCheckingOnline ? Brush.Parse("#FFA726")
-        : IsOnline ? Brush.Parse("#66BB6A")
-        : Brush.Parse("#546E7A");
+    public IBrush StatusDotBrush => GetStatusDotBrush();
 
     partial void OnIsOnlineChanged(bool value) => OnPropertyChanged(nameof(StatusDotBrush));
 
     partial void OnIsCheckingOnlineChanged(bool value) => OnPropertyChanged(nameof(StatusDotBrush));
+
+    private IBrush GetStatusDotBrush()
+    {
+        if (IsCheckingOnline)
+            return Brush.Parse("#FFA726");
+
+        return IsOnline ? Brush.Parse("#66BB6A") : Brush.Parse("#546E7A");
+    }
 
     public BackendItemViewModel(
         ApiClient.Data.BackendInstance instance,

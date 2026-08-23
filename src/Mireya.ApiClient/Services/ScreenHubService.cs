@@ -10,7 +10,7 @@ public interface IScreenHubService : IAsyncDisposable
 {
     bool IsConnected { get; }
     event Action<ScreenConfiguration> OnConfigurationUpdateReceived;
-    event Action<List<CampaignSyncInfo>> OnStartAssetSync;
+    event Func<List<CampaignSyncInfo>, Task> OnStartAssetSync;
     event Action<string> OnCommandReceived;
     event Action OnReconnected;
     event Action OnReconnecting;
@@ -73,13 +73,14 @@ public class ScreenHubService : IScreenHubService
 
         _hubConnection.On<List<CampaignSyncInfo>>(
             "StartAssetSync",
-            campaigns =>
+            async campaigns =>
             {
                 _logger.LogInformation(
                     "Received StartAssetSync for {CampaignCount} campaigns",
                     campaigns.Count
                 );
-                OnStartAssetSync?.Invoke(campaigns);
+                if (OnStartAssetSync is { } handler)
+                    await handler(campaigns);
             }
         );
 
@@ -118,7 +119,7 @@ public class ScreenHubService : IScreenHubService
     }
 
     public event Action<ScreenConfiguration>? OnConfigurationUpdateReceived;
-    public event Action<List<CampaignSyncInfo>>? OnStartAssetSync;
+    public event Func<List<CampaignSyncInfo>, Task>? OnStartAssetSync;
     public event Action<string>? OnCommandReceived;
     public event Action? OnReconnected;
     public event Action? OnReconnecting;
