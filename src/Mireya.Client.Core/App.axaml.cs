@@ -60,6 +60,15 @@ public class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // The previewer invokes BuildAvaloniaApp directly instead of Program.Main, so no
+        // platform head has supplied a composition root. It also must not migrate the real
+        // client database or initialize native renderers while rendering design-time XAML.
+        if (Design.IsDesignMode)
+        {
+            base.OnFrameworkInitializationCompleted();
+            return;
+        }
+
         // Build the composition root, run migrations and load settings. This shared
         // startup is identical for every platform head (Desktop, Android, …); only the
         // way the resulting ViewModel is presented (Window vs single MainView) differs.

@@ -33,4 +33,19 @@
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
   </ItemGroup>
+
+  <!--
+    WebView2's build targets add its Core, WinForms, and WPF assemblies to every
+    compatible .NET project. Mireya hosts CoreWebView2 directly and does not use either
+    framework-specific control. Leaving those wrappers in the dependency context makes
+    Avalonia's runtime XAML compiler try to load PresentationFramework in the previewer.
+  -->
+  <Target Name="RemoveUnusedWebView2UiReferences" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_UnusedWebView2UiReference
+        Include="@(Reference)"
+        Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf' Or '%(Reference.Filename)' == 'Microsoft.Web.WebView2.WinForms'" />
+      <Reference Remove="@(_UnusedWebView2UiReference)" />
+    </ItemGroup>
+  </Target>
 </Project>

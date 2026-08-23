@@ -7,11 +7,8 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
              x:Class="Mireya.Client.Avalonia.Views.MainView"
              x:DataType="vm:MainWindowViewModel"
+             Design.DataContext="{x:Static vm:MainWindowViewModel.DesignInstance}"
              Background="#1A1A2E">
-
-    <Design.DataContext>
-        <vm:MainWindowViewModel />
-    </Design.DataContext>
 
     <Grid>
         <ContentControl Content="{Binding CurrentView}">

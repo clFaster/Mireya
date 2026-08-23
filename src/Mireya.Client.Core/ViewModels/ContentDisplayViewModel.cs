@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Mireya.ApiClient.Generated;
 using Mireya.ApiClient.Models;
 using Mireya.ApiClient.Services;
@@ -27,6 +28,13 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private DispatcherTimer? _advanceTimer;
     private ScreenConfiguration? _pendingConfiguration;
     private bool _disposed;
+    private readonly bool _isDesignInstance;
+
+    /// <summary>
+    ///     Side-effect-free sample data for the XAML previewer. Runtime instances are
+    ///     created through dependency injection using the public constructor below.
+    /// </summary>
+    public static ContentDisplayViewModel DesignInstance => new();
 
     // Customer assets can be much larger than the display. Decoding them at their native
     // resolution allocates width * height * 4 bytes in Skia's native heap on every playlist
@@ -110,6 +118,30 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     // Event to notify video component to start playback
     public event Action<string, bool>? VideoPlaybackRequested; // path, isMuted
     public event Action? VideoStopRequested;
+
+    /// <summary>
+    ///     Creates sample data for XAML design tools. Runtime code should resolve this
+    ///     view model through dependency injection instead.
+    /// </summary>
+    public ContentDisplayViewModel()
+    {
+        _authenticationService = null!;
+        _hubService = null!;
+        _assetSyncService = null!;
+        _logger = NullLogger<ContentDisplayViewModel>.Instance;
+        _isDesignInstance = true;
+
+        ScreenName = "Lobby Display";
+        ConnectionStatus = "Connected";
+        ConnectionIndicatorColor = Brushes.LimeGreen;
+        StatusText = "Waiting for content...";
+        CurrentContentType = ContentType.None;
+        CurrentCampaignName = "Welcome campaign";
+        CurrentAssetName = "Welcome screen";
+        CurrentAssetPosition = 1;
+        TotalAssets = 3;
+        PairingCode = "MIREYA-7F3A";
+    }
 
     public ContentDisplayViewModel(
         IAuthenticationService authenticationService,
@@ -994,6 +1026,9 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
 
     public void Cleanup()
     {
+        if (_isDesignInstance)
+            return;
+
         _logger.LogInformation("Cleaning up ContentDisplayViewModel");
         if (_advanceTimer != null)
         {

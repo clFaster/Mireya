@@ -7,15 +7,12 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
         x:Class="Mireya.Client.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
+        Design.DataContext="{x:Static vm:MainWindowViewModel.DesignInstance}"
         Icon="/Assets/mireya-icon.ico"
         Title="Mireya Digital Signage"
         Width="800" Height="650"
         MinWidth="700" MinHeight="550"
         Background="#1A1A2E">
-
-    <Design.DataContext>
-        <vm:MainWindowViewModel />
-    </Design.DataContext>
 
     <views:MainView />
 

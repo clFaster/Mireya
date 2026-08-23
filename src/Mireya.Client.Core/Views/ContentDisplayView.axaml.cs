@@ -27,6 +27,10 @@ public partial class ContentDisplayView : UserControl
     public ContentDisplayView()
     {
         InitializeComponent();
+
+        if (Design.IsDesignMode)
+            return;
+
         CreatePlatformRenderers();
         DataContextChanged += OnDataContextChanged;
     }

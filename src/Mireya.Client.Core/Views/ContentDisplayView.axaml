@@ -8,11 +8,8 @@
              mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
              x:Class="Mireya.Client.Avalonia.Views.ContentDisplayView"
              x:DataType="vm:ContentDisplayViewModel"
+             Design.DataContext="{x:Static vm:ContentDisplayViewModel.DesignInstance}"
              Background="Black">
-
-    <Design.DataContext>
-        <vm:ContentDisplayViewModel />
-    </Design.DataContext>
 
     <Grid>
         <!-- Image display -->

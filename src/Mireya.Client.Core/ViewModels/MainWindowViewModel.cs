@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Services;
 using Mireya.Client.Avalonia.Platform;
@@ -25,6 +26,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     private CancellationTokenSource? _autoStartCts;
     private bool _disposed;
 
+    /// <summary>
+    ///     Side-effect-free sample data for the XAML previewer. Runtime instances are
+    ///     created through dependency injection using the public constructor below.
+    /// </summary>
+    public static MainWindowViewModel DesignInstance => new();
+
     [ObservableProperty]
     private ViewModelBase? _currentView;
 
@@ -37,6 +44,18 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public string AutoStartCountdownText =>
         $"Connecting automatically in {AutoStartSecondsRemaining} second{(AutoStartSecondsRemaining == 1 ? string.Empty : "s")}. Press any key to cancel.";
+
+    /// <summary>
+    ///     Creates sample data for XAML design tools. Runtime code should resolve this
+    ///     view model through dependency injection instead.
+    /// </summary>
+    public MainWindowViewModel()
+    {
+        _serviceProvider = null!;
+        _logger = NullLogger<MainWindowViewModel>.Instance;
+        _appSettings = null!;
+        CurrentView = ContentDisplayViewModel.DesignInstance;
+    }
 
     public MainWindowViewModel(
         IServiceProvider serviceProvider,
