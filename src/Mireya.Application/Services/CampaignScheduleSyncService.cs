@@ -89,9 +89,7 @@ public class CampaignScheduleSyncService(
         foreach (var display in displays)
         {
             var directCampaigns = display.CampaignAssignments.Select(ca => ca.Campaign);
-            var zoneCampaigns =
-                display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign)
-                ?? Enumerable.Empty<Database.Models.Campaign>();
+            var zoneCampaigns = display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign) ?? [];
 
             var activeIds = directCampaigns
                 .Concat(zoneCampaigns)

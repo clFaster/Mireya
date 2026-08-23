@@ -397,60 +397,15 @@ public class ScreenManagementService(
             .OrderBy(c => c.Name)
             .ToListAsync();
 
+        var utcNow = DateTime.UtcNow;
         var response = MapToDetailsResponse(display);
+        var assignedCampaigns = MapCampaignSummaries(
+            display.CampaignAssignments.Select(ca => ca.Campaign),
+            utcNow
+        );
+        var allCampaignSummaries = MapCampaignSummaries(allCampaigns, utcNow);
 
-        return new ScreenWithCampaignsResponse
-        {
-            Id = response.Id,
-            Name = response.Name,
-            Description = response.Description,
-            Location = response.Location,
-            ScreenIdentifier = response.ScreenIdentifier,
-            ApprovalStatus = response.ApprovalStatus,
-            UserId = response.UserId,
-            ResolutionWidth = response.ResolutionWidth,
-            ResolutionHeight = response.ResolutionHeight,
-            IsActive = response.IsActive,
-            LastSeenAt = response.LastSeenAt,
-            ShufflePlayback = response.ShufflePlayback,
-            ZoneId = response.ZoneId,
-            ZoneName = response.ZoneName,
-            CreatedAt = response.CreatedAt,
-            UpdatedAt = response.UpdatedAt,
-            AssignedCampaigns = display
-                .CampaignAssignments.Select(ca => ca.Campaign)
-                .Select(c => new CampaignSummary(
-                    c.Id,
-                    c.Name,
-                    c.Description,
-                    c.CampaignAssets.Count,
-                    c.CampaignAssignments.Count,
-                    c.CreatedAt,
-                    c.UpdatedAt,
-                    c.IsEnabled,
-                    c.StartDateUtc,
-                    c.EndDateUtc,
-                    c.IsActiveAt(DateTime.UtcNow),
-                    c.Priority
-                ))
-                .ToList(),
-            AllCampaigns = allCampaigns
-                .Select(c => new CampaignSummary(
-                    c.Id,
-                    c.Name,
-                    c.Description,
-                    c.CampaignAssets.Count,
-                    c.CampaignAssignments.Count,
-                    c.CreatedAt,
-                    c.UpdatedAt,
-                    c.IsEnabled,
-                    c.StartDateUtc,
-                    c.EndDateUtc,
-                    c.IsActiveAt(DateTime.UtcNow),
-                    c.Priority
-                ))
-                .ToList(),
-        };
+        return MapToScreenWithCampaignsResponse(response, assignedCampaigns, allCampaignSummaries);
     }
 
     public async Task UpdateScreenWithCampaignsAsync(
@@ -566,6 +521,58 @@ public class ScreenManagementService(
         }
 
         display.ZoneId = zoneId;
+    }
+
+    private static ScreenWithCampaignsResponse MapToScreenWithCampaignsResponse(
+        ScreenDetailsResponse response,
+        List<CampaignSummary> assignedCampaigns,
+        List<CampaignSummary> allCampaigns
+    )
+    {
+        return new ScreenWithCampaignsResponse
+        {
+            Id = response.Id,
+            Name = response.Name,
+            Description = response.Description,
+            Location = response.Location,
+            ScreenIdentifier = response.ScreenIdentifier,
+            ApprovalStatus = response.ApprovalStatus,
+            UserId = response.UserId,
+            ResolutionWidth = response.ResolutionWidth,
+            ResolutionHeight = response.ResolutionHeight,
+            IsActive = response.IsActive,
+            LastSeenAt = response.LastSeenAt,
+            ShufflePlayback = response.ShufflePlayback,
+            ZoneId = response.ZoneId,
+            ZoneName = response.ZoneName,
+            CreatedAt = response.CreatedAt,
+            UpdatedAt = response.UpdatedAt,
+            AssignedCampaigns = assignedCampaigns,
+            AllCampaigns = allCampaigns,
+        };
+    }
+
+    private static List<CampaignSummary> MapCampaignSummaries(
+        IEnumerable<Database.Models.Campaign> campaigns,
+        DateTime utcNow
+    )
+    {
+        return campaigns
+            .Select(c => new CampaignSummary(
+                c.Id,
+                c.Name,
+                c.Description,
+                c.CampaignAssets.Count,
+                c.CampaignAssignments.Count,
+                c.CreatedAt,
+                c.UpdatedAt,
+                c.IsEnabled,
+                c.StartDateUtc,
+                c.EndDateUtc,
+                c.IsActiveAt(utcNow),
+                c.Priority
+            ))
+            .ToList();
     }
 
     private static ScreenDetailsResponse MapToDetailsResponse(Display display)
