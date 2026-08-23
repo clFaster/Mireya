@@ -98,8 +98,7 @@ public class ScreenSynchronizationService(
         var utcNow = DateTime.UtcNow;
         return screen
             .CampaignAssignments.Where(a => a.IsActiveAt(utcNow))
-            .OrderByDescending(a => a.Priority)
-            .ThenBy(a => a.Campaign.Name)
+            .OrderBy(a => a.Campaign.Name)
             .Select(a => MapCampaign(a.Campaign))
             .ToList();
     }

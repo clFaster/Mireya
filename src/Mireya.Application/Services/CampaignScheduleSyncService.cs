@@ -5,10 +5,9 @@ using Mireya.Database;
 namespace Mireya.Application.Services;
 
 /// <summary>
-///     Periodically re-evaluates campaign schedules (start/end dates and weekday/daily-time
-///     recurrence) and pushes a fresh configuration to any screen whose active campaign set has
-///     changed since the last evaluation. Without this, time-based activation would only take
-///     effect when a campaign or assignment is edited.
+///     Periodically re-evaluates campaign start/end dates and pushes a fresh configuration to any
+///     screen whose active campaign set has changed since the last evaluation. Without this,
+///     time-based activation would only take effect when a campaign or assignment is edited.
 /// </summary>
 public class CampaignScheduleSyncService(
     IServiceScopeFactory scopeFactory,
@@ -57,8 +56,7 @@ public class CampaignScheduleSyncService(
         {
             var activeIds = screen
                 .CampaignAssignments.Where(a => a.IsActiveAt(utcNow))
-                .OrderByDescending(a => a.Priority)
-                .ThenBy(a => a.Campaign.Name)
+                .OrderBy(a => a.Campaign.Name)
                 .Select(a => a.CampaignId)
                 .ToList();
 

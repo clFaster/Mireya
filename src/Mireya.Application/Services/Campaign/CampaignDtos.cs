@@ -20,12 +20,7 @@ public record CampaignAssignmentRequest(
     Guid CampaignId,
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
-    DateTime? EndDateUtc = null,
-    int Priority = 0,
-    int? RecurrenceDaysMask = null,
-    TimeOnly? DailyStartTime = null,
-    TimeOnly? DailyEndTime = null,
-    string? RecurrenceTimeZoneId = null
+    DateTime? EndDateUtc = null
 );
 
 public record CampaignSummary(
@@ -59,11 +54,6 @@ public record CampaignAssignmentDetail(
     bool IsEnabled,
     DateTime? StartDateUtc,
     DateTime? EndDateUtc,
-    int Priority,
-    int? RecurrenceDaysMask,
-    TimeOnly? DailyStartTime,
-    TimeOnly? DailyEndTime,
-    string? RecurrenceTimeZoneId,
     bool IsActive
 );
 

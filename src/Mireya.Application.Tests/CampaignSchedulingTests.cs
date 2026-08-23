@@ -25,6 +25,8 @@ public class CampaignSchedulingTests
     {
         var assignment = new CampaignAssignment { IsEnabled = true, StartDateUtc = Now.AddDays(1) };
         Assert.False(assignment.IsActiveAt(Now));
+        Assert.True(assignment.IsEnabled);
+        Assert.True(assignment.IsActiveAt(Now.AddDays(2)));
     }
 
     [Fact]
@@ -32,5 +34,19 @@ public class CampaignSchedulingTests
     {
         var assignment = new CampaignAssignment { IsEnabled = true, EndDateUtc = Now.AddDays(-1) };
         Assert.False(assignment.IsActiveAt(Now));
+        Assert.True(assignment.IsEnabled);
+    }
+
+    [Fact]
+    public void AssignmentIsActiveAt_AtScheduleBoundaries_ReturnsTrue()
+    {
+        var assignment = new CampaignAssignment
+        {
+            IsEnabled = true,
+            StartDateUtc = Now,
+            EndDateUtc = Now,
+        };
+
+        Assert.True(assignment.IsActiveAt(Now));
     }
 }

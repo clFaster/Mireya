@@ -44,7 +44,6 @@ public class CampaignServiceTests
                 Campaign = campaign,
                 Screen = screen,
                 StartDateUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                Priority = 7,
             }
         );
         await db.Context.SaveChangesAsync();
@@ -61,7 +60,6 @@ public class CampaignServiceTests
 
         await using var verify = db.NewContext();
         var assignment = await verify.CampaignAssignments.SingleAsync();
-        Assert.Equal(7, assignment.Priority);
         Assert.Equal(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), assignment.StartDateUtc);
     }
 

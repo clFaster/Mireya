@@ -70,7 +70,10 @@ else
         </div>
     </div>
 
-    <h5 class="mt-3">Assigned Campaigns</h5>
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+        <h5 class="mb-0">Assigned Campaigns</h5>
+        <a href="/screens/edit/@_screen.Id#campaign-assignments" class="btn btn-outline-secondary btn-sm">Manage assignments</a>
+    </div>
     @if (!_screen.CampaignAssignments.Any())
     {
         <p class="text-muted">No campaigns assigned. <a href="/screens/edit/@_screen.Id">Assign campaigns</a>.</p>
@@ -80,13 +83,16 @@ else
         <ul class="list-group">
             @foreach (var assignment in _screen.CampaignAssignments)
             {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
+                <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
                     <span>
-                        @assignment.CampaignName
-                        <small class="text-muted ms-2">Priority @assignment.Priority</small>
+                        <span class="fw-semibold">@assignment.CampaignName</span>
+                        <small class="text-muted d-block">@ScheduleSummary(assignment)</small>
                     </span>
-                    <span class="badge @(assignment.IsActive ? "bg-success" : "bg-secondary")">
-                        @(assignment.IsActive ? "Active" : "Inactive")
+                    <span class="d-flex align-items-center gap-2">
+                        <small class="@(assignment.IsEnabled ? "text-success" : "text-muted")">
+                            @(assignment.IsEnabled ? "Enabled" : "Disabled")
+                        </small>
+                        <span class="badge @AssignmentStateClass(assignment)">@AssignmentStateLabel(assignment)</span>
                     </span>
                 </li>
             }
@@ -103,6 +109,35 @@ else
     private bool _isError;
     private bool _sendingCommand;
     private ConfirmDialog _confirmDialog = null;
+
+    private static string AssignmentStateLabel(CampaignAssignmentDetail assignment)
+    {
+        var now = DateTime.UtcNow;
+        if (!assignment.IsEnabled) return "Not playing";
+        if (assignment.StartDateUtc > now) return "Scheduled";
+        if (assignment.EndDateUtc < now) return "Ended";
+        return "Active now";
+    }
+
+    private static string AssignmentStateClass(CampaignAssignmentDetail assignment) =>
+        AssignmentStateLabel(assignment) switch
+        {
+            "Active now" => "bg-success",
+            "Scheduled" => "bg-info text-dark",
+            "Ended" => "bg-light text-dark border",
+            _ => "bg-secondary",
+        };
+
+    private static string ScheduleSummary(CampaignAssignmentDetail assignment)
+    {
+        if (!assignment.StartDateUtc.HasValue && !assignment.EndDateUtc.HasValue) return "No date limits";
+        if (assignment.StartDateUtc.HasValue && assignment.EndDateUtc.HasValue)
+            return $"{FormatUtc(assignment.StartDateUtc.Value)} – {FormatUtc(assignment.EndDateUtc.Value)}";
+        if (assignment.StartDateUtc.HasValue) return $"Starts {FormatUtc(assignment.StartDateUtc.Value)}";
+        return $"Ends {FormatUtc(assignment.EndDateUtc!.Value)}";
+    }
+
+    private static string FormatUtc(DateTime value) => $"{value:dd MMM yyyy, HH:mm} UTC";
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 

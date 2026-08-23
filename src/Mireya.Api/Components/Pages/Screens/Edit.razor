@@ -38,114 +38,60 @@ else
                 When on, this screen plays its assets in a random order instead of the configured campaign order.
             </small>
 
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Campaign assignments</h5>
-                <small class="text-muted">@_assignments.Count of @_screen.AllCampaigns.Count assigned</small>
+            <div id="campaign-assignments" class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <h5 class="mb-1">Campaign assignments</h5>
+                    <p class="text-muted small mb-0">
+                        Enabled assignments play continuously or within their optional UTC date window.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm flex-shrink-0"
+                        @onclick="OpenAddAssignment"
+                        disabled="@(_assignments.Count == _screen.AllCampaigns.Count)">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Add campaign
+                </button>
             </div>
-            <p class="text-muted small mt-1">
-                Each assignment has its own playback priority and schedule for this screen.
-            </p>
-            @if (_screen.AllCampaigns.Count > 8)
-            {
-                <input class="form-control form-control-sm mb-3" placeholder="Search campaigns..."
-                       @bind="_campaignSearch" @bind:event="oninput" aria-label="Search campaigns" />
-            }
 
-            @{
-                var visibleCampaigns = string.IsNullOrWhiteSpace(_campaignSearch)
-                    ? _screen.AllCampaigns
-                    : _screen.AllCampaigns
-                        .Where(c => c.Name.Contains(_campaignSearch, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-            }
-            @if (visibleCampaigns.Count == 0)
+            @if (_assignments.Count == 0)
             {
-                <p class="text-muted small">No campaigns match "@_campaignSearch".</p>
+                <div class="border rounded p-4 text-center bg-light">
+                    <i class="bi bi-collection-play d-block fs-3 text-muted mb-2" aria-hidden="true"></i>
+                    <p class="mb-1 fw-semibold">No campaigns assigned</p>
+                    <p class="text-muted small mb-0">Add a campaign to make its content available on this screen.</p>
+                </div>
             }
-            @foreach (var campaign in visibleCampaigns)
+            else
             {
-                var assigned = _assignments.TryGetValue(campaign.Id, out var assignment);
-                <div class="border rounded mb-3">
-                    <div class="p-3 d-flex justify-content-between align-items-center bg-light rounded-top">
-                        <div class="form-check mb-0">
-                            <input class="form-check-input" type="checkbox" id="c_@campaign.Id"
-                                   checked="@assigned"
-                                   @onchange="e => ToggleCampaign(campaign.Id, e.Value is true)" />
-                            <label class="form-check-label fw-semibold" for="c_@campaign.Id">@campaign.Name</label>
-                        </div>
-                        @if (assigned && assignment!.IsActiveNow())
-                        {
-                            <span class="badge bg-success">Active now</span>
-                        }
-                        else if (assigned)
-                        {
-                            <span class="badge bg-secondary">Inactive now</span>
-                        }
-                    </div>
-                    @if (assigned)
+                <div class="list-group">
+                    @foreach (var assignment in _assignments.Values.OrderBy(a => CampaignName(a.CampaignId)))
                     {
-                        var form = assignment!;
-                        <div class="p-3">
-                            <div class="row align-items-end">
-                                <div class="col-md-3 mb-3">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch"
-                                               id="enabled_@campaign.Id" @bind="form.IsEnabled" />
-                                        <label class="form-check-label" for="enabled_@campaign.Id">Enabled</label>
+                        var state = GetAssignmentState(assignment);
+                        <div class="list-group-item px-3 py-3">
+                            <div class="d-flex justify-content-between align-items-center gap-3">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="fw-semibold">@CampaignName(assignment.CampaignId)</span>
+                                        <span class="badge @state.CssClass">@state.Label</span>
+                                        <span class="small @(assignment.IsEnabled ? "text-success" : "text-muted")">
+                                            <i class="bi @(assignment.IsEnabled ? "bi-check-circle-fill" : "bi-pause-circle") me-1" aria-hidden="true"></i>
+                                            @(assignment.IsEnabled ? "Enabled" : "Disabled")
+                                        </span>
                                     </div>
+                                    <div class="text-muted small mt-1">@ScheduleSummary(assignment)</div>
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label" for="priority_@campaign.Id">Priority</label>
-                                    <input class="form-control" type="number" min="0" id="priority_@campaign.Id"
-                                           @bind="form.Priority" />
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label" for="start_@campaign.Id">Start (UTC)</label>
-                                    <input class="form-control" type="datetime-local" id="start_@campaign.Id"
-                                           @bind="form.StartDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label" for="end_@campaign.Id">End (UTC)</label>
-                                    <input class="form-control" type="datetime-local" id="end_@campaign.Id"
-                                           @bind="form.EndDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
+                                <div class="d-flex gap-2 flex-shrink-0">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            @onclick="() => OpenEditAssignment(assignment)">
+                                        Edit
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            title="Remove assignment"
+                                            aria-label="Remove @CampaignName(assignment.CampaignId) assignment"
+                                            @onclick="() => RemoveAssignment(assignment.CampaignId)">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                    </button>
                                 </div>
                             </div>
-                            <label class="form-label d-block">Days of week</label>
-                            <div class="d-flex flex-wrap gap-2 mb-3">
-                                @foreach (var (label, index) in _weekdayLabels.Select((label, index) => (label, index)))
-                                {
-                                    var dayIndex = index;
-                                    <input type="checkbox" class="btn-check" id="day_@(campaign.Id)_@dayIndex"
-                                           checked="@form.Days[dayIndex]"
-                                           @onchange="e => form.Days[dayIndex] = e.Value is true" />
-                                    <label class="btn btn-outline-primary btn-sm" for="day_@(campaign.Id)_@dayIndex">@label</label>
-                                }
-                            </div>
-                            <div class="row">
-                                <div class="col-md-3 mb-2">
-                                    <label class="form-label" for="dailyStart_@campaign.Id">Daily start</label>
-                                    <input class="form-control" type="time" id="dailyStart_@campaign.Id"
-                                           @bind="form.DailyStartTime" />
-                                </div>
-                                <div class="col-md-3 mb-2">
-                                    <label class="form-label" for="dailyEnd_@campaign.Id">Daily end</label>
-                                    <input class="form-control" type="time" id="dailyEnd_@campaign.Id"
-                                           @bind="form.DailyEndTime" />
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <label class="form-label" for="timezone_@campaign.Id">Time zone</label>
-                                    <select class="form-select" id="timezone_@campaign.Id" @bind="form.RecurrenceTimeZoneId">
-                                        <option value="">UTC</option>
-                                        @foreach (var timeZone in _timeZones)
-                                        {
-                                            <option value="@timeZone.Id">@timeZone.DisplayName</option>
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-                            <small class="text-muted">
-                                Leave the dates and recurrence empty for continuous playback. Both daily times must be set together.
-                            </small>
                         </div>
                     }
                 </div>
@@ -165,21 +111,95 @@ else
     </div>
 }
 
+@if (_assignmentDraft != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
+         aria-labelledby="assignment-dialog-title" style="background:rgba(0,0,0,.5)"
+         @onclick="CloseAssignmentDialog">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title" id="assignment-dialog-title">
+                            @(_addingAssignment ? "Add campaign assignment" : "Edit campaign assignment")
+                        </h5>
+                        @if (!_addingAssignment)
+                        {
+                            <div class="text-muted small mt-1">@CampaignName(_assignmentDraft.CampaignId)</div>
+                        }
+                    </div>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseAssignmentDialog"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrWhiteSpace(_assignmentError))
+                    {
+                        <div class="alert alert-danger py-2">@_assignmentError</div>
+                    }
+
+                    @if (_addingAssignment)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label" for="assignmentCampaign">Campaign</label>
+                            <select class="form-select" id="assignmentCampaign" @bind="_assignmentDraft.CampaignId">
+                                @foreach (var campaign in AvailableCampaigns)
+                                {
+                                    <option value="@campaign.Id">@campaign.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    <div class="form-check form-switch mb-1">
+                        <input class="form-check-input" type="checkbox" role="switch" id="assignmentEnabled"
+                               @bind="_assignmentDraft.IsEnabled" />
+                        <label class="form-check-label fw-semibold" for="assignmentEnabled">Enabled</label>
+                    </div>
+                    <p class="text-muted small mb-4">
+                        Enabled is the master switch. A future start or past end keeps the assignment inactive without changing this switch.
+                    </p>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="assignmentStart">Start (UTC)</label>
+                            <input class="form-control" type="datetime-local" id="assignmentStart"
+                                   @bind="_assignmentDraft.StartDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
+                            <div class="form-text">Leave empty to start immediately.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="assignmentEnd">End (UTC)</label>
+                            <input class="form-control" type="datetime-local" id="assignmentEnd"
+                                   @bind="_assignmentDraft.EndDateUtc" @bind:format="yyyy-MM-ddTHH:mm" />
+                            <div class="form-text">Leave empty to run indefinitely.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAssignmentDialog">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ApplyAssignmentDraft">
+                        @(_addingAssignment ? "Add campaign" : "Save assignment")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter] public Guid Id { get; set; }
 
-    private static readonly string[] _weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    private static readonly List<TimeZoneInfo> _timeZones =
-        TimeZoneInfo.GetSystemTimeZones().OrderBy(t => t.DisplayName).ToList();
-
     private ScreenWithCampaignsResponse? _screen;
     private readonly Dictionary<Guid, AssignmentFormModel> _assignments = [];
+    private AssignmentFormModel? _assignmentDraft;
     private string _name = string.Empty;
     private string _location = string.Empty;
     private string? _description;
     private bool _shufflePlayback;
-    private string _campaignSearch = string.Empty;
     private bool _saving;
+    private bool _addingAssignment;
+    private string? _assignmentError;
+
+    private IEnumerable<CampaignSummary> AvailableCampaigns =>
+        _screen?.AllCampaigns.Where(c => !_assignments.ContainsKey(c.Id)) ?? [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -192,13 +212,76 @@ else
             _assignments[assignment.CampaignId] = AssignmentFormModel.FromDetail(assignment);
     }
 
-    private void ToggleCampaign(Guid campaignId, bool selected)
+    private void OpenAddAssignment()
     {
-        if (selected)
-            _assignments.TryAdd(campaignId, new AssignmentFormModel(campaignId));
-        else
-            _assignments.Remove(campaignId);
+        var campaign = AvailableCampaigns.FirstOrDefault();
+        if (campaign == null)
+            return;
+
+        _addingAssignment = true;
+        _assignmentError = null;
+        _assignmentDraft = new AssignmentFormModel(campaign.Id);
     }
+
+    private void OpenEditAssignment(AssignmentFormModel assignment)
+    {
+        _addingAssignment = false;
+        _assignmentError = null;
+        _assignmentDraft = assignment.Clone();
+    }
+
+    private void CloseAssignmentDialog()
+    {
+        _assignmentDraft = null;
+        _assignmentError = null;
+    }
+
+    private void ApplyAssignmentDraft()
+    {
+        if (_assignmentDraft == null)
+            return;
+
+        if (_assignmentDraft.StartDateUtc.HasValue
+            && _assignmentDraft.EndDateUtc.HasValue
+            && _assignmentDraft.EndDateUtc.Value < _assignmentDraft.StartDateUtc.Value)
+        {
+            _assignmentError = "End must not be earlier than start.";
+            return;
+        }
+
+        _assignments[_assignmentDraft.CampaignId] = _assignmentDraft;
+        CloseAssignmentDialog();
+    }
+
+    private void RemoveAssignment(Guid campaignId) => _assignments.Remove(campaignId);
+
+    private string CampaignName(Guid campaignId) =>
+        _screen?.AllCampaigns.FirstOrDefault(c => c.Id == campaignId)?.Name ?? "Unknown campaign";
+
+    private static AssignmentState GetAssignmentState(AssignmentFormModel assignment)
+    {
+        var now = DateTime.UtcNow;
+        if (!assignment.IsEnabled)
+            return new("Not playing", "bg-secondary");
+        if (assignment.StartDateUtc > now)
+            return new("Scheduled", "bg-info text-dark");
+        if (assignment.EndDateUtc < now)
+            return new("Ended", "bg-light text-dark border");
+        return new("Active now", "bg-success");
+    }
+
+    private static string ScheduleSummary(AssignmentFormModel assignment)
+    {
+        if (!assignment.StartDateUtc.HasValue && !assignment.EndDateUtc.HasValue)
+            return "No date limits";
+        if (assignment.StartDateUtc.HasValue && assignment.EndDateUtc.HasValue)
+            return $"{FormatUtc(assignment.StartDateUtc.Value)} – {FormatUtc(assignment.EndDateUtc.Value)}";
+        if (assignment.StartDateUtc.HasValue)
+            return $"Starts {FormatUtc(assignment.StartDateUtc.Value)}";
+        return $"Ends {FormatUtc(assignment.EndDateUtc!.Value)}";
+    }
+
+    private static string FormatUtc(DateTime value) => $"{value:dd MMM yyyy, HH:mm} UTC";
 
     private async Task SaveAsync()
     {
@@ -227,76 +310,33 @@ else
         }
     }
 
+    private sealed record AssignmentState(string Label, string CssClass);
+
     private sealed class AssignmentFormModel(Guid campaignId)
     {
-        public Guid CampaignId { get; } = campaignId;
+        public Guid CampaignId { get; set; } = campaignId;
         public bool IsEnabled { get; set; } = true;
         public DateTime? StartDateUtc { get; set; }
         public DateTime? EndDateUtc { get; set; }
-        public int Priority { get; set; }
-        public bool[] Days { get; } = new bool[7];
-        public TimeOnly? DailyStartTime { get; set; }
-        public TimeOnly? DailyEndTime { get; set; }
-        public string RecurrenceTimeZoneId { get; set; } = "";
 
-        public static AssignmentFormModel FromDetail(CampaignAssignmentDetail detail)
-        {
-            var model = new AssignmentFormModel(detail.CampaignId)
+        public static AssignmentFormModel FromDetail(CampaignAssignmentDetail detail) =>
+            new(detail.CampaignId)
             {
                 IsEnabled = detail.IsEnabled,
                 StartDateUtc = detail.StartDateUtc,
                 EndDateUtc = detail.EndDateUtc,
-                Priority = detail.Priority,
-                DailyStartTime = detail.DailyStartTime,
-                DailyEndTime = detail.DailyEndTime,
-                RecurrenceTimeZoneId = detail.RecurrenceTimeZoneId ?? "",
             };
-            for (var i = 0; i < 7; i++)
-                model.Days[i] = detail.RecurrenceDaysMask is > 0
-                    && (detail.RecurrenceDaysMask.Value & (1 << i)) != 0;
-            return model;
-        }
+
+        public AssignmentFormModel Clone() =>
+            new(CampaignId)
+            {
+                IsEnabled = IsEnabled,
+                StartDateUtc = StartDateUtc,
+                EndDateUtc = EndDateUtc,
+            };
 
         public CampaignAssignmentRequest ToRequest() =>
-            new(
-                CampaignId,
-                IsEnabled,
-                NormalizeUtc(StartDateUtc),
-                NormalizeUtc(EndDateUtc),
-                Priority,
-                BuildDaysMask(),
-                DailyStartTime,
-                DailyEndTime,
-                string.IsNullOrWhiteSpace(RecurrenceTimeZoneId)
-                    ? null
-                    : RecurrenceTimeZoneId
-            );
-
-        public bool IsActiveNow()
-        {
-            var request = ToRequest();
-            var assignment = new Mireya.Database.Models.CampaignAssignment
-            {
-                IsEnabled = request.IsEnabled,
-                StartDateUtc = request.StartDateUtc,
-                EndDateUtc = request.EndDateUtc,
-                Priority = request.Priority,
-                RecurrenceDaysMask = request.RecurrenceDaysMask,
-                DailyStartTime = request.DailyStartTime,
-                DailyEndTime = request.DailyEndTime,
-                RecurrenceTimeZoneId = request.RecurrenceTimeZoneId,
-            };
-            return assignment.IsActiveAt(DateTime.UtcNow);
-        }
-
-        private int? BuildDaysMask()
-        {
-            var mask = 0;
-            for (var i = 0; i < 7; i++)
-                if (Days[i])
-                    mask |= 1 << i;
-            return mask;
-        }
+            new(CampaignId, IsEnabled, NormalizeUtc(StartDateUtc), NormalizeUtc(EndDateUtc));
 
         private static DateTime? NormalizeUtc(DateTime? value) =>
             value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;

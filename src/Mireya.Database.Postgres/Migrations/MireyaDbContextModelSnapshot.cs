@@ -379,27 +379,11 @@ namespace Mireya.Database.Postgres.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<TimeOnly?>("DailyEndTime")
-                        .HasColumnType("time without time zone");
-
-                    b.Property<TimeOnly?>("DailyStartTime")
-                        .HasColumnType("time without time zone");
-
                     b.Property<DateTime?>("EndDateUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("RecurrenceDaysMask")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RecurrenceTimeZoneId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
 
                     b.Property<Guid>("ScreenId")
                         .HasColumnType("uuid");
@@ -419,11 +403,7 @@ namespace Mireya.Database.Postgres.Migrations
 
                     b.ToTable("CampaignAssignments", t =>
                         {
-                            t.HasCheckConstraint("CK_CampaignAssignments_DailyWindow_Complete", "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)");
-
                             t.HasCheckConstraint("CK_CampaignAssignments_DateRange", "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\"");
-
-                            t.HasCheckConstraint("CK_CampaignAssignments_RecurrenceDaysMask_Range", "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127");
                         });
                 });
 

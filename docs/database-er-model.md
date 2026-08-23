@@ -79,11 +79,6 @@ erDiagram
         bool IsEnabled
         datetime StartDateUtc "nullable"
         datetime EndDateUtc "nullable"
-        int Priority
-        int RecurrenceDaysMask "nullable, 0 to 127"
-        time DailyStartTime "nullable pair"
-        time DailyEndTime "nullable pair"
-        string RecurrenceTimeZoneId "nullable"
         datetime CreatedAt
         datetime UpdatedAt
     }

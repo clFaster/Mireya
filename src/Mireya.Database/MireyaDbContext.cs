@@ -115,14 +115,6 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
                     "CK_CampaignAssignments_DateRange",
                     "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\""
                 );
-                table.HasCheckConstraint(
-                    "CK_CampaignAssignments_RecurrenceDaysMask_Range",
-                    "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127"
-                );
-                table.HasCheckConstraint(
-                    "CK_CampaignAssignments_DailyWindow_Complete",
-                    "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)"
-                );
             });
 
             entity

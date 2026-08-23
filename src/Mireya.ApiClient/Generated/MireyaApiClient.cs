@@ -4180,21 +4180,6 @@ namespace Mireya.ApiClient.Generated
         [System.Text.Json.Serialization.JsonPropertyName("endDateUtc")]
         public System.DateTimeOffset? EndDateUtc { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("priority")]
-        public int Priority { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("recurrenceDaysMask")]
-        public int? RecurrenceDaysMask { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("dailyStartTime")]
-        public System.TimeSpan? DailyStartTime { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("dailyEndTime")]
-        public System.TimeSpan? DailyEndTime { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("recurrenceTimeZoneId")]
-        public string? RecurrenceTimeZoneId { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = default!;
 
@@ -4224,21 +4209,6 @@ namespace Mireya.ApiClient.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("endDateUtc")]
         public System.DateTimeOffset? EndDateUtc { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("priority")]
-        public int Priority { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("recurrenceDaysMask")]
-        public int? RecurrenceDaysMask { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("dailyStartTime")]
-        public System.TimeSpan? DailyStartTime { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("dailyEndTime")]
-        public System.TimeSpan? DailyEndTime { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("recurrenceTimeZoneId")]
-        public string? RecurrenceTimeZoneId { get; set; } = default!;
 
     }
 
