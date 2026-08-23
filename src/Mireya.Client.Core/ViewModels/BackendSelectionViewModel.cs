@@ -406,28 +406,29 @@ public partial class BackendSelectionViewModel : ViewModelBase
         IsStatusError = isError;
 
         // Auto-hide success messages after 4 s
-        if (!isError && autoHide && message != null)
+        if (isError || !autoHide || message == null)
         {
-            var cts = new CancellationTokenSource();
-            _statusCts = cts;
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(4000, cts.Token);
-                    await Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        if (!cts.IsCancellationRequested)
-                            StatusMessage = null;
-                    });
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
-            });
+            return;
         }
+        var cts = new CancellationTokenSource();
+        _statusCts = cts;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(4000, cts.Token);
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (!cts.IsCancellationRequested)
+                        StatusMessage = null;
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignore cancellation; the status message was updated before the delay completed.
+            }
+        });
     }
 
     // ──────────────────────────────────────────────────────────────
