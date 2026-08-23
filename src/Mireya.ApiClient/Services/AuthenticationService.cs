@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Generated;
 
 namespace Mireya.ApiClient.Services;
@@ -174,58 +175,9 @@ public class AuthenticationService : IAuthenticationService
             if (credential == null || string.IsNullOrEmpty(credential.Username))
                 return new LoginResult(false, null, "No credentials found. Please register first.");
 
-            AccessTokenResponse? response = null;
-
-            if (!string.IsNullOrEmpty(credential.RefreshToken))
-            {
-                response = await TryRefreshAsync(credential.RefreshToken, backend.Id);
-            }
-
-            if (response == null && !string.IsNullOrEmpty(credential.Password))
-            {
-                try
-                {
-                    response = await LoginWithPasswordAsync(
-                        credential.Username,
-                        credential.Password
-                    );
-                }
-                catch (ApiException ex) when (ex.StatusCode == 401)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "Backend {BackendId} no longer accepts the stored screen identity; registering a replacement",
-                        backend.Id
-                    );
-                }
-            }
-
+            var (response, errorMessage) = await AcquireAccessTokenAsync(backend.Id, credential);
             if (response == null)
-            {
-                // Refresh and password login have both been rejected, or an older
-                // installation has no recoverable backend-scoped password. Replace only
-                // this backend's registration; credentials for other servers are untouched.
-                await _credentials.DeleteCredentialsAsync(backend.Id);
-                var registration = await RegisterAsync();
-                if (!registration.Success)
-                    return new LoginResult(false, null, registration.ErrorMessage);
-
-                credential = await _credentials.GetCredentialsAsync(backend.Id);
-                if (
-                    credential == null
-                    || string.IsNullOrEmpty(credential.Username)
-                    || string.IsNullOrEmpty(credential.Password)
-                )
-                {
-                    return new LoginResult(
-                        false,
-                        null,
-                        "Replacement registration did not persist credentials."
-                    );
-                }
-
-                response = await LoginWithPasswordAsync(credential.Username, credential.Password);
-            }
+                return new LoginResult(false, null, errorMessage ?? "Login failed.");
 
             await _credentials.SaveTokensAsync(
                 backend.Id,
@@ -252,6 +204,81 @@ public class AuthenticationService : IAuthenticationService
             _logger.LogError(ex, "Unexpected error during login");
             return new LoginResult(false, null, $"Unexpected error: {ex.Message}");
         }
+    }
+
+    private async Task<(
+        AccessTokenResponse? Response,
+        string? ErrorMessage
+    )> AcquireAccessTokenAsync(Guid backendId, BackendCredential credential)
+    {
+        AccessTokenResponse? response = null;
+
+        if (!string.IsNullOrEmpty(credential.RefreshToken))
+            response = await TryRefreshAsync(credential.RefreshToken, backendId);
+
+        if (
+            response == null
+            && !string.IsNullOrEmpty(credential.Username)
+            && !string.IsNullOrEmpty(credential.Password)
+        )
+            response = await TryLoginWithPasswordAsync(
+                credential.Username,
+                credential.Password,
+                backendId
+            );
+
+        if (response != null)
+            return (response, null);
+
+        return await RegisterReplacementAndLoginAsync(backendId);
+    }
+
+    private async Task<AccessTokenResponse?> TryLoginWithPasswordAsync(
+        string username,
+        string password,
+        Guid backendId
+    )
+    {
+        try
+        {
+            return await LoginWithPasswordAsync(username, password);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 401)
+        {
+            _logger.LogWarning(
+                ex,
+                "Backend {BackendId} no longer accepts the stored screen identity; registering a replacement",
+                backendId
+            );
+            return null;
+        }
+    }
+
+    private async Task<(
+        AccessTokenResponse? Response,
+        string? ErrorMessage
+    )> RegisterReplacementAndLoginAsync(Guid backendId)
+    {
+        // Refresh and password login have both been rejected, or an older installation
+        // has no recoverable backend-scoped password. Replace only this backend's
+        // registration; credentials for other servers are untouched.
+        await _credentials.DeleteCredentialsAsync(backendId);
+        var registration = await RegisterAsync();
+        if (!registration.Success)
+            return (null, registration.ErrorMessage);
+
+        var replacement = await _credentials.GetCredentialsAsync(backendId);
+        if (
+            replacement == null
+            || string.IsNullOrEmpty(replacement.Username)
+            || string.IsNullOrEmpty(replacement.Password)
+        )
+        {
+            return (null, "Replacement registration did not persist credentials.");
+        }
+
+        var response = await LoginWithPasswordAsync(replacement.Username, replacement.Password);
+        return (response, null);
     }
 
     private async Task<AccessTokenResponse?> TryRefreshAsync(string refreshToken, Guid backendId)
