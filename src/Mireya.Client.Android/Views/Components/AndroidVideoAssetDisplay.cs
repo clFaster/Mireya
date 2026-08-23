@@ -90,33 +90,85 @@ public sealed class AndroidVideoAssetDisplay : NativeControlHost, IVideoRenderer
 
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
+        // Avalonia's NativeControlHost may have already disposed the JNI wrappers for the
+        // views it embedded (PlayerView is an AndroidX view attached through
+        // AndroidViewControlHandle). When that happens, touching _playerView throws
+        // ObjectDisposedException. Historically that exception was caught by a single
+        // outer try/catch, which silently skipped _player.Stop/Release/Dispose — leaking a
+        // full ExoPlayer (audio + video decoders, decoder threads, buffers) on every
+        // Video→non-Video transition and driving the app back into the low-memory killer.
+        // Release each resource independently, and release the player we own *first* so
+        // its lifecycle no longer depends on the PlayerView JNI wrapper still being alive.
+        _pendingPlay = null;
+        _currentVideoPath = null;
+        _playbackEndedSignaled = false;
+        StopPlaybackCompletionPolling();
+
+        // Best-effort: detach the player from the view so the view stops rendering. May
+        // throw if the JNI-side PlayerView is already gone; that is fine, the player
+        // release below is what actually reclaims the native resources.
         try
         {
-            _pendingPlay = null;
-            _currentVideoPath = null;
-            _playbackEndedSignaled = false;
-            StopPlaybackCompletionPolling();
-
             if (_playerView != null)
                 _playerView.Player = null;
-
-            if (_player != null)
-            {
-                _player.Stop();
-                _player.Release();
-                _player.Dispose();
-                _player = null;
-            }
-
-            if (_playerView != null)
-            {
-                _playerView.Dispose();
-                _playerView = null;
-            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // PlayerView JNI wrapper was disposed by Avalonia's detach hook before us.
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to dispose Media3 resources: {ex.Message}");
+            Console.WriteLine($"Failed to detach Media3 player from view: {ex.Message}");
+        }
+
+        if (_player != null)
+        {
+            try
+            {
+                _player.Stop();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to stop Media3 player: {ex.Message}");
+            }
+
+            try
+            {
+                _player.Release();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to release Media3 player: {ex.Message}");
+            }
+
+            try
+            {
+                _player.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to dispose Media3 player: {ex.Message}");
+            }
+
+            _player = null;
+        }
+
+        if (_playerView != null)
+        {
+            try
+            {
+                _playerView.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already disposed by Avalonia's detach path; nothing to do.
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to dispose Media3 PlayerView: {ex.Message}");
+            }
+
+            _playerView = null;
         }
 
         base.DestroyNativeControlCore(control);
