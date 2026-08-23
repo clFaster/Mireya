@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Mireya.Database.Models;
 
 /// <summary>
-///     Represents the assignment of a campaign to a display
+///     Represents the assignment of a campaign to a screen
 /// </summary>
 public class CampaignAssignment
 {
@@ -15,7 +15,7 @@ public class CampaignAssignment
     public Guid CampaignId { get; set; }
 
     [Required]
-    public Guid DisplayId { get; set; }
+    public Guid ScreenId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -24,5 +24,5 @@ public class CampaignAssignment
     public Campaign Campaign { get; set; } = null;
 
     [AllowNull]
-    public Display Display { get; set; } = null;
+    public Screen Screen { get; set; } = null;
 }

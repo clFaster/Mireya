@@ -75,29 +75,31 @@ public class BackendManager : IBackendManager
     {
         _logger.LogInformation("Setting current backend to {BackendId}", backendInstanceId);
 
-        // Clear current backend flag from all
         var all = await _db.BackendInstances.ToListAsync();
-        foreach (var b in all)
-            b.IsCurrentBackend = false;
-
-        // Set current
-        var current = await _db.BackendInstances.FindAsync(backendInstanceId);
-        if (current != null)
-        {
-            current.IsCurrentBackend = true;
-            current.LastConnectedAt = DateTime.UtcNow;
-            _logger.LogInformation(
-                "Current backend set to {BackendId} - {BaseUrl}",
-                current.Id,
-                current.BaseUrl
-            );
-        }
-        else
+        var current = all.FirstOrDefault(b => b.Id == backendInstanceId);
+        if (current == null)
         {
             _logger.LogError("Backend {BackendId} not found!", backendInstanceId);
+            return;
         }
 
+        // Persist the switch in two phases inside one transaction. This satisfies
+        // the unique index without exposing an intermediate "no current backend" state.
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        foreach (var backend in all)
+            backend.IsCurrentBackend = false;
         await _db.SaveChangesAsync();
+
+        current.IsCurrentBackend = true;
+        current.LastConnectedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        _logger.LogInformation(
+            "Current backend set to {BackendId} - {BaseUrl}",
+            current.Id,
+            current.BaseUrl
+        );
     }
 
     public async Task<BackendInstance?> GetCurrentBackendAsync()

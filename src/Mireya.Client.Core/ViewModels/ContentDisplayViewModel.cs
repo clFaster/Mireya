@@ -39,7 +39,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     private long _imageCacheUseCounter;
 
     [ObservableProperty]
-    private string _displayName = "(not received yet)";
+    private string _screenName = "(not received yet)";
 
     [ObservableProperty]
     private string _connectionStatus = "Disconnected";
@@ -308,7 +308,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     {
         PairingCode = FormatPairingCode(screenIdentifier);
         if (!string.IsNullOrWhiteSpace(screenName))
-            DisplayName = screenName;
+            ScreenName = screenName;
 
         IsAwaitingApproval = !approved;
         if (!approved)
@@ -381,7 +381,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
         Dispatcher.UIThread.InvokeAsync(() =>
         {
             IsAwaitingApproval = false;
-            DisplayName = config.ScreenName;
+            ScreenName = config.ScreenName;
             StatusText = "Syncing assets...";
         });
     }

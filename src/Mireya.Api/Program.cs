@@ -152,8 +152,10 @@ app.UseExceptionHandler();
 app.MapDefaultEndpoints();
 
 // ─── Startup: migrations + seed ───────────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
+// NSwag starts the app only to inspect endpoints. It must not mutate a real database.
+if (!app.Environment.IsEnvironment("NSwag"))
 {
+    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<MireyaDbContext>();
     await context.Database.MigrateAsync();

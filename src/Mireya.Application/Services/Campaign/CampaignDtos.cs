@@ -7,7 +7,7 @@ public record CreateCampaignRequest(
     string Name,
     string? Description,
     List<CampaignAssetDto> Assets,
-    List<Guid> DisplayIds,
+    List<Guid> ScreenIds,
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
@@ -24,7 +24,7 @@ public record UpdateCampaignRequest(
     string? Description,
     List<CampaignAssetDto> Assets,
     // null = leave screen assignments unchanged; a list (incl. empty) = set assignments to exactly this set
-    List<Guid>? DisplayIds,
+    List<Guid>? ScreenIds,
     bool IsEnabled = true,
     DateTime? StartDateUtc = null,
     DateTime? EndDateUtc = null,
@@ -44,7 +44,7 @@ public record CampaignSummary(
     string Name,
     string? Description,
     int AssetCount,
-    int DisplayCount,
+    int ScreenCount,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     bool IsEnabled,
@@ -60,7 +60,7 @@ public record CampaignDetail(
     string Name,
     string? Description,
     List<CampaignAssetDetail> Assets,
-    List<DisplayInfo> Displays,
+    List<ScreenInfo> Screens,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     bool IsEnabled = true,
@@ -87,4 +87,4 @@ public record CampaignAssetDetail(
     ImageFit ImageFit = ImageFit.Contain // How an image is fitted to the screen
 );
 
-public record DisplayInfo(Guid Id, string Name, string Location);
+public record ScreenInfo(Guid Id, string Name, string Location);

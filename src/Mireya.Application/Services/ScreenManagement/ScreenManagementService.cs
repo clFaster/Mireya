@@ -99,6 +99,8 @@ public class ScreenManagementService(
 
     public async Task<RegisterScreenResponse> RegisterScreenAsync(RegisterScreenRequest request)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync();
+
         // Create a user account for the screen immediately
         var screenUser = new User
         {
@@ -118,23 +120,29 @@ public class ScreenManagementService(
         }
 
         // Add the Screen role
-        await userManager.AddToRoleAsync(screenUser, Roles.Screen);
+        var roleResult = await userManager.AddToRoleAsync(screenUser, Roles.Screen);
+        if (!roleResult.Succeeded)
+        {
+            var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+            logger.LogError("Failed to assign the screen role: {Errors}", errors);
+            throw new InvalidOperationException($"Failed to assign screen role: {errors}");
+        }
 
         // Generate unique screen identifier
         var screenIdentifier = await Nanoid.GenerateAsync(
             size: NanoIdGen.ScreenIdentifierLength,
             alphabet: NanoIdGen.HexAlphabet
         );
-        while (await db.Displays.AnyAsync(d => d.ScreenIdentifier == screenIdentifier))
+        while (await db.Screens.AnyAsync(d => d.ScreenIdentifier == screenIdentifier))
             screenIdentifier = await Nanoid.GenerateAsync(
                 size: NanoIdGen.ScreenIdentifierLength,
                 alphabet: NanoIdGen.HexAlphabet
             );
 
-        var display = new Display
+        var screen = new Screen
         {
             Name = string.IsNullOrEmpty(request.DeviceName)
-                ? $"Screen {await db.Displays.CountAsync() + 1}"
+                ? $"Screen {await db.Screens.CountAsync() + 1}"
                 : request.DeviceName,
             ScreenIdentifier = screenIdentifier,
             UserId = screenUser.Id,
@@ -144,12 +152,13 @@ public class ScreenManagementService(
             ApprovalStatus = ApprovalStatus.Pending,
         };
 
-        db.Displays.Add(display);
+        db.Screens.Add(screen);
         await db.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         logger.LogInformation(
-            "New screen registered with ID {DisplayId} and User {UserId}",
-            display.Id,
+            "New screen registered with ID {ScreenId} and User {UserId}",
+            screen.Id,
             screenUser.Id
         );
 
@@ -157,34 +166,34 @@ public class ScreenManagementService(
         {
             ScreenIdentifier = screenIdentifier,
             UserId = screenUser.Id,
-            ScreenName = display.Name,
+            ScreenName = screen.Name,
         };
     }
 
     public async Task<BonjourResponse> GetBonjourAsync(string userId)
     {
-        var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
+        var screen = await db.Screens.FirstOrDefaultAsync(d => d.UserId == userId);
 
-        if (display == null)
+        if (screen == null)
             throw new KeyNotFoundException($"No screen found for user {userId}");
 
         // Update last seen timestamp
-        display.LastSeenAt = DateTime.UtcNow;
+        screen.LastSeenAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
         logger.LogInformation(
-            "Screen {DisplayId} called bonjour (User: {UserId})",
-            display.Id,
+            "Screen {ScreenId} called bonjour (User: {UserId})",
+            screen.Id,
             userId
         );
 
         return new BonjourResponse
         {
-            ScreenIdentifier = display.ScreenIdentifier,
-            ScreenName = display.Name,
-            Description = display.Description,
-            ApprovalStatus = display.ApprovalStatus.ToString(),
-            Location = display.Location,
+            ScreenIdentifier = screen.ScreenIdentifier,
+            ScreenName = screen.Name,
+            Description = screen.Description,
+            ApprovalStatus = screen.ApprovalStatus.ToString(),
+            Location = screen.Location,
         };
     }
 
@@ -200,7 +209,7 @@ public class ScreenManagementService(
         if (pageSize is < 1 or > 100)
             pageSize = 10;
 
-        var query = db.Displays.AsQueryable();
+        var query = db.Screens.AsQueryable();
 
         if (status.HasValue)
             query = query.Where(d => d.ApprovalStatus == status.Value);
@@ -208,9 +217,9 @@ public class ScreenManagementService(
         query = ApplyScreenSorting(query, sortBy);
 
         var total = await query.CountAsync();
-        var displays = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var screens = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        var items = displays.Select(MapToDetailsResponse).ToList();
+        var items = screens.Select(MapToDetailsResponse).ToList();
 
         return new PagedScreensResponse
         {
@@ -223,7 +232,7 @@ public class ScreenManagementService(
 
     private static readonly Dictionary<
         string,
-        Func<IQueryable<Display>, IQueryable<Display>>
+        Func<IQueryable<Screen>, IQueryable<Screen>>
     > SortFunctions = new(StringComparer.OrdinalIgnoreCase)
     {
         ["name"] = q => q.OrderBy(d => d.Name),
@@ -232,8 +241,8 @@ public class ScreenManagementService(
         ["lastseen"] = q => q.OrderByDescending(d => d.LastSeenAt),
     };
 
-    private static IQueryable<Display> ApplyScreenSorting(
-        IQueryable<Display> query,
+    private static IQueryable<Screen> ApplyScreenSorting(
+        IQueryable<Screen> query,
         string? sortBy
     ) =>
         sortBy != null && SortFunctions.TryGetValue(sortBy, out var sort)
@@ -242,149 +251,149 @@ public class ScreenManagementService(
 
     public async Task<ScreenDetailsResponse> GetScreenByIdAsync(Guid id)
     {
-        var display = await db.Displays.FindAsync(id);
+        var screen = await db.Screens.FindAsync(id);
 
-        return display == null
+        return screen == null
             ? throw new KeyNotFoundException($"Screen with ID {id} not found")
-            : MapToDetailsResponse(display);
+            : MapToDetailsResponse(screen);
     }
 
     public async Task<ScreenDetailsResponse> UpdateScreenAsync(Guid id, UpdateScreenRequest request)
     {
-        var display = await db.Displays.FindAsync(id);
+        var screen = await db.Screens.FindAsync(id);
 
-        if (display == null)
+        if (screen == null)
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
         // Update only provided fields
         if (!string.IsNullOrWhiteSpace(request.Name))
-            display.Name = request.Name;
+            screen.Name = request.Name;
 
         if (!string.IsNullOrWhiteSpace(request.Description))
-            display.Description = request.Description;
+            screen.Description = request.Description;
 
         if (!string.IsNullOrWhiteSpace(request.Location))
-            display.Location = request.Location;
+            screen.Location = request.Location;
 
         if (request.ShufflePlayback.HasValue)
-            display.ShufflePlayback = request.ShufflePlayback.Value;
+            screen.ShufflePlayback = request.ShufflePlayback.Value;
 
-        display.UpdatedAt = DateTime.UtcNow;
+        screen.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
-        logger.LogInformation("Screen {DisplayId} updated", display.Id);
+        logger.LogInformation("Screen {ScreenId} updated", screen.Id);
 
         // Notify screen of updates
-        await syncService.SyncScreenAsync(display.Id);
+        await syncService.SyncScreenAsync(screen.Id);
 
-        return MapToDetailsResponse(display);
+        return MapToDetailsResponse(screen);
     }
 
     public async Task<ApproveScreenResponse> ApproveScreenAsync(Guid id)
     {
-        var display = await db.Displays.FindAsync(id);
+        var screen = await db.Screens.FindAsync(id);
 
-        if (display == null)
+        if (screen == null)
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
-        if (display.ApprovalStatus == ApprovalStatus.Approved)
+        if (screen.ApprovalStatus == ApprovalStatus.Approved)
         {
-            logger.LogInformation("Screen {DisplayId} is already approved", display.Id);
-            return new ApproveScreenResponse { Screen = MapToDetailsResponse(display) };
+            logger.LogInformation("Screen {ScreenId} is already approved", screen.Id);
+            return new ApproveScreenResponse { Screen = MapToDetailsResponse(screen) };
         }
 
-        if (string.IsNullOrEmpty(display.UserId))
+        if (string.IsNullOrEmpty(screen.UserId))
             throw new InvalidOperationException(
                 $"Screen {id} has no associated user account. It may need to be re-registered."
             );
 
         // Simply update the approval status
-        display.ApprovalStatus = ApprovalStatus.Approved;
-        display.UpdatedAt = DateTime.UtcNow;
+        screen.ApprovalStatus = ApprovalStatus.Approved;
+        screen.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
 
         logger.LogInformation(
-            "Screen {DisplayId} approved (User: {UserId})",
-            display.Id,
-            display.UserId
+            "Screen {ScreenId} approved (User: {UserId})",
+            screen.Id,
+            screen.UserId
         );
 
         // Notify screen of approval
-        await syncService.SyncScreenAsync(display.Id);
+        await syncService.SyncScreenAsync(screen.Id);
 
         await audit.LogAsync(
             "Approved",
             ScreenAuditEntity,
-            display.Id.ToString(),
-            $"Approved screen '{display.Name}'"
+            screen.Id.ToString(),
+            $"Approved screen '{screen.Name}'"
         );
 
-        return new ApproveScreenResponse { Screen = MapToDetailsResponse(display) };
+        return new ApproveScreenResponse { Screen = MapToDetailsResponse(screen) };
     }
 
     public async Task<ScreenDetailsResponse> RejectScreenAsync(Guid id)
     {
-        var display = await db.Displays.FindAsync(id);
+        var screen = await db.Screens.FindAsync(id);
 
-        if (display == null)
+        if (screen == null)
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
-        display.ApprovalStatus = ApprovalStatus.Rejected;
-        display.UpdatedAt = DateTime.UtcNow;
+        screen.ApprovalStatus = ApprovalStatus.Rejected;
+        screen.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
 
-        logger.LogInformation("Screen {DisplayId} rejected", display.Id);
+        logger.LogInformation("Screen {ScreenId} rejected", screen.Id);
 
         await audit.LogAsync(
             "Rejected",
             ScreenAuditEntity,
-            display.Id.ToString(),
-            $"Rejected screen '{display.Name}'"
+            screen.Id.ToString(),
+            $"Rejected screen '{screen.Name}'"
         );
 
-        return MapToDetailsResponse(display);
+        return MapToDetailsResponse(screen);
     }
 
     public async Task SetScreenActiveAsync(string userId, bool isActive)
     {
-        var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
-        if (display == null)
+        var screen = await db.Screens.FirstOrDefaultAsync(d => d.UserId == userId);
+        if (screen == null)
         {
             logger.LogWarning(
-                "No display found for user {UserId} when setting active state",
+                "No screen found for user {UserId} when setting active state",
                 userId
             );
             return;
         }
 
-        display.IsActive = isActive;
-        display.LastSeenAt = DateTime.UtcNow;
-        display.UpdatedAt = DateTime.UtcNow;
+        screen.IsActive = isActive;
+        screen.LastSeenAt = DateTime.UtcNow;
+        screen.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
         logger.LogInformation(
-            "Updated IsActive={IsActive} for screen {DisplayId}",
+            "Updated IsActive={IsActive} for screen {ScreenId}",
             isActive,
-            display.Id
+            screen.Id
         );
     }
 
     public async Task<int> GetScreenCountByStatusAsync(ApprovalStatus status)
     {
-        return await db.Displays.CountAsync(d => d.ApprovalStatus == status);
+        return await db.Screens.CountAsync(d => d.ApprovalStatus == status);
     }
 
     public async Task<ScreenWithCampaignsResponse> GetScreenWithCampaignsAsync(Guid id)
     {
-        var display = await db
-            .Displays.Include(d => d.CampaignAssignments)
+        var screen = await db
+            .Screens.Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign.CampaignAssets)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == id);
 
-        if (display == null)
+        if (screen == null)
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
         var allCampaigns = await db
@@ -395,9 +404,9 @@ public class ScreenManagementService(
             .ToListAsync();
 
         var utcNow = DateTime.UtcNow;
-        var response = MapToDetailsResponse(display);
+        var response = MapToDetailsResponse(screen);
         var assignedCampaigns = MapCampaignSummaries(
-            display.CampaignAssignments.Select(ca => ca.Campaign),
+            screen.CampaignAssignments.Select(ca => ca.Campaign),
             utcNow
         );
         var allCampaignSummaries = MapCampaignSummaries(allCampaigns, utcNow);
@@ -411,21 +420,21 @@ public class ScreenManagementService(
         List<Guid> campaignIds
     )
     {
-        var display = await db.Displays.FindAsync(id);
-        if (display == null)
+        var screen = await db.Screens.FindAsync(id);
+        if (screen == null)
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
         if (!string.IsNullOrWhiteSpace(request.Name))
-            display.Name = request.Name;
+            screen.Name = request.Name;
         if (request.Description != null)
-            display.Description = request.Description;
+            screen.Description = request.Description;
         if (!string.IsNullOrWhiteSpace(request.Location))
-            display.Location = request.Location;
+            screen.Location = request.Location;
 
         if (request.ShufflePlayback.HasValue)
-            display.ShufflePlayback = request.ShufflePlayback.Value;
+            screen.ShufflePlayback = request.ShufflePlayback.Value;
 
-        display.UpdatedAt = DateTime.UtcNow;
+        screen.UpdatedAt = DateTime.UtcNow;
 
         // Validate that all requested campaigns exist before changing assignments
         var distinctCampaignIds = campaignIds.Distinct().ToList();
@@ -440,7 +449,7 @@ public class ScreenManagementService(
 
         // Update campaign assignments
         var currentAssignments = await db
-            .CampaignAssignments.Where(ca => ca.DisplayId == id)
+            .CampaignAssignments.Where(ca => ca.ScreenId == id)
             .ToListAsync();
 
         var toRemove = currentAssignments
@@ -454,36 +463,36 @@ public class ScreenManagementService(
                 new CampaignAssignment
                 {
                     CampaignId = campaignId,
-                    DisplayId = id,
+                    ScreenId = id,
                     CreatedAt = DateTime.UtcNow,
                 }
             );
 
         await db.SaveChangesAsync();
         logger.LogInformation(
-            "Screen {DisplayId} updated with {CampaignCount} campaigns",
-            display.Id,
+            "Screen {ScreenId} updated with {CampaignCount} campaigns",
+            screen.Id,
             campaignIds.Count
         );
 
         await audit.LogAsync(
             "Updated",
             ScreenAuditEntity,
-            display.Id.ToString(),
-            $"Updated screen '{display.Name}' ({campaignIds.Count} campaign(s) assigned)"
+            screen.Id.ToString(),
+            $"Updated screen '{screen.Name}' ({campaignIds.Count} campaign(s) assigned)"
         );
 
-        await syncService.SyncScreenAsync(display.Id);
+        await syncService.SyncScreenAsync(screen.Id);
     }
 
     public async Task<List<ScreenDetailsResponse>> GetApprovedScreensAsync(bool includeOffline)
     {
-        var query = db.Displays.Where(d => d.ApprovalStatus == ApprovalStatus.Approved);
+        var query = db.Screens.Where(d => d.ApprovalStatus == ApprovalStatus.Approved);
         if (!includeOffline)
             query = query.Where(d => d.IsActive);
 
-        var displays = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
-        return displays.Select(MapToDetailsResponse).ToList();
+        var screens = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
+        return screens.Select(MapToDetailsResponse).ToList();
     }
 
     public async Task<bool> SendCommandAsync(Guid id, string command)
@@ -491,8 +500,8 @@ public class ScreenManagementService(
         if (!ScreenCommands.IsValid(command))
             throw new ArgumentException($"Unknown screen command '{command}'.", nameof(command));
 
-        var display = await db.Displays.FirstOrDefaultAsync(d => d.Id == id);
-        if (display == null)
+        var screen = await db.Screens.FirstOrDefaultAsync(d => d.Id == id);
+        if (screen == null)
             throw new KeyNotFoundException($"Screen with ID {id} not found");
 
         var delivered = await syncService.SendCommandAsync(id, command);
@@ -500,7 +509,7 @@ public class ScreenManagementService(
             "Command",
             ScreenAuditEntity,
             id.ToString(),
-            $"Sent command '{command}' to screen '{display.Name}'{(delivered ? "" : " (screen offline)")}"
+            $"Sent command '{command}' to screen '{screen.Name}'{(delivered ? "" : " (screen offline)")}"
         );
         return delivered;
     }
@@ -555,24 +564,24 @@ public class ScreenManagementService(
             .ToList();
     }
 
-    private static ScreenDetailsResponse MapToDetailsResponse(Display display)
+    private static ScreenDetailsResponse MapToDetailsResponse(Screen screen)
     {
         return new ScreenDetailsResponse
         {
-            Id = display.Id,
-            Name = display.Name,
-            Description = display.Description,
-            Location = display.Location,
-            ScreenIdentifier = display.ScreenIdentifier,
-            ApprovalStatus = display.ApprovalStatus.ToString(),
-            UserId = display.UserId,
-            ResolutionWidth = display.ResolutionWidth,
-            ResolutionHeight = display.ResolutionHeight,
-            IsActive = display.IsActive,
-            LastSeenAt = display.LastSeenAt,
-            ShufflePlayback = display.ShufflePlayback,
-            CreatedAt = display.CreatedAt,
-            UpdatedAt = display.UpdatedAt,
+            Id = screen.Id,
+            Name = screen.Name,
+            Description = screen.Description,
+            Location = screen.Location,
+            ScreenIdentifier = screen.ScreenIdentifier,
+            ApprovalStatus = screen.ApprovalStatus.ToString(),
+            UserId = screen.UserId,
+            ResolutionWidth = screen.ResolutionWidth,
+            ResolutionHeight = screen.ResolutionHeight,
+            IsActive = screen.IsActive,
+            LastSeenAt = screen.LastSeenAt,
+            ShufflePlayback = screen.ShufflePlayback,
+            CreatedAt = screen.CreatedAt,
+            UpdatedAt = screen.UpdatedAt,
         };
     }
 }

@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Mireya.Database.Models;
 
 /// <summary>
-///     Tracks the sync status of assets for each display
+///     Tracks the sync status of assets for each screen
 /// </summary>
 public class AssetSyncStatus
 {
@@ -12,7 +12,7 @@ public class AssetSyncStatus
     public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
-    public Guid DisplayId { get; set; }
+    public Guid ScreenId { get; set; }
 
     [Required]
     public Guid AssetId { get; set; }
@@ -43,7 +43,7 @@ public class AssetSyncStatus
 
     // Navigation properties
     [AllowNull]
-    public Display Display { get; set; } = null;
+    public Screen Screen { get; set; } = null;
 
     [AllowNull]
     public Asset Asset { get; set; } = null;

@@ -37,11 +37,17 @@ public class LocalDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        // The client stores only campaigns and assets needed for offline playback.
+        // These server navigation types would otherwise be discovered implicitly.
+        modelBuilder.Ignore<Screen>();
+        modelBuilder.Ignore<CampaignAssignment>();
+
         // Configure BackendInstance
         modelBuilder.Entity<BackendInstance>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.BaseUrl).IsUnique();
+            entity.HasIndex(e => e.IsCurrentBackend).IsUnique().HasFilter("\"IsCurrentBackend\"");
             entity.Property(e => e.BaseUrl).HasMaxLength(500).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(200);
         });
@@ -101,6 +107,17 @@ public class LocalDbContext : DbContext
             entity.HasIndex(e => e.Type);
             entity.Property(e => e.Name).HasMaxLength(200);
             entity.Property(e => e.Source).HasMaxLength(2000);
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_Assets_FileSizeBytes_NonNegative",
+                    "\"FileSizeBytes\" IS NULL OR \"FileSizeBytes\" >= 0"
+                );
+                table.HasCheckConstraint(
+                    "CK_Assets_DurationSeconds_Positive",
+                    "\"DurationSeconds\" IS NULL OR \"DurationSeconds\" > 0"
+                );
+            });
         });
 
         // Configure Campaign - using server model
@@ -109,15 +126,37 @@ public class LocalDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Name);
             entity.Property(e => e.Name).HasMaxLength(200);
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_Campaigns_DateRange",
+                    "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\""
+                );
+                table.HasCheckConstraint(
+                    "CK_Campaigns_RecurrenceDaysMask_Range",
+                    "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127"
+                );
+                table.HasCheckConstraint(
+                    "CK_Campaigns_DailyWindow_Complete",
+                    "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)"
+                );
+            });
         });
 
         // Configure CampaignAsset - using server model
         modelBuilder.Entity<CampaignAsset>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.CampaignId);
             entity.HasIndex(e => e.AssetId);
-            entity.HasIndex(e => new { e.CampaignId, e.Position });
+            entity.HasIndex(e => new { e.CampaignId, e.Position }).IsUnique();
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint("CK_CampaignAssets_Position_Positive", "\"Position\" > 0");
+                table.HasCheckConstraint(
+                    "CK_CampaignAssets_DurationSeconds_Positive",
+                    "\"DurationSeconds\" IS NULL OR \"DurationSeconds\" > 0"
+                );
+            });
 
             entity
                 .HasOne(ca => ca.Campaign)

@@ -21,7 +21,7 @@
                        Foreground="White"
                        LetterSpacing="8"
                        HorizontalAlignment="Center" />
-            <TextBlock Text="{Binding DisplayName}"
+            <TextBlock Text="{Binding ScreenName}"
                        FontSize="30"
                        Foreground="White"
                        HorizontalAlignment="Center" />

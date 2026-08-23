@@ -16,11 +16,11 @@ public class AssetSyncEndpoints : ICarterModule
         screenGroup.MapGet("/status", HandleGetSyncStatusAsync);
         screenGroup.MapGet("/campaigns", HandleGetCampaignsAsync);
 
-        app.MapGet("/api/assetsync/{displayId:guid}/status", HandleGetDisplaySyncStatusAsync)
+        app.MapGet("/api/assetsync/{screenId:guid}/status", HandleGetScreenSyncStatusAsync)
             .RequireAuthorization(Roles.Admin);
     }
 
-    private static async Task<(Guid DisplayId, IResult? Error)> ResolveDisplayIdAsync(
+    private static async Task<(Guid ScreenId, IResult? Error)> ResolveScreenIdAsync(
         ClaimsPrincipal user,
         IAssetSyncService assetSyncService
     )
@@ -29,11 +29,11 @@ public class AssetSyncEndpoints : ICarterModule
         if (string.IsNullOrEmpty(userId))
             return (Guid.Empty, Results.Unauthorized());
 
-        var displayId = await assetSyncService.GetDisplayIdByUserIdAsync(userId);
-        if (displayId == null)
-            return (Guid.Empty, Results.NotFound("Display not found for current user"));
+        var screenId = await assetSyncService.GetScreenIdByUserIdAsync(userId);
+        if (screenId == null)
+            return (Guid.Empty, Results.NotFound("Screen not found for current user"));
 
-        return (displayId.Value, null);
+        return (screenId.Value, null);
     }
 
     private static async Task<IResult> HandleUpdateSyncStatusAsync(
@@ -43,18 +43,18 @@ public class AssetSyncEndpoints : ICarterModule
         ILogger<AssetSyncEndpoints> logger
     )
     {
-        var (displayId, error) = await ResolveDisplayIdAsync(user, assetSyncService);
+        var (screenId, error) = await ResolveScreenIdAsync(user, assetSyncService);
         if (error != null)
             return error;
 
         try
         {
-            var result = await assetSyncService.UpdateAssetSyncStatusAsync(displayId, request);
+            var result = await assetSyncService.UpdateAssetSyncStatusAsync(screenId, request);
             return result switch
             {
                 AssetSyncUpdateResult.Updated => Results.Ok(),
                 AssetSyncUpdateResult.NotFound => Results.NotFound(
-                    $"No sync status found for asset {request.AssetId} on this display."
+                    $"No sync status found for asset {request.AssetId} on this screen."
                 ),
                 AssetSyncUpdateResult.InvalidState => Results.BadRequest(
                     $"Invalid sync state '{request.SyncState}'."
@@ -64,7 +64,7 @@ public class AssetSyncEndpoints : ICarterModule
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error updating sync status for display {DisplayId}", displayId);
+            logger.LogError(ex, "Error updating sync status for screen {ScreenId}", screenId);
             return Results.Problem("An error occurred while updating sync status.");
         }
     }
@@ -75,18 +75,18 @@ public class AssetSyncEndpoints : ICarterModule
         ILogger<AssetSyncEndpoints> logger
     )
     {
-        var (displayId, error) = await ResolveDisplayIdAsync(user, assetSyncService);
+        var (screenId, error) = await ResolveScreenIdAsync(user, assetSyncService);
         if (error != null)
             return error;
 
         try
         {
-            var statuses = await assetSyncService.GetSyncStatusForDisplayAsync(displayId);
+            var statuses = await assetSyncService.GetSyncStatusForScreenAsync(screenId);
             return Results.Ok(statuses);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving sync status for display {DisplayId}", displayId);
+            logger.LogError(ex, "Error retrieving sync status for screen {ScreenId}", screenId);
             return Results.Problem("An error occurred while retrieving sync status.");
         }
     }
@@ -97,36 +97,36 @@ public class AssetSyncEndpoints : ICarterModule
         ILogger<AssetSyncEndpoints> logger
     )
     {
-        var (displayId, error) = await ResolveDisplayIdAsync(user, assetSyncService);
+        var (screenId, error) = await ResolveScreenIdAsync(user, assetSyncService);
         if (error != null)
             return error;
 
         try
         {
-            var campaigns = await assetSyncService.GetCampaignsToSyncAsync(displayId);
+            var campaigns = await assetSyncService.GetCampaignsToSyncAsync(screenId);
             return Results.Ok(campaigns);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving campaigns for display {DisplayId}", displayId);
+            logger.LogError(ex, "Error retrieving campaigns for screen {ScreenId}", screenId);
             return Results.Problem("An error occurred while retrieving campaigns.");
         }
     }
 
-    private static async Task<IResult> HandleGetDisplaySyncStatusAsync(
-        Guid displayId,
+    private static async Task<IResult> HandleGetScreenSyncStatusAsync(
+        Guid screenId,
         IAssetSyncService assetSyncService,
         ILogger<AssetSyncEndpoints> logger
     )
     {
         try
         {
-            var statuses = await assetSyncService.GetSyncStatusForDisplayAsync(displayId);
+            var statuses = await assetSyncService.GetSyncStatusForScreenAsync(screenId);
             return Results.Ok(statuses);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error retrieving sync status for display {DisplayId}", displayId);
+            logger.LogError(ex, "Error retrieving sync status for screen {ScreenId}", screenId);
             return Results.Problem("An error occurred while retrieving sync status.");
         }
     }

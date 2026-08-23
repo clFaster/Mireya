@@ -15,15 +15,15 @@ public class PlaybackEvent
     /// <summary>
     ///     The screen that played the asset.
     /// </summary>
-    public Guid DisplayId { get; set; }
+    public Guid ScreenId { get; set; }
 
-    public Display? Display { get; set; }
+    public Screen? Screen { get; set; }
 
     /// <summary>
     ///     Screen name captured at play time.
     /// </summary>
     [MaxLength(200)]
-    public string DisplayName { get; set; } = string.Empty;
+    public string ScreenName { get; set; } = string.Empty;
 
     /// <summary>
     ///     The asset that was shown. Nullable because the asset may be deleted afterwards.

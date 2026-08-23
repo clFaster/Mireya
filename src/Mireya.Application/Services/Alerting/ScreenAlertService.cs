@@ -35,7 +35,7 @@ public interface IScreenAlertService
     /// </summary>
     Task SendAsync(
         ScreenAlertKind kind,
-        Display display,
+        Screen screen,
         CancellationToken cancellationToken = default
     );
 }
@@ -48,7 +48,7 @@ public class ScreenAlertService(
 {
     public async Task SendAsync(
         ScreenAlertKind kind,
-        Display display,
+        Screen screen,
         CancellationToken cancellationToken = default
     )
     {
@@ -56,7 +56,7 @@ public class ScreenAlertService(
         if (!settings.Enabled || string.IsNullOrWhiteSpace(settings.OfflineWebhookUrl))
             return;
 
-        var payload = BuildPayload(kind, display);
+        var payload = BuildPayload(kind, screen);
 
         try
         {
@@ -70,7 +70,7 @@ public class ScreenAlertService(
             {
                 logger.LogWarning(
                     "Screen alert webhook for {ScreenName} returned {StatusCode}",
-                    display.Name,
+                    screen.Name,
                     (int)response.StatusCode
                 );
             }
@@ -82,33 +82,33 @@ public class ScreenAlertService(
                 ex,
                 "Failed to deliver screen {Kind} alert for {ScreenName}",
                 kind,
-                display.Name
+                screen.Name
             );
         }
     }
 
-    private static ScreenAlertPayload BuildPayload(ScreenAlertKind kind, Display display)
+    private static ScreenAlertPayload BuildPayload(ScreenAlertKind kind, Screen screen)
     {
         var (eventName, message) = kind switch
         {
             ScreenAlertKind.Offline => (
                 "screen.offline",
-                $"Screen '{display.Name}' ({display.Location}) is offline."
+                $"Screen '{screen.Name}' ({screen.Location}) is offline."
             ),
             ScreenAlertKind.Online => (
                 "screen.online",
-                $"Screen '{display.Name}' ({display.Location}) is back online."
+                $"Screen '{screen.Name}' ({screen.Location}) is back online."
             ),
-            _ => ("screen.unknown", $"Screen '{display.Name}' changed state."),
+            _ => ("screen.unknown", $"Screen '{screen.Name}' changed state."),
         };
 
         return new ScreenAlertPayload(
             eventName,
-            display.Id,
-            display.Name,
-            display.Location,
-            display.ScreenIdentifier,
-            display.LastSeenAt,
+            screen.Id,
+            screen.Name,
+            screen.Location,
+            screen.ScreenIdentifier,
+            screen.LastSeenAt,
             DateTime.UtcNow,
             message
         );

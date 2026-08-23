@@ -198,7 +198,12 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("Type");
 
-                    b.ToTable("Assets");
+                    b.ToTable("Assets", t =>
+                        {
+                            t.HasCheckConstraint("CK_Assets_DurationSeconds_Positive", "\"DurationSeconds\" IS NULL OR \"DurationSeconds\" > 0");
+
+                            t.HasCheckConstraint("CK_Assets_FileSizeBytes_NonNegative", "\"FileSizeBytes\" IS NULL OR \"FileSizeBytes\" >= 0");
+                        });
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.AssetSyncStatus", b =>
@@ -213,9 +218,6 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("DisplayId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("ErrorMessage")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
@@ -226,6 +228,9 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Property<int>("Progress")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid>("ScreenId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("SyncState")
                         .HasColumnType("INTEGER");
 
@@ -233,14 +238,15 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.HasIndex("DisplayId");
-
                     b.HasIndex("SyncState");
 
-                    b.HasIndex("DisplayId", "AssetId")
+                    b.HasIndex("ScreenId", "AssetId")
                         .IsUnique();
 
-                    b.ToTable("AssetSyncStatuses");
+                    b.ToTable("AssetSyncStatuses", t =>
+                        {
+                            t.HasCheckConstraint("CK_AssetSyncStatuses_Progress_Range", "\"Progress\" BETWEEN 0 AND 100");
+                        });
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.AuditLog", b =>
@@ -342,9 +348,20 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasFilter("\"IsDefault\"");
+
                     b.HasIndex("Name");
 
-                    b.ToTable("Campaigns");
+                    b.ToTable("Campaigns", t =>
+                        {
+                            t.HasCheckConstraint("CK_Campaigns_DailyWindow_Complete", "(\"DailyStartTime\" IS NULL) = (\"DailyEndTime\" IS NULL)");
+
+                            t.HasCheckConstraint("CK_Campaigns_DateRange", "\"StartDateUtc\" IS NULL OR \"EndDateUtc\" IS NULL OR \"StartDateUtc\" <= \"EndDateUtc\"");
+
+                            t.HasCheckConstraint("CK_Campaigns_RecurrenceDaysMask_Range", "\"RecurrenceDaysMask\" IS NULL OR \"RecurrenceDaysMask\" BETWEEN 0 AND 127");
+                        });
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.CampaignAsset", b =>
@@ -369,12 +386,15 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasIndex("AssetId");
 
-                    b.HasIndex("CampaignId");
-
                     b.HasIndex("CampaignId", "Position")
                         .IsUnique();
 
-                    b.ToTable("CampaignAssets");
+                    b.ToTable("CampaignAssets", t =>
+                        {
+                            t.HasCheckConstraint("CK_CampaignAssets_DurationSeconds_Positive", "\"DurationSeconds\" IS NULL OR \"DurationSeconds\" > 0");
+
+                            t.HasCheckConstraint("CK_CampaignAssets_Position_Positive", "\"Position\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.CampaignAssignment", b =>
@@ -389,22 +409,55 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("DisplayId")
+                    b.Property<Guid>("ScreenId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CampaignId");
+                    b.HasIndex("ScreenId");
 
-                    b.HasIndex("DisplayId");
-
-                    b.HasIndex("CampaignId", "DisplayId")
+                    b.HasIndex("CampaignId", "ScreenId")
                         .IsUnique();
 
                     b.ToTable("CampaignAssignments");
                 });
 
-            modelBuilder.Entity("Mireya.Database.Models.Display", b =>
+            modelBuilder.Entity("Mireya.Database.Models.PlaybackEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AssetName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("PlayedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ScreenId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ScreenName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("PlayedAtUtc");
+
+                    b.HasIndex("ScreenId");
+
+                    b.ToTable("PlaybackEvents");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.Screen", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -462,51 +515,24 @@ namespace Mireya.Database.Sqlite.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApprovalStatus");
-
-                    b.HasIndex("IsActive");
+                    b.HasIndex("CreatedAt");
 
                     b.HasIndex("Name");
 
                     b.HasIndex("ScreenIdentifier")
                         .IsUnique();
 
-                    b.ToTable("Displays");
-                });
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
-            modelBuilder.Entity("Mireya.Database.Models.PlaybackEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                    b.HasIndex("ApprovalStatus", "IsActive", "CreatedAt");
 
-                    b.Property<Guid?>("AssetId")
-                        .HasColumnType("TEXT");
+                    b.ToTable("Screens", t =>
+                        {
+                            t.HasCheckConstraint("CK_Screens_ResolutionHeight_Positive", "\"ResolutionHeight\" IS NULL OR \"ResolutionHeight\" > 0");
 
-                    b.Property<string>("AssetName")
-                        .HasMaxLength(255)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("DisplayId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("PlayedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssetId");
-
-                    b.HasIndex("DisplayId");
-
-                    b.HasIndex("PlayedAtUtc");
-
-                    b.ToTable("PlaybackEvents");
+                            t.HasCheckConstraint("CK_Screens_ResolutionWidth_Positive", "\"ResolutionWidth\" IS NULL OR \"ResolutionWidth\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.User", b =>
@@ -638,15 +664,15 @@ namespace Mireya.Database.Sqlite.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Mireya.Database.Models.Display", "Display")
+                    b.HasOne("Mireya.Database.Models.Screen", "Screen")
                         .WithMany()
-                        .HasForeignKey("DisplayId")
+                        .HasForeignKey("ScreenId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Asset");
 
-                    b.Navigation("Display");
+                    b.Navigation("Screen");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.CampaignAsset", b =>
@@ -676,26 +702,34 @@ namespace Mireya.Database.Sqlite.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Mireya.Database.Models.Display", "Display")
+                    b.HasOne("Mireya.Database.Models.Screen", "Screen")
                         .WithMany("CampaignAssignments")
-                        .HasForeignKey("DisplayId")
+                        .HasForeignKey("ScreenId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Campaign");
 
-                    b.Navigation("Display");
+                    b.Navigation("Screen");
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.PlaybackEvent", b =>
                 {
-                    b.HasOne("Mireya.Database.Models.Display", "Display")
+                    b.HasOne("Mireya.Database.Models.Screen", "Screen")
                         .WithMany()
-                        .HasForeignKey("DisplayId")
+                        .HasForeignKey("ScreenId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Display");
+                    b.Navigation("Screen");
+                });
+
+            modelBuilder.Entity("Mireya.Database.Models.Screen", b =>
+                {
+                    b.HasOne("Mireya.Database.Models.User", null)
+                        .WithOne()
+                        .HasForeignKey("Mireya.Database.Models.Screen", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Mireya.Database.Models.Campaign", b =>
@@ -705,7 +739,7 @@ namespace Mireya.Database.Sqlite.Migrations
                     b.Navigation("CampaignAssignments");
                 });
 
-            modelBuilder.Entity("Mireya.Database.Models.Display", b =>
+            modelBuilder.Entity("Mireya.Database.Models.Screen", b =>
                 {
                     b.Navigation("CampaignAssignments");
                 });

@@ -6,7 +6,7 @@ namespace Mireya.Application.Tests;
 
 public class ScreenOfflineMonitorTests
 {
-    private static Display AddDisplay(
+    private static Screen AddScreen(
         TestDatabase db,
         ApprovalStatus status,
         bool isActive,
@@ -14,7 +14,7 @@ public class ScreenOfflineMonitorTests
         DateTime? offlineAlertedAt = null
     )
     {
-        var display = new Display
+        var screen = new Screen
         {
             Name = "Screen",
             Location = "Lobby",
@@ -24,9 +24,9 @@ public class ScreenOfflineMonitorTests
             LastSeenAt = lastSeenAt,
             OfflineAlertedAt = offlineAlertedAt,
         };
-        db.Context.Displays.Add(display);
+        db.Context.Screens.Add(screen);
         db.Context.SaveChanges();
-        return display;
+        return screen;
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class ScreenOfflineMonitorTests
     {
         using var db = new TestDatabase();
         var now = DateTime.UtcNow;
-        var display = AddDisplay(
+        var screen = AddScreen(
             db,
             ApprovalStatus.Approved,
             isActive: false,
@@ -54,10 +54,10 @@ public class ScreenOfflineMonitorTests
             .Received(1)
             .SendAsync(
                 ScreenAlertKind.Offline,
-                Arg.Is<Display>(d => d.Id == display.Id),
+                Arg.Is<Screen>(d => d.Id == screen.Id),
                 Arg.Any<CancellationToken>()
             );
-        Assert.NotNull((await db.NewContext().Displays.FindAsync(display.Id))!.OfflineAlertedAt);
+        Assert.NotNull((await db.NewContext().Screens.FindAsync(screen.Id))!.OfflineAlertedAt);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class ScreenOfflineMonitorTests
     {
         using var db = new TestDatabase();
         var now = DateTime.UtcNow;
-        AddDisplay(db, ApprovalStatus.Approved, isActive: false, lastSeenAt: now.AddMinutes(-2));
+        AddScreen(db, ApprovalStatus.Approved, isActive: false, lastSeenAt: now.AddMinutes(-2));
         var alerts = Substitute.For<IScreenAlertService>();
 
         var sent = await ScreenOfflineMonitorService.EvaluateOnceAsync(
@@ -78,11 +78,7 @@ public class ScreenOfflineMonitorTests
         Assert.Equal(0, sent);
         await alerts
             .DidNotReceive()
-            .SendAsync(
-                Arg.Any<ScreenAlertKind>(),
-                Arg.Any<Display>(),
-                Arg.Any<CancellationToken>()
-            );
+            .SendAsync(Arg.Any<ScreenAlertKind>(), Arg.Any<Screen>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -90,7 +86,7 @@ public class ScreenOfflineMonitorTests
     {
         using var db = new TestDatabase();
         var now = DateTime.UtcNow;
-        AddDisplay(
+        AddScreen(
             db,
             ApprovalStatus.Approved,
             isActive: false,
@@ -109,11 +105,7 @@ public class ScreenOfflineMonitorTests
         Assert.Equal(0, sent);
         await alerts
             .DidNotReceive()
-            .SendAsync(
-                Arg.Any<ScreenAlertKind>(),
-                Arg.Any<Display>(),
-                Arg.Any<CancellationToken>()
-            );
+            .SendAsync(Arg.Any<ScreenAlertKind>(), Arg.Any<Screen>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -121,7 +113,7 @@ public class ScreenOfflineMonitorTests
     {
         using var db = new TestDatabase();
         var now = DateTime.UtcNow;
-        var display = AddDisplay(
+        var screen = AddScreen(
             db,
             ApprovalStatus.Approved,
             isActive: true,
@@ -142,10 +134,10 @@ public class ScreenOfflineMonitorTests
             .Received(1)
             .SendAsync(
                 ScreenAlertKind.Online,
-                Arg.Is<Display>(d => d.Id == display.Id),
+                Arg.Is<Screen>(d => d.Id == screen.Id),
                 Arg.Any<CancellationToken>()
             );
-        Assert.Null((await db.NewContext().Displays.FindAsync(display.Id))!.OfflineAlertedAt);
+        Assert.Null((await db.NewContext().Screens.FindAsync(screen.Id))!.OfflineAlertedAt);
     }
 
     [Fact]
@@ -153,7 +145,7 @@ public class ScreenOfflineMonitorTests
     {
         using var db = new TestDatabase();
         var now = DateTime.UtcNow;
-        AddDisplay(db, ApprovalStatus.Pending, isActive: false, lastSeenAt: now.AddMinutes(-30));
+        AddScreen(db, ApprovalStatus.Pending, isActive: false, lastSeenAt: now.AddMinutes(-30));
         var alerts = Substitute.For<IScreenAlertService>();
 
         var sent = await ScreenOfflineMonitorService.EvaluateOnceAsync(

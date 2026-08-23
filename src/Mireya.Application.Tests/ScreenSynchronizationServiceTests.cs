@@ -10,7 +10,7 @@ namespace Mireya.Application.Tests;
 
 public class ScreenSynchronizationServiceTests
 {
-    private static Display NewDisplay() =>
+    private static Screen NewScreen() =>
         new()
         {
             Name = "Screen",
@@ -59,7 +59,7 @@ public class ScreenSynchronizationServiceTests
     public async Task SyncScreen_WithNoActiveCampaign_FallsBackToDefaultCampaign()
     {
         using var db = new TestDatabase();
-        var display = NewDisplay();
+        var screen = NewScreen();
         var asset = new Asset
         {
             Name = "Default Asset",
@@ -73,12 +73,12 @@ public class ScreenSynchronizationServiceTests
             IsEnabled = true,
         };
         defaultCampaign.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
-        db.Context.Displays.Add(display);
+        db.AddScreen(screen);
         db.Context.Campaigns.Add(defaultCampaign);
         await db.Context.SaveChangesAsync();
 
         var (service, captured) = CreateService(db);
-        await service.SyncScreenAsync(display.Id);
+        await service.SyncScreenAsync(screen.Id);
 
         var config = captured();
         Assert.NotNull(config);
@@ -90,7 +90,7 @@ public class ScreenSynchronizationServiceTests
     public async Task SyncScreen_WithActiveAssignedCampaign_DoesNotUseDefault()
     {
         using var db = new TestDatabase();
-        var display = NewDisplay();
+        var screen = NewScreen();
         var asset = new Asset
         {
             Name = "Asset",
@@ -99,19 +99,19 @@ public class ScreenSynchronizationServiceTests
         };
         var assigned = new Campaign { Name = "Assigned", IsEnabled = true };
         assigned.CampaignAssets.Add(new CampaignAsset { Asset = asset, Position = 1 });
-        assigned.CampaignAssignments.Add(new CampaignAssignment { Display = display });
+        assigned.CampaignAssignments.Add(new CampaignAssignment { Screen = screen });
         var defaultCampaign = new Campaign
         {
             Name = "House Ads",
             IsDefault = true,
             IsEnabled = true,
         };
-        db.Context.Displays.Add(display);
+        db.AddScreen(screen);
         db.Context.Campaigns.AddRange(assigned, defaultCampaign);
         await db.Context.SaveChangesAsync();
 
         var (service, captured) = CreateService(db);
-        await service.SyncScreenAsync(display.Id);
+        await service.SyncScreenAsync(screen.Id);
 
         var config = captured();
         Assert.NotNull(config);
@@ -123,19 +123,19 @@ public class ScreenSynchronizationServiceTests
     public async Task SyncScreen_WithDisabledDefaultCampaign_SendsNoCampaigns()
     {
         using var db = new TestDatabase();
-        var display = NewDisplay();
+        var screen = NewScreen();
         var defaultCampaign = new Campaign
         {
             Name = "House Ads",
             IsDefault = true,
             IsEnabled = false,
         };
-        db.Context.Displays.Add(display);
+        db.AddScreen(screen);
         db.Context.Campaigns.Add(defaultCampaign);
         await db.Context.SaveChangesAsync();
 
         var (service, captured) = CreateService(db);
-        await service.SyncScreenAsync(display.Id);
+        await service.SyncScreenAsync(screen.Id);
 
         var config = captured();
         Assert.NotNull(config);
@@ -146,22 +146,22 @@ public class ScreenSynchronizationServiceTests
     public async Task SendCommand_ToConnectedScreen_DeliversToScreenUser()
     {
         using var db = new TestDatabase();
-        var display = NewDisplay();
-        db.Context.Displays.Add(display);
+        var screen = NewScreen();
+        db.AddScreen(screen);
         await db.Context.SaveChangesAsync();
 
         var (service, _, hub) = CreateServiceWithHub(db);
-        var delivered = await service.SendCommandAsync(display.Id, "restart");
+        var delivered = await service.SendCommandAsync(screen.Id, "restart");
 
         Assert.True(delivered);
-        await hub.Received(1).SendCommandAsync(display.UserId!, "restart");
+        await hub.Received(1).SendCommandAsync(screen.UserId!, "restart");
     }
 
     [Fact]
     public async Task SendCommand_ToScreenWithoutUser_ReturnsFalse()
     {
         using var db = new TestDatabase();
-        var display = new Display
+        var screen = new Screen
         {
             Name = "Screen",
             Location = "Lobby",
@@ -169,11 +169,11 @@ public class ScreenSynchronizationServiceTests
             UserId = null,
             ApprovalStatus = ApprovalStatus.Approved,
         };
-        db.Context.Displays.Add(display);
+        db.AddScreen(screen);
         await db.Context.SaveChangesAsync();
 
         var (service, _, hub) = CreateServiceWithHub(db);
-        var delivered = await service.SendCommandAsync(display.Id, "restart");
+        var delivered = await service.SendCommandAsync(screen.Id, "restart");
 
         Assert.False(delivered);
         await hub.DidNotReceive().SendCommandAsync(Arg.Any<string>(), Arg.Any<string>());

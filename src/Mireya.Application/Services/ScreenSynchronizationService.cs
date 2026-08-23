@@ -11,10 +11,10 @@ namespace Mireya.Application.Services;
 
 public interface IScreenSynchronizationService
 {
-    Task SyncScreenAsync(Guid displayId);
-    Task SyncScreensAsync(IEnumerable<Guid> displayIds);
-    Task<Guid?> GetDisplayIdByUserIdAsync(string userId);
-    Task<bool> SendCommandAsync(Guid displayId, string command);
+    Task SyncScreenAsync(Guid screenId);
+    Task SyncScreensAsync(IEnumerable<Guid> screenIds);
+    Task<Guid?> GetScreenIdByUserIdAsync(string userId);
+    Task<bool> SendCommandAsync(Guid screenId, string command);
 }
 
 public class ScreenSynchronizationService(
@@ -24,79 +24,79 @@ public class ScreenSynchronizationService(
     ILogger<ScreenSynchronizationService> logger
 ) : IScreenSynchronizationService
 {
-    public async Task SyncScreensAsync(IEnumerable<Guid> displayIds)
+    public async Task SyncScreensAsync(IEnumerable<Guid> screenIds)
     {
         // Sequential execution required: DbContext is not thread-safe
-        foreach (var displayId in displayIds.Distinct())
-            await SyncScreenAsync(displayId);
+        foreach (var screenId in screenIds.Distinct())
+            await SyncScreenAsync(screenId);
     }
 
-    public async Task SyncScreenAsync(Guid displayId)
+    public async Task SyncScreenAsync(Guid screenId)
     {
-        var display = await db
-            .Displays.Include(d => d.CampaignAssignments)
+        var screen = await db
+            .Screens.Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign.CampaignAssets)
                     .ThenInclude(ca => ca.Asset)
             .AsSplitQuery()
-            .FirstOrDefaultAsync(d => d.Id == displayId);
+            .FirstOrDefaultAsync(d => d.Id == screenId);
 
-        if (display == null)
+        if (screen == null)
         {
-            logger.LogWarning("Screen {DisplayId} not found", displayId);
+            logger.LogWarning("Screen {ScreenId} not found", screenId);
             return;
         }
 
-        if (display.UserId == null)
+        if (screen.UserId == null)
         {
-            logger.LogWarning("Screen {DisplayId} has no UserId, skipping sync", displayId);
+            logger.LogWarning("Screen {ScreenId} has no UserId, skipping sync", screenId);
             return;
         }
 
-        var campaigns = BuildCampaignList(display);
+        var campaigns = BuildCampaignList(screen);
         if (campaigns.Count == 0)
             campaigns = await BuildDefaultCampaignListAsync();
-        var config = BuildScreenConfiguration(display, campaigns);
+        var config = BuildScreenConfiguration(screen, campaigns);
 
         logger.LogInformation(
             "SYNC SCREEN: {ScreenName} - CampaignAssignments: {Count}, Active campaigns: {ConfigCampaigns}, UserId: {UserId}",
-            display.Name,
-            display.CampaignAssignments.Count,
+            screen.Name,
+            screen.CampaignAssignments.Count,
             campaigns.Count,
-            display.UserId
+            screen.UserId
         );
 
-        await hubContext.SendConfigurationUpdateAsync(display.UserId, config);
-        await NotifyAssetSyncAsync(display, display.UserId, campaigns);
+        await hubContext.SendConfigurationUpdateAsync(screen.UserId, config);
+        await NotifyAssetSyncAsync(screen, screen.UserId, campaigns);
     }
 
-    public async Task<Guid?> GetDisplayIdByUserIdAsync(string userId)
+    public async Task<Guid?> GetScreenIdByUserIdAsync(string userId)
     {
-        var display = await db.Displays.FirstOrDefaultAsync(d => d.UserId == userId);
-        return display?.Id;
+        var screen = await db.Screens.FirstOrDefaultAsync(d => d.UserId == userId);
+        return screen?.Id;
     }
 
-    public async Task<bool> SendCommandAsync(Guid displayId, string command)
+    public async Task<bool> SendCommandAsync(Guid screenId, string command)
     {
-        var display = await db.Displays.FirstOrDefaultAsync(d => d.Id == displayId);
-        if (display?.UserId == null)
+        var screen = await db.Screens.FirstOrDefaultAsync(d => d.Id == screenId);
+        if (screen?.UserId == null)
         {
             logger.LogWarning(
-                "Cannot send command '{Command}' to screen {DisplayId}: screen not found or has no associated user",
+                "Cannot send command '{Command}' to screen {ScreenId}: screen not found or has no associated user",
                 command,
-                displayId
+                screenId
             );
             return false;
         }
 
-        await hubContext.SendCommandAsync(display.UserId, command);
-        logger.LogInformation("Sent command '{Command}' to screen {DisplayId}", command, displayId);
+        await hubContext.SendCommandAsync(screen.UserId, command);
+        logger.LogInformation("Sent command '{Command}' to screen {ScreenId}", command, screenId);
         return true;
     }
 
-    private static List<CampaignDetail> BuildCampaignList(Display display)
+    private static List<CampaignDetail> BuildCampaignList(Screen screen)
     {
         var utcNow = DateTime.UtcNow;
-        return EffectiveCampaigns(display)
+        return EffectiveCampaigns(screen)
             .Where(c => c.IsActiveAt(utcNow))
             .OrderByDescending(c => c.Priority)
             .ThenBy(c => c.Name)
@@ -104,8 +104,8 @@ public class ScreenSynchronizationService(
             .ToList();
     }
 
-    private static IEnumerable<Database.Models.Campaign> EffectiveCampaigns(Display display) =>
-        display.CampaignAssignments.Select(ca => ca.Campaign);
+    private static IEnumerable<Database.Models.Campaign> EffectiveCampaigns(Screen screen) =>
+        screen.CampaignAssignments.Select(ca => ca.Campaign);
 
     /// <summary>
     ///     Builds the playlist from the global default (fallback) campaign, when one is configured and
@@ -151,24 +151,24 @@ public class ScreenSynchronizationService(
         );
 
     private static ScreenConfiguration BuildScreenConfiguration(
-        Display display,
+        Screen screen,
         List<CampaignDetail> campaigns
     ) =>
         new()
         {
-            DisplayId = display.Id,
-            ScreenName = display.Name,
-            Description = display.Description,
-            Location = display.Location,
-            ApprovalStatus = display.ApprovalStatus.ToString(),
-            ResolutionWidth = display.ResolutionWidth,
-            ResolutionHeight = display.ResolutionHeight,
-            ShufflePlayback = display.ShufflePlayback,
+            ScreenId = screen.Id,
+            ScreenName = screen.Name,
+            Description = screen.Description,
+            Location = screen.Location,
+            ApprovalStatus = screen.ApprovalStatus.ToString(),
+            ResolutionWidth = screen.ResolutionWidth,
+            ResolutionHeight = screen.ResolutionHeight,
+            ShufflePlayback = screen.ShufflePlayback,
             Campaigns = campaigns,
         };
 
     private async Task NotifyAssetSyncAsync(
-        Display display,
+        Screen screen,
         string userId,
         List<CampaignDetail> campaigns
     )
@@ -179,10 +179,10 @@ public class ScreenSynchronizationService(
             .Distinct()
             .ToList();
 
-        await assetSyncService.CleanupSyncStatusAsync(display.Id, allAssetIds);
-        await assetSyncService.InitializeSyncStatusForDisplayAsync(display.Id, allAssetIds);
+        await assetSyncService.CleanupSyncStatusAsync(screen.Id, allAssetIds);
+        await assetSyncService.InitializeSyncStatusForScreenAsync(screen.Id, allAssetIds);
 
-        var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(display.Id);
+        var campaignsToSync = await assetSyncService.GetCampaignsToSyncAsync(screen.Id);
         await hubContext.StartAssetSyncAsync(userId, campaignsToSync);
 
         logger.LogInformation(

@@ -9,7 +9,7 @@ namespace Mireya.Application.Services.Alerting;
 /// <summary>
 ///     Periodically checks approved screens and raises a webhook alert when one has been offline
 ///     longer than the configured threshold, and a recovery alert when it comes back. State is
-///     tracked via <see cref="Display.OfflineAlertedAt" /> so each outage alerts exactly once and
+///     tracked via <see cref="Screen.OfflineAlertedAt" /> so each outage alerts exactly once and
 ///     survives application restarts.
 /// </summary>
 public class ScreenOfflineMonitorService(
@@ -72,26 +72,26 @@ public class ScreenOfflineMonitorService(
         var sent = 0;
 
         var approved = await db
-            .Displays.Where(d => d.ApprovalStatus == ApprovalStatus.Approved)
+            .Screens.Where(d => d.ApprovalStatus == ApprovalStatus.Approved)
             .ToListAsync(cancellationToken);
 
-        foreach (var display in approved)
+        foreach (var screen in approved)
         {
             var offlineLongEnough =
-                !display.IsActive
-                && display.LastSeenAt.HasValue
-                && display.LastSeenAt.Value <= threshold;
+                !screen.IsActive
+                && screen.LastSeenAt.HasValue
+                && screen.LastSeenAt.Value <= threshold;
 
-            if (offlineLongEnough && display.OfflineAlertedAt is null)
+            if (offlineLongEnough && screen.OfflineAlertedAt is null)
             {
-                await alerts.SendAsync(ScreenAlertKind.Offline, display, cancellationToken);
-                display.OfflineAlertedAt = utcNow;
+                await alerts.SendAsync(ScreenAlertKind.Offline, screen, cancellationToken);
+                screen.OfflineAlertedAt = utcNow;
                 sent++;
             }
-            else if (display.IsActive && display.OfflineAlertedAt is not null)
+            else if (screen.IsActive && screen.OfflineAlertedAt is not null)
             {
-                await alerts.SendAsync(ScreenAlertKind.Online, display, cancellationToken);
-                display.OfflineAlertedAt = null;
+                await alerts.SendAsync(ScreenAlertKind.Online, screen, cancellationToken);
+                screen.OfflineAlertedAt = null;
                 sent++;
             }
         }

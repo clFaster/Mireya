@@ -1,42 +1,37 @@
-# Database entity-relationship model
+# Database model and optimization decisions
 
-This document describes the current persisted EF Core models for the Mireya API and
-display client. It is intended as the starting point for a separate normalization,
-integrity, query-pattern, and index review.
+This document is the review baseline for Mireya's two databases after the database
+optimization and the complete `Display` to `Screen` rename.
 
-The diagrams are based on the current model snapshots:
+- The API can use PostgreSQL or SQLite. Both providers have the same logical model.
+- The client uses SQLite as an offline cache.
+- `PK`, `FK`, and `UK` mean primary key, foreign key, and unique key.
+- Snapshot fields intentionally keep readable historical text even after referenced
+  data is deleted.
 
-- API: `Mireya.Database.Postgres/Migrations/MireyaDbContextModelSnapshot.cs` and
-  `Mireya.Database.Sqlite/Migrations/MireyaDbContextModelSnapshot.cs`
-- Client: `Mireya.ApiClient/Migrations/LocalDbContextModelSnapshot.cs`
-
-The API's PostgreSQL and SQLite snapshots have the same logical schema. Their physical
-column types differ, so the diagrams use provider-neutral types. `PK`, `FK`, and `UK`
-mean primary key, foreign key, and single-column unique key. Nullable columns are
-identified in comments. Composite keys and indexes are listed after each diagram.
-
-## API database: signage domain
+## API database
 
 ```mermaid
 erDiagram
-    Displays ||--o{ CampaignAssignments : receives
-    Campaigns ||--o{ CampaignAssignments : is_assigned_by
+    AspNetUsers ||--o| Screens : authenticates
+    Screens ||--o{ CampaignAssignments : receives
+    Campaigns ||--o{ CampaignAssignments : assigns
     Campaigns ||--o{ CampaignAssets : contains
-    Assets ||--o{ CampaignAssets : is_used_by
-    Displays ||--o{ AssetSyncStatuses : reports
-    Assets ||--o{ AssetSyncStatuses : is_synchronized_by
-    Displays ||--o{ PlaybackEvents : produces
+    Assets ||--o{ CampaignAssets : uses
+    Screens ||--o{ AssetSyncStatuses : reports
+    Assets ||--o{ AssetSyncStatuses : tracks
+    Screens ||--o{ PlaybackEvents : produces
 
-    Displays {
+    Screens {
         guid Id PK
         string Name
-        string Description "nullable, max 500"
-        string Location "max 100"
-        string ScreenIdentifier UK "max 10"
-        int ApprovalStatus "enum"
-        string UserId "nullable, logical user reference"
-        int ResolutionWidth "nullable"
-        int ResolutionHeight "nullable"
+        string Description "nullable"
+        string Location
+        string ScreenIdentifier UK
+        int ApprovalStatus
+        string UserId FK,UK "nullable"
+        int ResolutionWidth "nullable, positive"
+        int ResolutionHeight "nullable, positive"
         bool IsActive
         datetime LastSeenAt "nullable"
         datetime OfflineAlertedAt "nullable"
@@ -47,213 +42,141 @@ erDiagram
 
     Assets {
         guid Id PK
-        string Name "max 200"
-        string Description "nullable, max 1000"
-        int Type "enum"
-        string Source "max 2000"
-        string ThumbnailSource "nullable, max 2000"
-        string Tags "nullable, CSV, max 500"
-        long FileSizeBytes "nullable"
-        int DurationSeconds "nullable"
+        string Name
+        string Description "nullable"
+        int Type
+        string Source
+        string ThumbnailSource "nullable"
+        string Tags "nullable CSV"
+        long FileSizeBytes "nullable, non-negative"
+        int DurationSeconds "nullable, positive"
         bool IsMuted
-        int ImageFit "enum"
+        int ImageFit
         datetime CreatedAt
         datetime UpdatedAt
     }
 
     Campaigns {
         guid Id PK
-        string Name "max 200"
-        string Description "nullable, max 1000"
+        string Name
+        string Description "nullable"
         datetime CreatedAt
         datetime UpdatedAt
         bool IsEnabled
         datetime StartDateUtc "nullable"
         datetime EndDateUtc "nullable"
         int Priority
-        bool IsDefault
-        int RecurrenceDaysMask "nullable bitmask"
-        time DailyStartTime "nullable"
-        time DailyEndTime "nullable"
-        string RecurrenceTimeZoneId "nullable, max 100"
+        bool IsDefault "at most one true"
+        int RecurrenceDaysMask "nullable, 0 to 127"
+        time DailyStartTime "nullable pair"
+        time DailyEndTime "nullable pair"
+        string RecurrenceTimeZoneId "nullable"
     }
 
     CampaignAssets {
         guid Id PK
         guid CampaignId FK
         guid AssetId FK
-        int Position
-        int DurationSeconds "nullable"
+        int Position "positive"
+        int DurationSeconds "nullable, positive"
     }
 
     CampaignAssignments {
         guid Id PK
         guid CampaignId FK
-        guid DisplayId FK
+        guid ScreenId FK
         datetime CreatedAt
     }
 
     AssetSyncStatuses {
         guid Id PK
-        guid DisplayId FK
+        guid ScreenId FK
         guid AssetId FK
-        int SyncState "enum"
-        int Progress
-        string ErrorMessage "nullable, max 1000"
+        int SyncState
+        int Progress "0 to 100"
+        string ErrorMessage "nullable"
         datetime LastUpdatedAt
         datetime CreatedAt
     }
 
     PlaybackEvents {
         guid Id PK
-        guid DisplayId FK
-        string DisplayName "snapshot, max 200"
-        guid AssetId "nullable, logical asset reference"
-        string AssetName "nullable snapshot, max 255"
+        guid ScreenId FK
+        string ScreenName "historical snapshot"
+        guid AssetId "nullable logical reference"
+        string AssetName "nullable snapshot"
         datetime PlayedAtUtc
     }
 
     AuditLogs {
         guid Id PK
         datetime Timestamp
-        string ActorUserId "nullable, logical user reference"
-        string ActorName "nullable, max 256"
-        string Action "max 100"
-        string EntityType "max 100"
+        string ActorUserId "nullable logical reference"
+        string ActorName "nullable snapshot"
+        string Action
+        string EntityType
         string EntityId "nullable polymorphic reference"
-        string Summary "nullable, max 2000"
+        string Summary "nullable"
     }
-```
-
-### API domain constraints and indexes
-
-| Table | Unique constraints beyond the primary key | Non-unique indexes | Delete behavior |
-| --- | --- | --- | --- |
-| `Displays` | `ScreenIdentifier` | `Name`, `IsActive`, `ApprovalStatus` | Deleting a display cascades to assignments, sync statuses, and playback events |
-| `Assets` | — | `Type` | Deleting an asset is restricted while campaign items reference it; sync statuses cascade |
-| `Campaigns` | — | `Name`, `CreatedAt` | Deleting a campaign cascades to campaign items and assignments |
-| `CampaignAssets` | (`CampaignId`, `Position`) | `CampaignId`, `AssetId` | Both foreign keys are required |
-| `CampaignAssignments` | (`CampaignId`, `DisplayId`) | `CampaignId`, `DisplayId` | Both foreign keys cascade |
-| `AssetSyncStatuses` | (`DisplayId`, `AssetId`) | `DisplayId`, `AssetId`, `SyncState` | Both foreign keys cascade |
-| `PlaybackEvents` | — | `PlayedAtUtc`, `DisplayId`, `AssetId` | Only `DisplayId` is an enforced foreign key |
-| `AuditLogs` | — | `Timestamp`, `EntityType`, `ActorUserId` | No foreign keys; historical values are snapshots/logical references |
-
-## API database: ASP.NET Core Identity
-
-Identity tables are separated from the domain diagram to keep both diagrams readable.
-They live in the same API database.
-
-```mermaid
-erDiagram
-    AspNetUsers ||--o{ AspNetUserClaims : has
-    AspNetUsers ||--o{ AspNetUserLogins : has
-    AspNetUsers ||--o{ AspNetUserTokens : has
-    AspNetUsers ||--o{ AspNetUserRoles : receives
-    AspNetRoles ||--o{ AspNetUserRoles : grants
-    AspNetRoles ||--o{ AspNetRoleClaims : has
 
     AspNetUsers {
         string Id PK
-        string UserName "nullable, max 256"
-        string NormalizedUserName UK "nullable, max 256"
-        string Email "nullable, max 256"
-        string NormalizedEmail "nullable, max 256"
-        bool EmailConfirmed
-        string PasswordHash "nullable"
-        string SecurityStamp "nullable"
-        string ConcurrencyStamp "nullable"
-        string PhoneNumber "nullable"
-        bool PhoneNumberConfirmed
-        bool TwoFactorEnabled
-        datetimeoffset LockoutEnd "nullable"
-        bool LockoutEnabled
-        int AccessFailedCount
+        string UserName
+        string NormalizedUserName UK
+        string Email "nullable"
         datetime CreatedAt
         datetime LastLoginAt "nullable"
     }
-
-    AspNetRoles {
-        string Id PK
-        string Name "nullable, max 256"
-        string NormalizedName UK "nullable, max 256"
-        string ConcurrencyStamp "nullable"
-    }
-
-    AspNetUserRoles {
-        string UserId PK, FK
-        string RoleId PK, FK
-    }
-
-    AspNetUserClaims {
-        int Id PK
-        string UserId FK
-        string ClaimType "nullable"
-        string ClaimValue "nullable"
-    }
-
-    AspNetUserLogins {
-        string LoginProvider PK
-        string ProviderKey PK
-        string ProviderDisplayName "nullable"
-        string UserId FK
-    }
-
-    AspNetUserTokens {
-        string UserId PK, FK
-        string LoginProvider PK
-        string Name PK
-        string Value "nullable"
-    }
-
-    AspNetRoleClaims {
-        int Id PK
-        string RoleId FK
-        string ClaimType "nullable"
-        string ClaimValue "nullable"
-    }
 ```
 
-All Identity relationships cascade on deletion. Its indexes beyond primary keys are:
+The remaining ASP.NET Core Identity tables are unchanged:
+`AspNetRoles`, `AspNetUserClaims`, `AspNetUserLogins`, `AspNetUserTokens`,
+`AspNetUserRoles`, and `AspNetRoleClaims`.
 
-| Table | Unique indexes | Non-unique indexes |
+### API integrity and index summary
+
+| Table | Database rule | Important indexes |
 | --- | --- | --- |
-| `AspNetUsers` | `NormalizedUserName` | `NormalizedEmail` |
-| `AspNetRoles` | `NormalizedName` | — |
-| `AspNetUserClaims` | — | `UserId` |
-| `AspNetUserLogins` | — | `UserId` |
-| `AspNetUserRoles` | — | `RoleId` |
-| `AspNetUserTokens` | — | — |
-| `AspNetRoleClaims` | — | `RoleId` |
+| `Screens` | identifier unique; user optional but linked to a real user and used by at most one screen; resolutions positive | name, created time, and `(ApprovalStatus, IsActive, CreatedAt)` |
+| `Campaigns` | at most one default; valid date range; daily times both set or both empty; weekday mask in range | name, created time, partial unique default index |
+| `CampaignAssets` | position unique inside a campaign; positive position and duration | asset and `(CampaignId, Position)` |
+| `CampaignAssignments` | a campaign can be assigned to a screen only once | screen and `(CampaignId, ScreenId)` |
+| `AssetSyncStatuses` | one state per screen and asset; progress from 0 to 100 | asset, state, and `(ScreenId, AssetId)` |
+| `PlaybackEvents` | screen is enforced; asset is deliberately a logical reference | played time, screen, asset |
+| `AuditLogs` | deliberately stores historical/logical references | time, entity type, actor |
+
+Deleting a screen cascades to its assignments, sync states, and playback events.
+Deleting an asset is blocked while a campaign still uses it. Audit data remains
+independent so that history is not silently erased.
 
 ## Client database
 
-The client database is SQLite. It stores offline copies of server assets and campaigns,
-backend-scoped mappings, credentials, download state, and local settings.
+The client database is a cache, not a second copy of the whole server database. It
+therefore contains only data required for backend selection, authentication, content
+synchronization, downloads, scheduling, and local settings.
 
 ```mermaid
 erDiagram
     BackendInstances ||--o| BackendCredentials : has
-    BackendInstances ||--o{ BackendAssets : provides
-    Assets ||--o{ BackendAssets : is_mapped_by
-    BackendInstances ||--o{ BackendCampaigns : provides
-    Campaigns ||--o{ BackendCampaigns : is_mapped_by
+    BackendInstances ||--o{ BackendAssets : maps
+    Assets ||--o{ BackendAssets : belongs_to
+    BackendInstances ||--o{ BackendCampaigns : maps
+    Campaigns ||--o{ BackendCampaigns : belongs_to
     BackendInstances ||--o{ DownloadedAssets : tracks
     Campaigns ||--o{ CampaignAssets : contains
-    Assets ||--o{ CampaignAssets : is_used_by
-    Campaigns ||--o{ CampaignAssignment : is_assigned_by
-    Display ||--o{ CampaignAssignment : receives
+    Assets ||--o{ CampaignAssets : uses
 
     BackendInstances {
         guid Id PK
-        string BaseUrl UK "max 500"
-        string Name "nullable, max 200"
-        bool IsCurrentBackend
+        string BaseUrl UK
+        string Name "nullable"
+        bool IsCurrentBackend "at most one true"
         datetime LastConnectedAt
         datetime CreatedAt
     }
 
     BackendCredentials {
-        guid BackendInstanceId PK, FK
+        guid BackendInstanceId PK,FK
         string Username "nullable"
         bytes EncryptedAccessToken "nullable"
         bytes EncryptedRefreshToken "nullable"
@@ -264,119 +187,111 @@ erDiagram
     }
 
     BackendAssets {
-        guid BackendInstanceId PK, FK
-        guid AssetId PK, FK
+        guid BackendInstanceId PK,FK
+        guid AssetId PK,FK
         datetime SyncedAt
     }
 
     BackendCampaigns {
-        guid BackendInstanceId PK, FK
-        guid CampaignId PK, FK
+        guid BackendInstanceId PK,FK
+        guid CampaignId PK,FK
         datetime SyncedAt
     }
 
     DownloadedAssets {
-        guid BackendInstanceId PK, FK
-        guid AssetId PK "logical asset reference"
-        string LocalPath "nullable, max 500"
-        string FileExtension "nullable, max 10"
+        guid BackendInstanceId PK,FK
+        guid AssetId PK "logical cache reference"
+        string LocalPath "nullable"
+        string FileExtension "nullable"
         bool IsDownloaded
         datetime DownloadedAt "nullable"
         datetime LastCheckedAt
     }
 
-    ClientSettings {
-        string Key PK "max 100"
-        string Value
-    }
-
     Assets {
         guid Id PK
-        string Name "max 200"
-        string Description "nullable, max 1000"
-        int Type "enum"
-        string Source "max 2000"
-        string ThumbnailSource "nullable, max 2000"
-        string Tags "nullable, CSV, max 500"
-        long FileSizeBytes "nullable"
-        int DurationSeconds "nullable"
-        bool IsMuted
-        int ImageFit "enum"
-        datetime CreatedAt
+        string Name
+        int Type
+        string Source
+        string Tags "nullable CSV"
+        long FileSizeBytes "nullable, non-negative"
+        int DurationSeconds "nullable, positive"
         datetime UpdatedAt
     }
 
     Campaigns {
         guid Id PK
-        string Name "max 200"
-        string Description "nullable, max 1000"
-        datetime CreatedAt
-        datetime UpdatedAt
+        string Name
         bool IsEnabled
         datetime StartDateUtc "nullable"
         datetime EndDateUtc "nullable"
         int Priority
-        bool IsDefault
-        int RecurrenceDaysMask "nullable bitmask"
-        time DailyStartTime "nullable"
-        time DailyEndTime "nullable"
-        string RecurrenceTimeZoneId "nullable, max 100"
+        bool IsDefault "one per backend is allowed"
+        int RecurrenceDaysMask "nullable, 0 to 127"
+        time DailyStartTime "nullable pair"
+        time DailyEndTime "nullable pair"
+        datetime UpdatedAt
     }
 
     CampaignAssets {
         guid Id PK
         guid CampaignId FK
         guid AssetId FK
-        int Position
-        int DurationSeconds "nullable"
+        int Position "positive"
+        int DurationSeconds "nullable, positive"
     }
 
-    CampaignAssignment {
-        guid Id PK
-        guid CampaignId FK
-        guid DisplayId FK
-        datetime CreatedAt
-    }
-
-    Display {
-        guid Id PK
-        string Name "max 200"
-        string Description "nullable, max 500"
-        string Location "max 100"
-        string ScreenIdentifier "max 10"
-        int ApprovalStatus "enum"
-        string UserId "nullable"
-        int ResolutionWidth "nullable"
-        int ResolutionHeight "nullable"
-        bool IsActive
-        datetime LastSeenAt "nullable"
-        datetime OfflineAlertedAt "nullable"
-        bool ShufflePlayback
-        datetime CreatedAt
-        datetime UpdatedAt
+    ClientSettings {
+        string Key PK
+        string Value
     }
 ```
 
-### Client constraints and indexes
+The old client tables `Display` and `CampaignAssignment` were accidental EF model
+discoveries. The client did not use them, so the optimization migration removes them
+instead of renaming them. This reduces the client schema from 11 to 9 tables.
 
-| Table | Unique constraints beyond the primary key | Non-unique indexes | Delete behavior |
-| --- | --- | --- | --- |
-| `BackendInstances` | `BaseUrl` | — | Deletion cascades to credentials, backend mappings, and download records |
-| `BackendCredentials` | — | — | Shared primary key is also the backend foreign key |
-| `BackendAssets` | — | `AssetId` | Both foreign keys cascade |
-| `BackendCampaigns` | — | `CampaignId` | Both foreign keys cascade |
-| `DownloadedAssets` | — | `IsDownloaded` | Only `BackendInstanceId` is an enforced foreign key |
-| `Assets` | — | `Type` | Deletion cascades to backend mappings and campaign items |
-| `Campaigns` | — | `Name` | Deletion cascades to backend mappings, campaign items, and assignments |
-| `CampaignAssets` | — | `CampaignId`, `AssetId`, (`CampaignId`, `Position`) | Both foreign keys cascade; campaign position is not unique on the client |
-| `CampaignAssignment` | — | `CampaignId`, `DisplayId` | Both foreign keys cascade |
-| `Display` | — | — | Deletion cascades to assignments |
-| `ClientSettings` | — | — | No relationships |
+### Client integrity and index summary
 
-`Display` and `CampaignAssignment` are present in the client migration snapshot even
-though `LocalDbContext` does not expose them as `DbSet` properties. EF discovers them
-through `Campaign.CampaignAssignments` because the client reuses the server `Campaign`
-entity. They are therefore part of the physical client schema shown above.
+| Table | Database rule | Important indexes |
+| --- | --- | --- |
+| `BackendInstances` | URL unique; at most one current backend | partial unique current-backend index |
+| `CampaignAssets` | position unique inside a campaign; positive position and duration | asset and `(CampaignId, Position)` |
+| `Campaigns` | valid date range, paired daily times, weekday mask in range | name |
+| `Assets` | non-negative size and positive duration | type |
+| `DownloadedAssets` | backend is enforced; asset remains a logical cache reference | downloaded state |
+
+The client does **not** enforce one global default campaign. It can cache several
+backends, and each backend may legitimately supply its own default campaign.
+
+## Decisions in simple words
+
+| Finding | Best decision | Why |
+| --- | --- | --- |
+| `Display` and `Screen` were mixed | Use `Screen` everywhere in the domain, database, API contract, generated client, UI bindings, and tests | One term prevents mapping mistakes and makes the API easier to understand |
+| API default campaign was application-only | Add a partial unique index and switch defaults transactionally | The database now protects the rule even during concurrent requests |
+| Current client backend was application-only | Add a partial unique index and switch it transactionally | The cache cannot end up with two active backends |
+| Screen-to-user link was only text | Add a real optional foreign key and a unique index | A screen cannot point to a missing user or share one login with another screen |
+| Screen registration writes a user, role, and screen | Put all three writes in one transaction | A failed registration cannot leave an orphan login behind |
+| Invalid ranges and negative values were possible | Add check constraints | Bad values are rejected close to the source instead of failing later in playback |
+| Client campaign positions could duplicate | Match the server's unique `(CampaignId, Position)` rule | Offline ordering stays deterministic |
+| Several indexes duplicated the first part of a composite index | Remove the redundant ones | Less storage and faster inserts/updates without losing query support |
+| Playback and audit references can outlive their source | Keep snapshots/logical references | Reports and audit history must remain readable after content or users are removed |
+| Download records can outlive cached asset metadata | Keep `DownloadedAssets.AssetId` logical | File cleanup must still work after cache metadata disappears |
+| Tags are comma-separated | Keep for now; normalize into `Tags` and `AssetTags` only when tag filtering becomes important | A join table is cleaner, but currently adds sync complexity without proven benefit |
+| Client entities use globally generated GUIDs across backends | Keep the existing IDs now; introduce dedicated backend-scoped client entities in a later phase if multi-backend collisions or cleanup bugs are observed | A full key redesign is high-risk and is not justified by the current access pattern |
+
+## Migration safety
+
+The API migration renames `Displays` to `Screens`; it does not drop and recreate the
+table. Existing screen rows and child references are retained. Before stricter rules
+are enabled, legacy invalid values are normalized: impossible dimensions/durations are
+cleared, progress is clamped, duplicate positions are ordered deterministically, and
+duplicate default/current flags keep the most recently updated row.
+
+The rename is a breaking API contract change (`displayId`/`displayIds` become
+`screenId`/`screenIds`). Server and clients should therefore be deployed as one
+coordinated release.
 
 ## Provider type mapping
 
@@ -384,45 +299,8 @@ entity. They are therefore part of the physical client schema shown above.
 | --- | --- | --- |
 | `guid` | `uuid` | `TEXT` |
 | `datetime` | `timestamp with time zone` | `TEXT` |
-| `datetimeoffset` | `timestamp with time zone` | `TEXT` |
 | `time` | `time without time zone` | `TEXT` |
 | `bool` | `boolean` | `INTEGER` |
-| `int` | `integer` | `INTEGER` |
-| `long` | `bigint` | `INTEGER` |
-| `string` | `text` / `character varying(n)` | `TEXT` |
-| `bytes` | `bytea` when used | `BLOB` |
-
-## Initial optimization review candidates
-
-These are questions raised by the structure, not recommendations to change the model
-without checking real query plans, row counts, retention rules, and sync behavior.
-
-1. **Client model scope:** determine whether `Display` and `CampaignAssignment` should
-   be stored locally. If not, exclude the server navigation graph from the client model
-   or use dedicated client persistence entities.
-2. **Client parity:** the API enforces unique (`CampaignId`, `Position`) and unique
-   (`CampaignId`, `DisplayId`) constraints, while the client does not. Decide whether
-   offline data should preserve the same invariants.
-3. **Logical references:** `Displays.UserId`, `AuditLogs.ActorUserId`,
-   `PlaybackEvents.AssetId`, and `DownloadedAssets.AssetId` are not foreign keys.
-   Some are intentionally historical or polymorphic; document that decision and check
-   whether the others can accumulate orphans.
-4. **Backend scoping:** client campaign items reference global `Assets` and `Campaigns`
-   by GUID, not by (`BackendInstanceId`, entity ID). Confirm that every sync and cleanup
-   path prevents data from different backends from being combined.
-5. **Single-current/default invariants:** neither `BackendInstances.IsCurrentBackend`
-   nor `Campaigns.IsDefault` is constrained to a single true row. Verify that the
-   application transactionally maintains these invariants, or consider provider-specific
-   filtered/partial unique indexes.
-6. **Possible redundant indexes:** on the API, standalone leading-column indexes such
-   as `CampaignAssets.CampaignId`, `CampaignAssignments.CampaignId`, and
-   `AssetSyncStatuses.DisplayId` may overlap their composite unique indexes. Confirm with
-   provider query plans before removing anything.
-7. **Reporting indexes:** current playback reports filter by `PlayedAtUtc` and then group
-   by display or asset, so the time index matches the leading filter. If subject-specific
-   time-range filters are added, compare it with composite candidates such as
-   (`DisplayId`, `PlayedAtUtc`) and (`AssetId`, `PlayedAtUtc`) using production-shaped
-   queries and data volumes.
-8. **Tags:** comma-separated `Assets.Tags` is simple for transport but is not relational
-   and cannot efficiently support indexed tag membership. Normalize it only if tag
-   filtering/selectivity and asset volume justify the extra tables and sync complexity.
+| `int` / `long` | `integer` / `bigint` | `INTEGER` |
+| `string` | `text` or `varchar(n)` | `TEXT` |
+| `bytes` | `bytea` | `BLOB` |

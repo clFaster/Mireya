@@ -17,7 +17,7 @@ public class CampaignServiceTests
             Source = "/uploads/x.png",
         };
 
-    private static Display NewDisplay(string name = "Screen") =>
+    private static Screen NewScreen(string name = "Screen") =>
         new()
         {
             Name = name,
@@ -28,15 +28,15 @@ public class CampaignServiceTests
         };
 
     [Fact]
-    public async Task UpdateCampaign_WithNullDisplayIds_PreservesExistingAssignments()
+    public async Task UpdateCampaign_WithNullScreenIds_PreservesExistingAssignments()
     {
         using var db = new TestDatabase();
         var sync = Substitute.For<IScreenSynchronizationService>();
 
         var asset = NewAsset();
-        var display = NewDisplay();
+        var screen = NewScreen();
         db.Context.Assets.Add(asset);
-        db.Context.Displays.Add(display);
+        db.AddScreen(screen);
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
@@ -45,11 +45,11 @@ public class CampaignServiceTests
                 "Campaign A",
                 null,
                 [new CampaignAssetDto(asset.Id, 1, 5)],
-                [display.Id]
+                [screen.Id]
             )
         );
 
-        // Update content only, passing null DisplayIds (campaign editor behaviour)
+        // Update content only, passing null ScreenIds (campaign editor behaviour)
         await service.UpdateCampaignAsync(
             created.Id,
             new UpdateCampaignRequest(
@@ -66,19 +66,19 @@ public class CampaignServiceTests
             .ToListAsync();
 
         Assert.Single(assignments);
-        Assert.Equal(display.Id, assignments[0].DisplayId);
+        Assert.Equal(screen.Id, assignments[0].ScreenId);
     }
 
     [Fact]
-    public async Task UpdateCampaign_WithEmptyDisplayIds_UnassignsAll()
+    public async Task UpdateCampaign_WithEmptyScreenIds_UnassignsAll()
     {
         using var db = new TestDatabase();
         var sync = Substitute.For<IScreenSynchronizationService>();
 
         var asset = NewAsset();
-        var display = NewDisplay();
+        var screen = NewScreen();
         db.Context.Assets.Add(asset);
-        db.Context.Displays.Add(display);
+        db.AddScreen(screen);
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
@@ -87,7 +87,7 @@ public class CampaignServiceTests
                 "Campaign B",
                 null,
                 [new CampaignAssetDto(asset.Id, 1, 5)],
-                [display.Id]
+                [screen.Id]
             )
         );
 
@@ -108,16 +108,17 @@ public class CampaignServiceTests
     }
 
     [Fact]
-    public async Task UpdateCampaign_WithDisplayIds_SyncsAffectedScreens()
+    public async Task UpdateCampaign_WithScreenIds_SyncsAffectedScreens()
     {
         using var db = new TestDatabase();
         var sync = Substitute.For<IScreenSynchronizationService>();
 
         var asset = NewAsset();
-        var oldDisplay = NewDisplay("Old");
-        var newDisplay = NewDisplay("New");
+        var oldScreen = NewScreen("Old");
+        var newScreen = NewScreen("New");
         db.Context.Assets.Add(asset);
-        db.Context.Displays.AddRange(oldDisplay, newDisplay);
+        db.AddScreen(oldScreen);
+        db.AddScreen(newScreen);
         await db.Context.SaveChangesAsync();
 
         var service = new CampaignService(db.Context, sync, Substitute.For<IAuditService>());
@@ -126,7 +127,7 @@ public class CampaignServiceTests
                 "Campaign C",
                 null,
                 [new CampaignAssetDto(asset.Id, 1, 5)],
-                [oldDisplay.Id]
+                [oldScreen.Id]
             )
         );
 
@@ -138,7 +139,7 @@ public class CampaignServiceTests
                 "Campaign C",
                 null,
                 [new CampaignAssetDto(asset.Id, 1, 5)],
-                [newDisplay.Id]
+                [newScreen.Id]
             )
         );
 
@@ -146,7 +147,7 @@ public class CampaignServiceTests
         await sync.Received(1)
             .SyncScreensAsync(
                 Arg.Is<IEnumerable<Guid>>(ids =>
-                    ids.Contains(oldDisplay.Id) && ids.Contains(newDisplay.Id)
+                    ids.Contains(oldScreen.Id) && ids.Contains(newScreen.Id)
                 )
             );
     }

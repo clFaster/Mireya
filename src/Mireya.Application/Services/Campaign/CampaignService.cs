@@ -8,7 +8,7 @@ namespace Mireya.Application.Services.Campaign;
 
 public interface ICampaignService
 {
-    Task<List<CampaignSummary>> GetCampaignsAsync(Guid? displayId = null);
+    Task<List<CampaignSummary>> GetCampaignsAsync(Guid? screenId = null);
     Task<CampaignDetail> GetCampaignAsync(Guid id);
     Task<CampaignDetail> CreateCampaignAsync(CreateCampaignRequest request);
     Task<CampaignDetail> UpdateCampaignAsync(Guid id, UpdateCampaignRequest request);
@@ -22,7 +22,7 @@ public class CampaignService(
     IAuditService audit
 ) : ICampaignService
 {
-    public async Task<List<CampaignSummary>> GetCampaignsAsync(Guid? displayId = null)
+    public async Task<List<CampaignSummary>> GetCampaignsAsync(Guid? screenId = null)
     {
         var query = db
             .Campaigns.Include(c => c.CampaignAssets)
@@ -30,9 +30,9 @@ public class CampaignService(
             .AsSplitQuery()
             .AsQueryable();
 
-        if (displayId.HasValue)
+        if (screenId.HasValue)
             query = query.Where(c =>
-                c.CampaignAssignments.Any(ca => ca.DisplayId == displayId.Value)
+                c.CampaignAssignments.Any(ca => ca.ScreenId == screenId.Value)
             );
 
         var campaigns = await query.OrderByDescending(c => c.UpdatedAt).ToListAsync();
@@ -62,7 +62,7 @@ public class CampaignService(
             .Campaigns.Include(c => c.CampaignAssets)
                 .ThenInclude(ca => ca.Asset)
             .Include(c => c.CampaignAssignments)
-                .ThenInclude(ca => ca.Display)
+                .ThenInclude(ca => ca.Screen)
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id);
 
@@ -85,11 +85,11 @@ public class CampaignService(
             ))
             .ToList();
 
-        var displays = campaign
-            .CampaignAssignments.Select(ca => new DisplayInfo(
-                ca.Display.Id,
-                ca.Display.Name,
-                ca.Display.Location
+        var screens = campaign
+            .CampaignAssignments.Select(ca => new ScreenInfo(
+                ca.Screen.Id,
+                ca.Screen.Name,
+                ca.Screen.Location
             ))
             .ToList();
 
@@ -98,7 +98,7 @@ public class CampaignService(
             campaign.Name,
             campaign.Description,
             assets,
-            displays,
+            screens,
             campaign.CreatedAt,
             campaign.UpdatedAt,
             campaign.IsEnabled,
@@ -128,8 +128,8 @@ public class CampaignService(
             request.Assets.Count
         );
 
-        if (request.DisplayIds.Any())
-            await VerifyDisplaysExistAsync(request.DisplayIds);
+        if (request.ScreenIds.Any())
+            await VerifyScreensExistAsync(request.ScreenIds);
 
         var campaign = new Database.Models.Campaign
         {
@@ -152,12 +152,9 @@ public class CampaignService(
 
         db.Campaigns.Add(campaign);
         AddCampaignAssets(campaign.Id, request.Assets);
-        AddCampaignAssignments(campaign.Id, request.DisplayIds);
+        AddCampaignAssignments(campaign.Id, request.ScreenIds);
 
-        if (request.IsDefault)
-            await ClearOtherDefaultsAsync(campaign.Id);
-
-        await db.SaveChangesAsync();
+        await SaveWithSingleDefaultAsync(campaign, request.IsDefault);
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
 
@@ -170,9 +167,9 @@ public class CampaignService(
 
         // A new default campaign affects every screen that currently has nothing active.
         if (request.IsDefault)
-            await SyncAllDisplaysAsync();
+            await SyncAllScreensAsync();
         else
-            await syncService.SyncScreensAsync(request.DisplayIds);
+            await syncService.SyncScreensAsync(request.ScreenIds);
 
         return campaignDetail;
     }
@@ -196,7 +193,7 @@ public class CampaignService(
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
-        var oldDisplayIds = campaign.CampaignAssignments.Select(ca => ca.DisplayId).ToList();
+        var oldScreenIds = campaign.CampaignAssignments.Select(ca => ca.ScreenId).ToList();
         var defaultChanged = campaign.IsDefault != request.IsDefault;
 
         await VerifyAssetsExistAsync(
@@ -204,8 +201,8 @@ public class CampaignService(
             request.Assets.Count
         );
 
-        if (request.DisplayIds is { Count: > 0 })
-            await VerifyDisplaysExistAsync(request.DisplayIds);
+        if (request.ScreenIds is { Count: > 0 })
+            await VerifyScreensExistAsync(request.ScreenIds);
 
         campaign.Name = request.Name;
         campaign.Description = request.Description;
@@ -222,24 +219,21 @@ public class CampaignService(
             ? null
             : request.RecurrenceTimeZoneId;
 
-        if (request.IsDefault)
-            await ClearOtherDefaultsAsync(campaign.Id);
-
         db.CampaignAssets.RemoveRange(campaign.CampaignAssets);
         AddCampaignAssets(campaign.Id, request.Assets);
 
-        // Only modify display assignments when explicitly provided.
+        // Only modify screen assignments when explicitly provided.
         // null => leave assignments untouched (e.g. campaign content edits).
         // non-null list (incl. empty) => set assignments to exactly this set.
-        var affectedDisplayIds = oldDisplayIds;
-        if (request.DisplayIds is not null)
+        var affectedScreenIds = oldScreenIds;
+        if (request.ScreenIds is not null)
         {
             db.CampaignAssignments.RemoveRange(campaign.CampaignAssignments);
-            AddCampaignAssignments(campaign.Id, request.DisplayIds);
-            affectedDisplayIds = oldDisplayIds.Union(request.DisplayIds).ToList();
+            AddCampaignAssignments(campaign.Id, request.ScreenIds);
+            affectedScreenIds = oldScreenIds.Union(request.ScreenIds).ToList();
         }
 
-        await db.SaveChangesAsync();
+        await SaveWithSingleDefaultAsync(campaign, request.IsDefault);
 
         var campaignDetail = await GetCampaignAsync(campaign.Id);
 
@@ -253,9 +247,9 @@ public class CampaignService(
         // Changing the default designation (or editing the default campaign's content)
         // can affect any screen that relies on the fallback, so re-sync everything.
         if (defaultChanged || campaign.IsDefault)
-            await SyncAllDisplaysAsync();
+            await SyncAllScreensAsync();
         else
-            await syncService.SyncScreensAsync(affectedDisplayIds);
+            await syncService.SyncScreensAsync(affectedScreenIds);
 
         return campaignDetail;
     }
@@ -269,8 +263,8 @@ public class CampaignService(
         if (campaign == null)
             throw new KeyNotFoundException($"Campaign with ID {id} not found");
 
-        // Collect affected displays before deletion (cascade will remove assignments)
-        var affectedDisplayIds = campaign.CampaignAssignments.Select(ca => ca.DisplayId).ToList();
+        // Collect affected screens before deletion (cascade will remove assignments)
+        var affectedScreenIds = campaign.CampaignAssignments.Select(ca => ca.ScreenId).ToList();
 
         db.Campaigns.Remove(campaign);
         await db.SaveChangesAsync();
@@ -283,8 +277,8 @@ public class CampaignService(
         );
 
         // Notify affected screens so they stop showing deleted campaign content
-        if (affectedDisplayIds.Count > 0)
-            await syncService.SyncScreensAsync(affectedDisplayIds);
+        if (affectedScreenIds.Count > 0)
+            await syncService.SyncScreensAsync(affectedScreenIds);
     }
 
     public async Task<List<Guid>> GetCampaignsUsingAssetAsync(Guid assetId)
@@ -357,11 +351,11 @@ public class CampaignService(
         }
     }
 
-    private async Task VerifyDisplaysExistAsync(List<Guid> displayIds)
+    private async Task VerifyScreensExistAsync(List<Guid> screenIds)
     {
-        var existingDisplays = await db.Displays.Where(d => displayIds.Contains(d.Id)).CountAsync();
-        if (existingDisplays != displayIds.Distinct().Count())
-            throw new ArgumentException("One or more displays do not exist");
+        var existingScreens = await db.Screens.Where(d => screenIds.Contains(d.Id)).CountAsync();
+        if (existingScreens != screenIds.Distinct().Count())
+            throw new ArgumentException("One or more screens do not exist");
     }
 
     private async Task ClearOtherDefaultsAsync(Guid keepCampaignId)
@@ -373,10 +367,33 @@ public class CampaignService(
             other.IsDefault = false;
     }
 
-    private async Task SyncAllDisplaysAsync()
+    private async Task SaveWithSingleDefaultAsync(
+        Database.Models.Campaign campaign,
+        bool shouldBeDefault
+    )
     {
-        var displayIds = await db.Displays.Select(d => d.Id).ToListAsync();
-        await syncService.SyncScreensAsync(displayIds);
+        if (!shouldBeDefault)
+        {
+            await db.SaveChangesAsync();
+            return;
+        }
+
+        // Two saves inside one transaction avoid a temporary unique-index conflict
+        // while switching the default from one campaign to another.
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        campaign.IsDefault = false;
+        await ClearOtherDefaultsAsync(campaign.Id);
+        await db.SaveChangesAsync();
+
+        campaign.IsDefault = true;
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
+    private async Task SyncAllScreensAsync()
+    {
+        var screenIds = await db.Screens.Select(d => d.Id).ToListAsync();
+        await syncService.SyncScreensAsync(screenIds);
     }
 
     private void AddCampaignAssets(Guid campaignId, List<CampaignAssetDto> assets)
@@ -393,11 +410,11 @@ public class CampaignService(
             );
     }
 
-    private void AddCampaignAssignments(Guid campaignId, List<Guid> displayIds)
+    private void AddCampaignAssignments(Guid campaignId, List<Guid> screenIds)
     {
-        foreach (var displayId in displayIds)
+        foreach (var screenId in screenIds)
             db.CampaignAssignments.Add(
-                new CampaignAssignment { CampaignId = campaignId, DisplayId = displayId }
+                new CampaignAssignment { CampaignId = campaignId, ScreenId = screenId }
             );
     }
 }

@@ -28,5 +28,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Mireya.Application\Mireya.Application.csproj" />
     <ProjectReference Include="..\Mireya.Database\Mireya.Database.csproj" />
+    <ProjectReference Include="..\Mireya.Database.Sqlite\Mireya.Database.Sqlite.csproj" />
   </ItemGroup>
 </Project>

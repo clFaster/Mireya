@@ -21,7 +21,7 @@
                            FontWeight="SemiBold"
                            LetterSpacing="2"
                            Foreground="#8C9EFF" />
-                <TextBlock Text="{Binding DisplayName}"
+                <TextBlock Text="{Binding ScreenName}"
                            FontSize="36"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap"

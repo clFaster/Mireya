@@ -45,9 +45,9 @@ public class ScreenHub(
                 bonjour.ScreenIdentifier
             );
 
-            var displayId = await screenSyncService.GetDisplayIdByUserIdAsync(userId);
-            if (displayId.HasValue)
-                await screenSyncService.SyncScreenAsync(displayId.Value);
+            var screenId = await screenSyncService.GetScreenIdByUserIdAsync(userId);
+            if (screenId.HasValue)
+                await screenSyncService.SyncScreenAsync(screenId.Value);
         }
 
         await base.OnConnectedAsync();
@@ -84,7 +84,7 @@ public class ScreenHub(
     }
 
     /// <summary>
-    ///     Called by screen clients to report which asset they are currently displaying.
+    ///     Called by screen clients to report which asset they are currently screening.
     ///     This enables real-time "now playing" visibility in the admin UI.
     /// </summary>
     public Task ReportNowPlaying(Guid? assetId, string? assetName)

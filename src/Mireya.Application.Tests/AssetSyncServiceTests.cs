@@ -6,9 +6,9 @@ namespace Mireya.Application.Tests;
 
 public class AssetSyncServiceTests
 {
-    private static (Display display, Asset asset) Seed(TestDatabase db)
+    private static (Screen screen, Asset asset) Seed(TestDatabase db)
     {
-        var display = new Display
+        var screen = new Screen
         {
             Name = "Screen",
             Location = "Lobby",
@@ -22,10 +22,10 @@ public class AssetSyncServiceTests
             Type = AssetType.Image,
             Source = "/x.png",
         };
-        db.Context.Displays.Add(display);
+        db.AddScreen(screen);
         db.Context.Assets.Add(asset);
         db.Context.SaveChanges();
-        return (display, asset);
+        return (screen, asset);
     }
 
     private static AssetSyncService CreateService(TestDatabase db) =>
@@ -35,11 +35,11 @@ public class AssetSyncServiceTests
     public async Task UpdateStatus_WhenNoRowExists_ReturnsNotFound()
     {
         using var db = new TestDatabase();
-        var (display, asset) = Seed(db);
+        var (screen, asset) = Seed(db);
         var service = CreateService(db);
 
         var result = await service.UpdateAssetSyncStatusAsync(
-            display.Id,
+            screen.Id,
             new UpdateAssetSyncRequest(asset.Id, "Downloaded", 100, null)
         );
 
@@ -50,12 +50,12 @@ public class AssetSyncServiceTests
     public async Task UpdateStatus_WithInvalidState_ReturnsInvalidState()
     {
         using var db = new TestDatabase();
-        var (display, asset) = Seed(db);
+        var (screen, asset) = Seed(db);
         var service = CreateService(db);
-        await service.InitializeSyncStatusForDisplayAsync(display.Id, [asset.Id]);
+        await service.InitializeSyncStatusForScreenAsync(screen.Id, [asset.Id]);
 
         var result = await service.UpdateAssetSyncStatusAsync(
-            display.Id,
+            screen.Id,
             new UpdateAssetSyncRequest(asset.Id, "NotARealState", 50, null)
         );
 
@@ -66,12 +66,12 @@ public class AssetSyncServiceTests
     public async Task UpdateStatus_WithValidState_ReturnsUpdatedAndPersists()
     {
         using var db = new TestDatabase();
-        var (display, asset) = Seed(db);
+        var (screen, asset) = Seed(db);
         var service = CreateService(db);
-        await service.InitializeSyncStatusForDisplayAsync(display.Id, [asset.Id]);
+        await service.InitializeSyncStatusForScreenAsync(screen.Id, [asset.Id]);
 
         var result = await service.UpdateAssetSyncStatusAsync(
-            display.Id,
+            screen.Id,
             new UpdateAssetSyncRequest(asset.Id, "Downloaded", 100, null)
         );
 

@@ -21,12 +21,12 @@ public class CampaignEndpoints : ICarterModule
     private static async Task<IResult> HandleGetCampaignsAsync(
         ICampaignService campaignService,
         ILogger<CampaignEndpoints> logger,
-        [FromQuery] Guid? displayId = null
+        [FromQuery] Guid? screenId = null
     )
     {
         try
         {
-            var campaigns = await campaignService.GetCampaignsAsync(displayId);
+            var campaigns = await campaignService.GetCampaignsAsync(screenId);
             return Results.Ok(campaigns);
         }
         catch (Exception ex)

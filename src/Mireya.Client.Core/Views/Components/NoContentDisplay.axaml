@@ -57,7 +57,7 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="{Binding DisplayName}"
+            <TextBlock Text="{Binding ScreenName}"
                        FontSize="15"
                        Foreground="#555"
                        HorizontalAlignment="Center"

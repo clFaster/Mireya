@@ -30,11 +30,11 @@ namespace Mireya.ApiClient.Generated
     public partial interface IMireyaApiClient
     {
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId);
+        System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid screenId);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid screenId, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task GetApiInfoAsync();
@@ -212,11 +212,11 @@ namespace Mireya.ApiClient.Generated
         System.Threading.Tasks.Task GetApiAuditAsync(int? take, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId);
+        System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? screenId);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? screenId, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task PostApiCampaignAsync(CreateCampaignRequest request);
@@ -346,17 +346,17 @@ namespace Mireya.ApiClient.Generated
         partial void ProcessResponse(System.Net.Http.HttpClient client, System.Net.Http.HttpResponseMessage response);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId)
+        public virtual System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid screenId)
         {
-            return GetApiAssetsyncStatusAsync(displayId, System.Threading.CancellationToken.None);
+            return GetApiAssetsyncStatusAsync(screenId, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid displayId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiAssetsyncStatusAsync(System.Guid screenId, System.Threading.CancellationToken cancellationToken)
         {
-            if (displayId == null)
-                throw new System.ArgumentNullException("displayId");
+            if (screenId == null)
+                throw new System.ArgumentNullException("screenId");
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -368,9 +368,9 @@ namespace Mireya.ApiClient.Generated
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "api/assetsync/{displayId}/status"
+                    // Operation Path: "api/assetsync/{screenId}/status"
                     urlBuilder_.Append("api/assetsync/");
-                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(displayId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(screenId, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/status");
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -2442,14 +2442,14 @@ namespace Mireya.ApiClient.Generated
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId)
+        public virtual System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? screenId)
         {
-            return GetApiCampaignAsync(displayId, System.Threading.CancellationToken.None);
+            return GetApiCampaignAsync(screenId, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? displayId, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task GetApiCampaignAsync(System.Guid? screenId, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2464,9 +2464,9 @@ namespace Mireya.ApiClient.Generated
                     // Operation Path: "api/campaign"
                     urlBuilder_.Append("api/campaign");
                     urlBuilder_.Append('?');
-                    if (displayId != null)
+                    if (screenId != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("displayId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(displayId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("screenId")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(screenId, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -3886,8 +3886,8 @@ namespace Mireya.ApiClient.Generated
         [System.Text.Json.Serialization.JsonPropertyName("assets")]
         public System.Collections.Generic.ICollection<CampaignAssetDto> Assets { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("displayIds")]
-        public System.Collections.Generic.ICollection<System.Guid> DisplayIds { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("screenIds")]
+        public System.Collections.Generic.ICollection<System.Guid> ScreenIds { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isEnabled")]
         public bool IsEnabled { get; set; } = default!;
@@ -3946,8 +3946,8 @@ namespace Mireya.ApiClient.Generated
         [System.Text.Json.Serialization.JsonPropertyName("assets")]
         public System.Collections.Generic.ICollection<CampaignAssetDto> Assets { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("displayIds")]
-        public System.Collections.Generic.ICollection<System.Guid>? DisplayIds { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("screenIds")]
+        public System.Collections.Generic.ICollection<System.Guid>? ScreenIds { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isEnabled")]
         public bool IsEnabled { get; set; } = default!;

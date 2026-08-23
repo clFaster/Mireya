@@ -76,16 +76,16 @@ public class CampaignScheduleSyncService(
                 ? defaultCampaign.Id
                 : (Guid?)null;
 
-        var displays = await db
-            .Displays.Where(d => d.UserId != null)
+        var screens = await db
+            .Screens.Where(d => d.UserId != null)
             .Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
-        foreach (var display in displays)
+        foreach (var screen in screens)
         {
-            var activeIds = display
+            var activeIds = screen
                 .CampaignAssignments.Select(ca => ca.Campaign)
                 .GroupBy(c => c.Id)
                 .Select(g => g.First())
@@ -100,21 +100,21 @@ public class CampaignScheduleSyncService(
                     ? string.Join(",", activeIds)
                     : $"default:{defaultActiveId?.ToString() ?? "none"}";
 
-            if (_lastSignatures.TryGetValue(display.Id, out var previous) && previous == signature)
+            if (_lastSignatures.TryGetValue(screen.Id, out var previous) && previous == signature)
                 continue;
 
             // Skip the very first observation (initial sync happens on edits / client connect)
             // to avoid a burst of redundant syncs on startup.
-            var isFirstObservation = !_lastSignatures.ContainsKey(display.Id);
-            _lastSignatures[display.Id] = signature;
+            var isFirstObservation = !_lastSignatures.ContainsKey(screen.Id);
+            _lastSignatures[screen.Id] = signature;
             if (isFirstObservation)
                 continue;
 
             logger.LogInformation(
-                "Schedule change detected for screen {DisplayId}; re-syncing",
-                display.Id
+                "Schedule change detected for screen {ScreenId}; re-syncing",
+                screen.Id
             );
-            await syncService.SyncScreenAsync(display.Id);
+            await syncService.SyncScreenAsync(screen.Id);
         }
     }
 }

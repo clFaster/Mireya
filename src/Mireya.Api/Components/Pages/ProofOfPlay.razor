@@ -110,7 +110,7 @@ else
                             @foreach (var s in _report.ByScreen)
                             {
                                 <tr>
-                                    <td>@s.DisplayName</td>
+                                    <td>@s.ScreenName</td>
                                     <td class="text-end"><span class="badge bg-secondary">@s.Plays</span></td>
                                 </tr>
                             }
@@ -137,7 +137,7 @@ else
                     {
                         <tr>
                             <td class="text-nowrap"><small>@e.PlayedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</small></td>
-                            <td>@e.DisplayName</td>
+                            <td>@e.ScreenName</td>
                             <td>@(e.AssetName ?? "—")</td>
                         </tr>
                     }

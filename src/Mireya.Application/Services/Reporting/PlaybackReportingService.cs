@@ -10,8 +10,8 @@ namespace Mireya.Application.Services.Reporting;
 public record PlaybackEventEntry(
     Guid Id,
     DateTime PlayedAtUtc,
-    Guid DisplayId,
-    string DisplayName,
+    Guid ScreenId,
+    string ScreenName,
     Guid? AssetId,
     string? AssetName
 );
@@ -24,7 +24,7 @@ public record AssetPlayCount(Guid? AssetId, string AssetName, int Plays);
 /// <summary>
 ///     Aggregated play counts grouped by screen.
 /// </summary>
-public record ScreenPlayCount(Guid DisplayId, string DisplayName, int Plays);
+public record ScreenPlayCount(Guid ScreenId, string ScreenName, int Plays);
 
 /// <summary>
 ///     A proof-of-play report over a time window.
@@ -69,19 +69,19 @@ public class PlaybackReportingService(MireyaDbContext db, ILogger<PlaybackReport
 
         try
         {
-            var display = await db
-                .Displays.Where(d => d.UserId == userId)
+            var screen = await db
+                .Screens.Where(d => d.UserId == userId)
                 .Select(d => new { d.Id, d.Name })
                 .FirstOrDefaultAsync();
 
-            if (display is null)
+            if (screen is null)
                 return;
 
             db.PlaybackEvents.Add(
                 new PlaybackEvent
                 {
-                    DisplayId = display.Id,
-                    DisplayName = display.Name,
+                    ScreenId = screen.Id,
+                    ScreenName = screen.Name,
                     AssetId = assetId,
                     AssetName = assetName,
                     PlayedAtUtc = DateTime.UtcNow,
@@ -125,17 +125,17 @@ public class PlaybackReportingService(MireyaDbContext db, ILogger<PlaybackReport
             .ToList();
 
         var byScreenRaw = await events
-            .GroupBy(e => new { e.DisplayId, e.DisplayName })
+            .GroupBy(e => new { e.ScreenId, e.ScreenName })
             .Select(g => new
             {
-                g.Key.DisplayId,
-                g.Key.DisplayName,
+                g.Key.ScreenId,
+                g.Key.ScreenName,
                 Plays = g.Count(),
             })
             .ToListAsync();
 
         var byScreen = byScreenRaw
-            .Select(s => new ScreenPlayCount(s.DisplayId, s.DisplayName, s.Plays))
+            .Select(s => new ScreenPlayCount(s.ScreenId, s.ScreenName, s.Plays))
             .OrderByDescending(s => s.Plays)
             .ToList();
 
@@ -159,8 +159,8 @@ public class PlaybackReportingService(MireyaDbContext db, ILogger<PlaybackReport
             .Select(e => new PlaybackEventEntry(
                 e.Id,
                 e.PlayedAtUtc,
-                e.DisplayId,
-                e.DisplayName,
+                e.ScreenId,
+                e.ScreenName,
                 e.AssetId,
                 e.AssetName
             ))
