@@ -411,12 +411,15 @@ public class LocalAssetSyncService : ILocalAssetSyncService
             da.BackendInstanceId == ctx.BackendId && da.AssetId == ctx.Asset.AssetId
         );
 
-        if (IsAlreadyDownloaded(downloadedAsset))
+        if (
+            downloadedAsset is { IsDownloaded: true, LocalPath: { Length: > 0 } localPath }
+            && File.Exists(localPath)
+        )
         {
             _logger.LogInformation(
                 "Asset {AssetId} already downloaded at {Path}, skipping",
                 ctx.Asset.AssetId,
-                downloadedAsset!.LocalPath
+                localPath
             );
             downloadedAsset.LastCheckedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
@@ -445,11 +448,6 @@ public class LocalAssetSyncService : ILocalAssetSyncService
 
         return await DownloadAndTrackAssetAsync(ctx, cancellationToken);
     }
-
-    private static bool IsAlreadyDownloaded(DownloadedAsset? asset) =>
-        asset?.IsDownloaded == true
-        && !string.IsNullOrEmpty(asset.LocalPath)
-        && File.Exists(asset.LocalPath);
 
     private static bool IsStaleDownload(DownloadedAsset? asset) =>
         asset?.IsDownloaded == true

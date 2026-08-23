@@ -46,7 +46,7 @@ else
     private List<ScreenDetailsResponse> _screens = [];
     private bool _loading = true, _isError;
     private string? _message;
-    private ConfirmDialog _confirmDialog = default!;
+    private ConfirmDialog _confirmDialog = null;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 

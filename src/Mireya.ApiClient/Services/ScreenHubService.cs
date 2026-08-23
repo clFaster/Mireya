@@ -10,7 +10,7 @@ public interface IScreenHubService : IAsyncDisposable
 {
     bool IsConnected { get; }
     event Action<ScreenConfiguration> OnConfigurationUpdateReceived;
-    event Action<List<CampaignSyncInfo>> OnStartAssetSync;
+    event Func<List<CampaignSyncInfo>, Task> OnStartAssetSync;
     event Action<string> OnCommandReceived;
     event Action OnReconnected;
     event Action OnReconnecting;
@@ -41,84 +41,12 @@ public class ScreenHubService : IScreenHubService
         _logger = logger;
 
         var baseUrl = options.Value.BaseUrl.TrimEnd('/');
-        _hubConnection = new HubConnectionBuilder()
-            .WithUrl(
-                $"{baseUrl}/hubs/screen",
-                options =>
-                {
-                    options.AccessTokenProvider = () =>
-                        Task.FromResult(_accessTokenProvider.GetAccessToken());
-                }
-            )
-            .WithAutomaticReconnect(new BackoffRetryPolicy())
-            .ConfigureLogging(logging =>
-            {
-                logging.SetMinimumLevel(LogLevel.Debug);
-                logging.AddProvider(new ConsoleLoggerProvider()); // Simple console logging for SignalR internals
-            })
-            .Build();
-
-        _hubConnection.On<ScreenConfiguration>(
-            "ReceiveConfigurationUpdate",
-            config =>
-            {
-                _logger.LogInformation(
-                    "Received config: {ScreenName} with {CampaignCount} campaigns",
-                    config.ScreenName,
-                    config.Campaigns.Count
-                );
-                OnConfigurationUpdateReceived?.Invoke(config);
-            }
-        );
-
-        _hubConnection.On<List<CampaignSyncInfo>>(
-            "StartAssetSync",
-            campaigns =>
-            {
-                _logger.LogInformation(
-                    "Received StartAssetSync for {CampaignCount} campaigns",
-                    campaigns.Count
-                );
-                OnStartAssetSync?.Invoke(campaigns);
-            }
-        );
-
-        _hubConnection.On<string>(
-            "ExecuteCommand",
-            command =>
-            {
-                _logger.LogInformation("Received remote command: {Command}", command);
-                OnCommandReceived?.Invoke(command);
-            }
-        );
-
-        _hubConnection.Closed += error =>
-        {
-            _logger.LogWarning(error, "SignalR connection closed");
-            OnClosed?.Invoke();
-            return Task.CompletedTask;
-        };
-
-        _hubConnection.Reconnecting += error =>
-        {
-            _logger.LogWarning(error, "SignalR reconnecting");
-            OnReconnecting?.Invoke();
-            return Task.CompletedTask;
-        };
-
-        _hubConnection.Reconnected += connectionId =>
-        {
-            _logger.LogInformation("SignalR reconnected: {ConnectionId}", connectionId);
-
-            // Trigger sync check on reconnect
-            OnReconnected?.Invoke();
-
-            return Task.CompletedTask;
-        };
+        _hubConnection = CreateHubConnection(baseUrl);
+        RegisterHubCallbacks();
     }
 
     public event Action<ScreenConfiguration>? OnConfigurationUpdateReceived;
-    public event Action<List<CampaignSyncInfo>>? OnStartAssetSync;
+    public event Func<List<CampaignSyncInfo>, Task>? OnStartAssetSync;
     public event Action<string>? OnCommandReceived;
     public event Action? OnReconnected;
     public event Action? OnReconnecting;
@@ -135,7 +63,9 @@ public class ScreenHubService : IScreenHubService
         // powering on with the server), so retry the initial connection with a
         // capped exponential backoff before surfacing a failure to the UI.
         const int maxAttempts = 6;
-        Exception? lastError = null;
+        Exception lastError = new InvalidOperationException(
+            "No SignalR connection attempt was made."
+        );
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             if (attempt > 0)
@@ -168,8 +98,7 @@ public class ScreenHubService : IScreenHubService
             "Failed to connect to SignalR hub after {Attempts} attempts",
             maxAttempts
         );
-        if (lastError is not null)
-            throw lastError;
+        throw lastError;
     }
 
     public async Task DisconnectAsync()
@@ -212,6 +141,90 @@ public class ScreenHubService : IScreenHubService
         }
 
         await _hubConnection.DisposeAsync();
+    }
+
+    private HubConnection CreateHubConnection(string baseUrl)
+    {
+        return new HubConnectionBuilder()
+            .WithUrl(
+                $"{baseUrl}/hubs/screen",
+                options =>
+                {
+                    options.AccessTokenProvider = () =>
+                        Task.FromResult(_accessTokenProvider.GetAccessToken());
+                }
+            )
+            .WithAutomaticReconnect(new BackoffRetryPolicy())
+            .ConfigureLogging(logging =>
+            {
+                logging.SetMinimumLevel(LogLevel.Debug);
+                logging.AddProvider(new ConsoleLoggerProvider()); // Simple console logging for SignalR internals
+            })
+            .Build();
+    }
+
+    private void RegisterHubCallbacks()
+    {
+        _hubConnection.On<ScreenConfiguration>(
+            "ReceiveConfigurationUpdate",
+            HandleConfigurationUpdate
+        );
+        _hubConnection.On<List<CampaignSyncInfo>>("StartAssetSync", HandleStartAssetSyncAsync);
+        _hubConnection.On<string>("ExecuteCommand", HandleCommand);
+
+        _hubConnection.Closed += HandleConnectionClosedAsync;
+        _hubConnection.Reconnecting += HandleReconnectingAsync;
+        _hubConnection.Reconnected += HandleReconnectedAsync;
+    }
+
+    private void HandleConfigurationUpdate(ScreenConfiguration config)
+    {
+        _logger.LogInformation(
+            "Received config: {ScreenName} with {CampaignCount} campaigns",
+            config.ScreenName,
+            config.Campaigns.Count
+        );
+        OnConfigurationUpdateReceived?.Invoke(config);
+    }
+
+    private async Task HandleStartAssetSyncAsync(List<CampaignSyncInfo> campaigns)
+    {
+        _logger.LogInformation(
+            "Received StartAssetSync for {CampaignCount} campaigns",
+            campaigns.Count
+        );
+        if (OnStartAssetSync is { } handler)
+            await handler(campaigns);
+    }
+
+    private void HandleCommand(string command)
+    {
+        _logger.LogInformation("Received remote command: {Command}", command);
+        OnCommandReceived?.Invoke(command);
+    }
+
+    private Task HandleConnectionClosedAsync(Exception? error)
+    {
+        _logger.LogWarning(error, "SignalR connection closed");
+        OnClosed?.Invoke();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleReconnectingAsync(Exception? error)
+    {
+        _logger.LogWarning(error, "SignalR reconnecting");
+        OnReconnecting?.Invoke();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleReconnectedAsync(string? connectionId)
+    {
+        _logger.LogInformation("SignalR reconnected: {ConnectionId}", connectionId);
+
+        // Trigger sync check on reconnect
+        OnReconnected?.Invoke();
+
+        return Task.CompletedTask;
     }
 
     // Simple logger provider to ensure we see SignalR internal logs in console

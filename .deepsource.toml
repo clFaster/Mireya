@@ -2,7 +2,9 @@ version = 1
 
 exclude_patterns = [
   "/src/Mireya.Database.Postgres/**",
-  "/src/Mireya.Database.Sqlite/**"
+  "/src/Mireya.Database.Sqlite/**",
+  "/src/Mireya.ApiClient/Generated/**",
+  "/src/Mireya.ApiClient/Migrations/**"
 ]
 
 [[analyzers]]

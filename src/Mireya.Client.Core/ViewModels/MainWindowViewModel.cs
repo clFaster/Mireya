@@ -14,7 +14,7 @@ using Mireya.Client.Avalonia.Services;
 
 namespace Mireya.Client.Avalonia.ViewModels;
 
-public partial class MainWindowViewModel : ViewModelBase, IDisposable
+public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly IServiceProvider _serviceProvider;

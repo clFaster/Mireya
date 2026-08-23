@@ -46,18 +46,12 @@ public partial class ContentDisplayView : UserControl
             return;
 
         _websiteHost = this.FindControl<ContentControl>("WebsiteHost");
-        if (_websiteHost != null)
-        {
-            _websiteControl = factory.CreateWebsiteRenderer();
-            _websiteRenderer = _websiteControl as IWebsiteRenderer;
-        }
+        _websiteControl = _websiteHost is null ? null : factory.CreateWebsiteRenderer();
+        _websiteRenderer = _websiteControl as IWebsiteRenderer;
 
         _videoHost = this.FindControl<ContentControl>("VideoHost");
-        if (_videoHost != null)
-        {
-            _videoControl = factory.CreateVideoRenderer();
-            _videoRenderer = _videoControl as IVideoRenderer;
-        }
+        _videoControl = _videoHost is null ? null : factory.CreateVideoRenderer();
+        _videoRenderer = _videoControl as IVideoRenderer;
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -104,8 +98,7 @@ public partial class ContentDisplayView : UserControl
         // Create the floating overlay window once the parent Window is known.
         // If we're already in the visual tree, do it immediately; otherwise
         // wait for AttachedToVisualTree.
-        var parentWindow = TopLevel.GetTopLevel(this) as Window;
-        if (parentWindow != null)
+        if (TopLevel.GetTopLevel(this) is Window parentWindow)
             SetupIdentifyWindow(parentWindow);
         else
             AttachedToVisualTree += OnFirstAttach;
@@ -115,8 +108,7 @@ public partial class ContentDisplayView : UserControl
     {
         AttachedToVisualTree -= OnFirstAttach;
 
-        var parentWindow = TopLevel.GetTopLevel(this) as Window;
-        if (parentWindow != null && _viewModel != null)
+        if (TopLevel.GetTopLevel(this) is Window parentWindow && _viewModel != null)
             SetupIdentifyWindow(parentWindow);
     }
 

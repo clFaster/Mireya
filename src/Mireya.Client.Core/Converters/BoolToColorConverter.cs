@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 
@@ -24,6 +25,6 @@ public class BoolToColorConverter : IValueConverter
         CultureInfo culture
     )
     {
-        throw new NotImplementedException();
+        return BindingOperations.DoNothing;
     }
 }

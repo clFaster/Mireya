@@ -16,21 +16,21 @@ public class LocalDbContext : DbContext
         : base(options) { }
 
     // Backend tracking
-    public DbSet<BackendInstance> BackendInstances { get; set; } = null!;
-    public DbSet<BackendCredential> BackendCredentials { get; set; } = null!;
-    public DbSet<BackendAsset> BackendAssets { get; set; } = null!;
-    public DbSet<BackendCampaign> BackendCampaigns { get; set; } = null!;
+    public DbSet<BackendInstance> BackendInstances => Set<BackendInstance>();
+    public DbSet<BackendCredential> BackendCredentials => Set<BackendCredential>();
+    public DbSet<BackendAsset> BackendAssets => Set<BackendAsset>();
+    public DbSet<BackendCampaign> BackendCampaigns => Set<BackendCampaign>();
 
     // Server models (reused)
-    public DbSet<Asset> Assets { get; set; } = null!;
-    public DbSet<Campaign> Campaigns { get; set; } = null!;
-    public DbSet<CampaignAsset> CampaignAssets { get; set; } = null!;
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<Campaign> Campaigns => Set<Campaign>();
+    public DbSet<CampaignAsset> CampaignAssets => Set<CampaignAsset>();
 
     // Download tracking
-    public DbSet<DownloadedAsset> DownloadedAssets { get; set; } = null!;
+    public DbSet<DownloadedAsset> DownloadedAssets => Set<DownloadedAsset>();
 
     // Client-wide key/value settings
-    public DbSet<ClientSetting> ClientSettings { get; set; } = null!;
+    public DbSet<ClientSetting> ClientSettings => Set<ClientSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
