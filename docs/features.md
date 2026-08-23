@@ -4,7 +4,7 @@ This page describes Mireya from an operator's point of view: what can be managed
 
 ## Admin backend
 
-The backend is both a web admin interface and an API server. Administrators sign in through the Blazor Server admin UI and manage assets, campaigns, screens, zones, reports, and audit history.
+The backend is both a web admin interface and an API server. Administrators sign in through the Blazor Server admin UI and manage assets, campaigns, screens, reports, and audit history.
 
 The main admin sections are:
 
@@ -12,7 +12,6 @@ The main admin sections are:
 - Assets: media and website content library.
 - Campaigns: playlists, schedules, and assignments.
 - Screens: display registration, approval, configuration, and remote commands.
-- Zones: screen groups for fleet-level campaign assignment.
 - Proof of Play: playback reporting.
 - Audit Log: administrative action history.
 
@@ -34,7 +33,7 @@ Video assets can have generated poster-frame thumbnails and use their configured
 
 ## Campaigns
 
-A campaign is an ordered playlist of assets. Campaigns can be enabled, disabled, prioritized, scheduled, assigned directly to screens, and assigned to zones.
+A campaign is an ordered playlist of assets. Campaigns can be enabled, disabled, prioritized, scheduled, and assigned directly to screens.
 
 Campaign behavior includes:
 
@@ -62,24 +61,11 @@ Screen management includes:
 - Screen name, description, and location.
 - Online/offline status and last-seen tracking.
 - Direct campaign assignment.
-- Zone membership.
 - Per-screen shuffle playback.
 - Asset sync status.
 - Now-playing updates.
 
 Once approved, a screen authenticates with the backend, connects to the SignalR hub, receives configuration updates, and starts syncing assigned content.
-
-## Zones
-
-Zones are named groups of screens. Assign a campaign to a zone to apply it to every screen in that zone.
-
-A screen's effective playlist is built from:
-
-- Campaigns assigned directly to the screen.
-- Campaigns assigned to the screen's zone.
-- The default fallback campaign, when no other active campaign applies.
-
-Zones are useful for locations, departments, floors, regions, or device fleets that should share campaign assignments.
 
 ## Display clients
 

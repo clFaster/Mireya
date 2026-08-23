@@ -14,8 +14,8 @@ public class AuthenticationService(
     ICredentialRepository credentials,
     IBackendManager backendManager,
     IScreenHubService hubService,
-    ILogger<AuthenticationService> logger)
-    : IAuthenticationService
+    ILogger<AuthenticationService> logger
+) : IAuthenticationService
 {
     public async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
@@ -201,17 +201,16 @@ public class AuthenticationService(
         if (!string.IsNullOrEmpty(credential.RefreshToken))
             response = await TryRefreshAsync(credential.RefreshToken, backendId);
 
-        if (response == null && credential is
-            {
-                Username: { Length: > 0 } storedUsername,
-                Password: { Length: > 0 } storedPassword,
-            })
+        if (
+            response == null
+            && credential
+                is {
+                    Username: { Length: > 0 } storedUsername,
+                    Password: { Length: > 0 } storedPassword,
+                }
+        )
         {
-            response = await TryLoginWithPasswordAsync(
-                storedUsername,
-                storedPassword,
-                backendId
-            );
+            response = await TryLoginWithPasswordAsync(storedUsername, storedPassword, backendId);
         }
 
         if (response != null)

@@ -13,7 +13,7 @@ Mireya has two main parts:
 - **Backend/admin app**: an ASP.NET Core application with a Blazor Server admin UI, REST APIs, Identity authentication, OpenAPI, SignalR screen messaging, EF Core persistence, and background services.
 - **Display clients**: Avalonia-based clients that run on signage devices. The shared client core is hosted by desktop and Android TV platform heads.
 
-Administrators use the web UI to upload assets, create campaigns, approve screens, assign campaigns directly or through zones, review playback activity, and send remote commands to connected screens.
+Administrators use the web UI to upload assets, create campaigns, approve screens, assign campaigns, review playback activity, and send remote commands to connected screens.
 
 Display clients connect to a Mireya backend, register themselves, wait for approval, sync assigned campaign content, cache media locally, and play the active playlist. Clients reconnect automatically and can keep playing downloaded media after content has been cached.
 
@@ -22,7 +22,6 @@ Display clients connect to a Mireya backend, register themselves, wait for appro
 - **Assets**: images, videos, and website URLs; upload workflow; thumbnails/poster frames; tags; search/filtering; image fit modes.
 - **Campaigns**: ordered playlists, custom durations, priorities, enable/disable state, default fallback campaign, start/end dates, weekday recurrence, daily time windows, and recurrence time zones.
 - **Screens**: first-run registration, pairing code, approval/rejection, online status, last-seen tracking, shuffle playback, asset sync status, and remote commands.
-- **Zones**: named groups of screens. Campaigns assigned to a zone apply to all member screens in addition to directly assigned campaigns.
 - **Reports**: proof-of-play records every asset start reported by a screen and aggregates plays by screen and asset over a selected time window.
 - **Audit log**: mutating admin actions are recorded with actor, target, action, timestamp, and summary.
 - **Offline alerting**: optional webhook notifications for screens that stay offline beyond a configured threshold, plus recovery notifications when they come back online.

@@ -19,8 +19,6 @@ public class ScreenDetailsResponse
     public bool IsActive { get; set; }
     public DateTime? LastSeenAt { get; set; }
     public bool ShufflePlayback { get; set; }
-    public Guid? ZoneId { get; set; }
-    public string? ZoneName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

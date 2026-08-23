@@ -71,14 +71,6 @@ public class Display
     /// </summary>
     public bool ShufflePlayback { get; set; }
 
-    /// <summary>
-    ///     Optional zone (screen group) this display belongs to. Campaigns assigned to the zone
-    ///     apply to this screen in addition to its directly assigned campaigns.
-    /// </summary>
-    public Guid? ZoneId { get; set; }
-
-    public Zone? Zone { get; set; }
-
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

@@ -36,10 +36,7 @@ public class ScreenSynchronizationService(
         var display = await db
             .Displays.Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign.CampaignAssets)
-                        .ThenInclude(ca => ca.Asset)
-            .Include(d => d.Zone.ZoneCampaigns)
-                .ThenInclude(zc => zc.Campaign.CampaignAssets)
-                            .ThenInclude(ca => ca.Asset)
+                    .ThenInclude(ca => ca.Asset)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == displayId);
 
@@ -107,16 +104,8 @@ public class ScreenSynchronizationService(
             .ToList();
     }
 
-    /// <summary>
-    ///     A screen's effective campaigns are those assigned directly plus those assigned to its
-    ///     zone (if any), de-duplicated by campaign id.
-    /// </summary>
-    private static IEnumerable<Database.Models.Campaign> EffectiveCampaigns(Display display)
-    {
-        var direct = display.CampaignAssignments.Select(ca => ca.Campaign);
-        var zone = display.Zone?.ZoneCampaigns.Select(zc => zc.Campaign) ?? [];
-        return direct.Concat(zone).GroupBy(c => c.Id).Select(g => g.First());
-    }
+    private static IEnumerable<Database.Models.Campaign> EffectiveCampaigns(Display display) =>
+        display.CampaignAssignments.Select(ca => ca.Campaign);
 
     /// <summary>
     ///     Builds the playlist from the global default (fallback) campaign, when one is configured and

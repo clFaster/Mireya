@@ -269,9 +269,6 @@ public class ScreenManagementService(
         if (request.ShufflePlayback.HasValue)
             display.ShufflePlayback = request.ShufflePlayback.Value;
 
-        if (request.ZoneAssignmentProvided)
-            await ApplyZoneAssignmentAsync(display, request.ZoneId);
-
         display.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
@@ -384,7 +381,6 @@ public class ScreenManagementService(
         var display = await db
             .Displays.Include(d => d.CampaignAssignments)
                 .ThenInclude(ca => ca.Campaign.CampaignAssets)
-            .Include(d => d.Zone)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == id);
 
@@ -428,9 +424,6 @@ public class ScreenManagementService(
 
         if (request.ShufflePlayback.HasValue)
             display.ShufflePlayback = request.ShufflePlayback.Value;
-
-        if (request.ZoneAssignmentProvided)
-            await ApplyZoneAssignmentAsync(display, request.ZoneId);
 
         display.UpdatedAt = DateTime.UtcNow;
 
@@ -512,18 +505,6 @@ public class ScreenManagementService(
         return delivered;
     }
 
-    private async Task ApplyZoneAssignmentAsync(Display display, Guid? zoneId)
-    {
-        if (zoneId.HasValue)
-        {
-            var zoneExists = await db.Zones.AnyAsync(z => z.Id == zoneId.Value);
-            if (!zoneExists)
-                throw new ArgumentException($"Zone with ID {zoneId.Value} not found");
-        }
-
-        display.ZoneId = zoneId;
-    }
-
     private static ScreenWithCampaignsResponse MapToScreenWithCampaignsResponse(
         ScreenDetailsResponse response,
         List<CampaignSummary> assignedCampaigns,
@@ -544,8 +525,6 @@ public class ScreenManagementService(
             IsActive = response.IsActive,
             LastSeenAt = response.LastSeenAt,
             ShufflePlayback = response.ShufflePlayback,
-            ZoneId = response.ZoneId,
-            ZoneName = response.ZoneName,
             CreatedAt = response.CreatedAt,
             UpdatedAt = response.UpdatedAt,
             AssignedCampaigns = assignedCampaigns,
@@ -592,8 +571,6 @@ public class ScreenManagementService(
             IsActive = display.IsActive,
             LastSeenAt = display.LastSeenAt,
             ShufflePlayback = display.ShufflePlayback,
-            ZoneId = display.ZoneId,
-            ZoneName = display.Zone?.Name,
             CreatedAt = display.CreatedAt,
             UpdatedAt = display.UpdatedAt,
         };

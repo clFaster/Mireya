@@ -375,7 +375,12 @@ public class AssetService(MireyaDbContext db, IHostEnvironment env, IAuditServic
         db.Assets.Remove(asset);
         await db.SaveChangesAsync();
 
-        await audit.LogAsync("Deleted", AssetAuditEntity, id.ToString(), $"Deleted asset '{asset.Name}'");
+        await audit.LogAsync(
+            "Deleted",
+            AssetAuditEntity,
+            id.ToString(),
+            $"Deleted asset '{asset.Name}'"
+        );
     }
 
     public async Task<Database.Models.Asset> UpdateAssetMetadataAsync(

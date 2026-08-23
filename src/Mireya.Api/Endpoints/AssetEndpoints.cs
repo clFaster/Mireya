@@ -14,7 +14,8 @@ public class AssetEndpoints : ICarterModule
     {
         var group = app.MapGroup("/api/assets").RequireAuthorization(Roles.Admin);
 
-        group.MapPost("/upload", HandleUploadAsync)
+        group
+            .MapPost("/upload", HandleUploadAsync)
             .DisableAntiforgery()
             .WithMetadata(
                 new RequestSizeLimitAttribute(MaxAssetUploadRequestBytes),

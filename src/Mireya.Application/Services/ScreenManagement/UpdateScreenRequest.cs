@@ -24,16 +24,4 @@ public class UpdateScreenRequest
     ///     When set, toggles randomised (shuffle) playback order on the screen.
     /// </summary>
     public bool? ShufflePlayback { get; set; }
-
-    /// <summary>
-    ///     When true, the screen's zone membership is updated to <see cref="ZoneId" />
-    ///     (which may be null to remove the screen from any zone).
-    /// </summary>
-    public bool ZoneAssignmentProvided { get; set; }
-
-    /// <summary>
-    ///     Zone the screen should belong to. Only applied when <see cref="ZoneAssignmentProvided" />
-    ///     is true. Null removes the screen from its current zone.
-    /// </summary>
-    public Guid? ZoneId { get; set; }
 }

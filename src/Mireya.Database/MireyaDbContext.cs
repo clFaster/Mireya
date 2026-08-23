@@ -15,8 +15,6 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
     public DbSet<AssetSyncStatus> AssetSyncStatuses { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<PlaybackEvent> PlaybackEvents { get; set; }
-    public DbSet<Zone> Zones { get; set; }
-    public DbSet<ZoneCampaign> ZoneCampaigns { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -124,38 +122,6 @@ public class MireyaDbContext(DbContextOptions<MireyaDbContext> options)
                 .HasOne(pe => pe.Display)
                 .WithMany()
                 .HasForeignKey(pe => pe.DisplayId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // Configure Zone entity (screen groups)
-        builder.Entity<Zone>(entity =>
-        {
-            entity.HasIndex(e => e.Name);
-
-            entity
-                .HasMany(z => z.Displays)
-                .WithOne(d => d.Zone)
-                .HasForeignKey(d => d.ZoneId)
-                .OnDelete(DeleteBehavior.SetNull);
-        });
-
-        // Configure ZoneCampaign entity (campaigns applied to a zone)
-        builder.Entity<ZoneCampaign>(entity =>
-        {
-            entity.HasIndex(e => e.ZoneId);
-            entity.HasIndex(e => e.CampaignId);
-            entity.HasIndex(e => new { e.ZoneId, e.CampaignId }).IsUnique();
-
-            entity
-                .HasOne(zc => zc.Zone)
-                .WithMany(z => z.ZoneCampaigns)
-                .HasForeignKey(zc => zc.ZoneId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity
-                .HasOne(zc => zc.Campaign)
-                .WithMany()
-                .HasForeignKey(zc => zc.CampaignId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
