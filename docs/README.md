@@ -31,6 +31,7 @@ Display clients connect to a Mireya backend, register themselves, wait for appro
 
 - [Features](features.md): operator-facing guide to what the admin and client apps do.
 - [Development](development.md): local setup, project structure, build/test commands, migrations, and client development.
+- [Database ER Model](database-er-model.md): current API and client schemas, relationships, constraints, indexes, and review candidates.
 - [Android Debugging](debugging/android.md): emulator/device builds, deployment, logging, and verification.
 - [Operations](operations.md): configuration, Docker, Aspire, health checks, alerting, and runtime notes.
 - [API](api.md): endpoint groups, auth roles, SignalR hub behavior, and generated client workflow.
