@@ -9,61 +9,46 @@ namespace Mireya.ApiClient.Services;
 ///     Implementation of authentication service for screen clients
 ///     Uses database-backed credential storage per backend
 /// </summary>
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationService(
+    IMireyaApiClient apiClient,
+    ICredentialRepository credentials,
+    IBackendManager backendManager,
+    IScreenHubService hubService,
+    ILogger<AuthenticationService> logger)
+    : IAuthenticationService
 {
-    private readonly IMireyaApiClient _apiClient;
-    private readonly IBackendManager _backendManager;
-    private readonly ICredentialRepository _credentials;
-    private readonly IScreenHubService _hubService;
-    private readonly ILogger<AuthenticationService> _logger;
-
-    public AuthenticationService(
-        IMireyaApiClient apiClient,
-        ICredentialRepository credentials,
-        IBackendManager backendManager,
-        IScreenHubService hubService,
-        ILogger<AuthenticationService> logger
-    )
-    {
-        _apiClient = apiClient;
-        _credentials = credentials;
-        _backendManager = backendManager;
-        _hubService = hubService;
-        _logger = logger;
-    }
-
     public async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         try
         {
-            await _credentials.MigrateLegacyCredentialsAsync();
+            await credentials.MigrateLegacyCredentialsAsync();
 
-            var backend = await _backendManager.GetCurrentBackendAsync();
+            var backend = await backendManager.GetCurrentBackendAsync();
             if (backend == null)
             {
-                _logger.LogDebug("No backend configured");
+                logger.LogDebug("No backend configured");
                 return AuthenticationState.NotRegistered;
             }
 
-            var credential = await _credentials.GetCredentialsAsync(backend.Id);
+            var credential = await credentials.GetCredentialsAsync(backend.Id);
             if (credential == null || string.IsNullOrEmpty(credential.Username))
             {
-                _logger.LogDebug("No registration found for backend {BackendId}", backend.Id);
+                logger.LogDebug("No registration found for backend {BackendId}", backend.Id);
                 return AuthenticationState.NotRegistered;
             }
 
-            if (!await _credentials.HasValidCredentialsAsync(backend.Id))
+            if (!await credentials.HasValidCredentialsAsync(backend.Id))
                 return AuthenticationState.NotAuthenticated;
 
             // Local expiry alone cannot prove that a token is still valid. The backend may
-            // have been reset or the screen user may have been deleted since the last run.
+            // have been reset, or the screen user may have been deleted from the last run.
             try
             {
-                await _apiClient.GetApiScreenmanagementBonjourAsync();
+                await apiClient.GetApiScreenmanagementBonjourAsync();
             }
             catch (ApiException ex) when (ex.StatusCode is 302 or 401 or 403)
             {
-                _logger.LogInformation(
+                logger.LogInformation(
                     ex,
                     "Stored token was rejected by backend {BackendId}; login recovery required",
                     backend.Id
@@ -72,31 +57,31 @@ public class AuthenticationService : IAuthenticationService
             }
             catch (ApiException ex) when (ex.StatusCode == 404)
             {
-                _logger.LogInformation(
+                logger.LogInformation(
                     ex,
                     "Screen registration no longer exists on backend {BackendId}",
                     backend.Id
                 );
-                await _credentials.DeleteCredentialsAsync(backend.Id);
+                await credentials.DeleteCredentialsAsync(backend.Id);
                 return AuthenticationState.NotRegistered;
             }
             catch (Exception ex)
             {
                 // Connectivity failures must not cause a replacement screen to be created.
                 // Let SignalR's normal retry policy handle an unavailable backend.
-                _logger.LogWarning(
+                logger.LogWarning(
                     ex,
                     "Could not validate stored token for backend {BackendId}; keeping local authentication state",
                     backend.Id
                 );
             }
 
-            _logger.LogDebug("Valid credentials found for backend {BackendId}", backend.Id);
+            logger.LogDebug("Valid credentials found for backend {BackendId}", backend.Id);
             return AuthenticationState.Authenticated;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking authentication state");
+            logger.LogError(ex, "Error checking authentication state");
             return AuthenticationState.Failed;
         }
     }
@@ -105,7 +90,7 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            var backend = await _backendManager.GetCurrentBackendAsync();
+            var backend = await backendManager.GetCurrentBackendAsync();
             if (backend == null)
                 return new RegisterResult(
                     false,
@@ -118,7 +103,7 @@ public class AuthenticationService : IAuthenticationService
             var username = GenerateUsername();
             var password = GeneratePassword();
 
-            _logger.LogInformation("Registering screen with backend {BackendId}", backend.Id);
+            logger.LogInformation("Registering screen with backend {BackendId}", backend.Id);
 
             // Register with backend
             var request = new RegisterScreenRequest
@@ -130,25 +115,25 @@ public class AuthenticationService : IAuthenticationService
                 ResolutionHeight = null,
             };
 
-            var response = await _apiClient.PostApiScreenmanagementRegisterAsync(request);
+            var response = await apiClient.PostApiScreenmanagementRegisterAsync(request);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Registration successful. Screen identifier: {ScreenIdentifier}",
                 response.ScreenIdentifier
             );
 
-            await _credentials.SaveRegistrationAsync(backend.Id, username, password);
+            await credentials.SaveRegistrationAsync(backend.Id, username, password);
 
             return new RegisterResult(true, response.ScreenIdentifier, response.UserId, null);
         }
         catch (ApiException ex)
         {
-            _logger.LogError(ex, "Registration failed");
+            logger.LogError(ex, "Registration failed");
             return new RegisterResult(false, null, null, $"Registration failed: {ex.Message}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during registration");
+            logger.LogError(ex, "Unexpected error during registration");
             return new RegisterResult(false, null, null, $"Unexpected error: {ex.Message}");
         }
     }
@@ -157,7 +142,7 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            var backend = await _backendManager.GetCurrentBackendAsync();
+            var backend = await backendManager.GetCurrentBackendAsync();
             if (backend == null)
                 return new LoginResult(
                     false,
@@ -165,13 +150,13 @@ public class AuthenticationService : IAuthenticationService
                     "No backend configured. Please select a backend first."
                 );
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Attempting login for backend {BackendId} - {BaseUrl}",
                 backend.Id,
                 backend.BaseUrl
             );
 
-            var credential = await _credentials.GetCredentialsAsync(backend.Id);
+            var credential = await credentials.GetCredentialsAsync(backend.Id);
             if (credential == null || string.IsNullOrEmpty(credential.Username))
                 return new LoginResult(false, null, "No credentials found. Please register first.");
 
@@ -179,15 +164,15 @@ public class AuthenticationService : IAuthenticationService
             if (response == null)
                 return new LoginResult(false, null, errorMessage ?? "Login failed.");
 
-            await _credentials.SaveTokensAsync(
+            await credentials.SaveTokensAsync(
                 backend.Id,
                 response.AccessToken,
                 response.RefreshToken,
                 DateTime.UtcNow.AddSeconds(response.ExpiresIn)
             );
 
-            await _hubService.ConnectAsync();
-            _logger.LogInformation(
+            await hubService.ConnectAsync();
+            logger.LogInformation(
                 "Login succeeded for backend {BackendId}: credentials saved, connected to hub",
                 backend.Id
             );
@@ -196,12 +181,12 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (ApiException ex)
         {
-            _logger.LogError(ex, "Login failed");
+            logger.LogError(ex, "Login failed");
             return new LoginResult(false, null, $"Login failed: {ex.Message}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during login");
+            logger.LogError(ex, "Unexpected error during login");
             return new LoginResult(false, null, $"Unexpected error: {ex.Message}");
         }
     }
@@ -216,20 +201,17 @@ public class AuthenticationService : IAuthenticationService
         if (!string.IsNullOrEmpty(credential.RefreshToken))
             response = await TryRefreshAsync(credential.RefreshToken, backendId);
 
-        if (response == null)
+        if (response == null && credential is
+            {
+                Username: { Length: > 0 } storedUsername,
+                Password: { Length: > 0 } storedPassword,
+            })
         {
-            if (
-                credential is
-                {
-                    Username: { Length: > 0 } storedUsername,
-                    Password: { Length: > 0 } storedPassword,
-                }
-            )
-                response = await TryLoginWithPasswordAsync(
-                    storedUsername,
-                    storedPassword,
-                    backendId
-                );
+            response = await TryLoginWithPasswordAsync(
+                storedUsername,
+                storedPassword,
+                backendId
+            );
         }
 
         if (response != null)
@@ -250,7 +232,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (ApiException ex) when (ex.StatusCode == 401)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 ex,
                 "Backend {BackendId} no longer accepts the stored screen identity; registering a replacement",
                 backendId
@@ -267,12 +249,12 @@ public class AuthenticationService : IAuthenticationService
         // Refresh and password login have both been rejected, or an older installation
         // has no recoverable backend-scoped password. Replace only this backend's
         // registration; credentials for other servers are untouched.
-        await _credentials.DeleteCredentialsAsync(backendId);
+        await credentials.DeleteCredentialsAsync(backendId);
         var registration = await RegisterAsync();
         if (!registration.Success)
             return (null, registration.ErrorMessage);
 
-        var replacement = await _credentials.GetCredentialsAsync(backendId);
+        var replacement = await credentials.GetCredentialsAsync(backendId);
         if (
             replacement
             is not {
@@ -292,14 +274,14 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            _logger.LogDebug("Refreshing access token for backend {BackendId}", backendId);
-            return await _apiClient.PostRefreshAsync(
+            logger.LogDebug("Refreshing access token for backend {BackendId}", backendId);
+            return await apiClient.PostRefreshAsync(
                 new RefreshRequest { RefreshToken = refreshToken }
             );
         }
         catch (ApiException ex) when (ex.StatusCode is 400 or 401)
         {
-            _logger.LogInformation(
+            logger.LogInformation(
                 ex,
                 "Refresh token was rejected for backend {BackendId}; trying the stored password",
                 backendId
@@ -310,37 +292,37 @@ public class AuthenticationService : IAuthenticationService
 
     private Task<AccessTokenResponse> LoginWithPasswordAsync(string username, string password)
     {
-        // The Identity API field is named Email but PasswordSignInAsync resolves UserName.
+        // The Identity API field is named Email, but PasswordSignInAsync resolves UserName.
         var request = new LoginRequest { Email = username, Password = password };
-        return _apiClient.PostLoginAsync(false, false, request);
+        return apiClient.PostLoginAsync(false, false, request);
     }
 
     public async Task<ScreenInfo?> GetScreenInfoAsync()
     {
         try
         {
-            var backend = await _backendManager.GetCurrentBackendAsync();
+            var backend = await backendManager.GetCurrentBackendAsync();
             if (backend == null)
             {
-                _logger.LogWarning("Cannot fetch screen info: No backend configured");
+                logger.LogWarning("Cannot fetch screen info: No backend configured");
                 return null;
             }
 
-            var credential = await _credentials.GetCredentialsAsync(backend.Id);
+            var credential = await credentials.GetCredentialsAsync(backend.Id);
             if (credential == null || string.IsNullOrEmpty(credential.AccessToken))
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "Cannot fetch screen info: Not authenticated for backend {BackendId}",
                     backend.Id
                 );
                 return null;
             }
 
-            _logger.LogDebug("Fetching screen info for backend {BackendId}", backend.Id);
+            logger.LogDebug("Fetching screen info for backend {BackendId}", backend.Id);
 
-            var response = await _apiClient.GetApiScreenmanagementBonjourAsync();
+            var response = await apiClient.GetApiScreenmanagementBonjourAsync();
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Successfully fetched screen info: {ScreenIdentifier}",
                 response.ScreenIdentifier
             );
@@ -354,7 +336,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (ApiException ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "API error fetching screen info. Status: {StatusCode}",
                 ex.StatusCode
@@ -363,7 +345,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error fetching screen info");
+            logger.LogError(ex, "Unexpected error fetching screen info");
             return null;
         }
     }
@@ -372,22 +354,22 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            var backend = await _backendManager.GetCurrentBackendAsync();
+            var backend = await backendManager.GetCurrentBackendAsync();
             if (backend == null)
             {
-                _logger.LogWarning("Cannot logout: No backend configured");
+                logger.LogWarning("Cannot logout: No backend configured");
                 return;
             }
 
-            _logger.LogInformation("Logging out from backend {BackendId}", backend.Id);
+            logger.LogInformation("Logging out from backend {BackendId}", backend.Id);
 
             // Disconnect from SignalR Hub
-            await _hubService.DisconnectAsync();
-            _logger.LogDebug("Disconnected from SignalR hub");
+            await hubService.DisconnectAsync();
+            logger.LogDebug("Disconnected from SignalR hub");
 
             // Delete credentials from database
-            await _credentials.DeleteCredentialsAsync(backend.Id);
-            _logger.LogInformation("Credentials deleted for backend {BackendId}", backend.Id);
+            await credentials.DeleteCredentialsAsync(backend.Id);
+            logger.LogInformation("Credentials deleted for backend {BackendId}", backend.Id);
         }
         catch (Exception ex)
         {
@@ -398,7 +380,7 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public string? GetAccessToken() => _credentials.GetAccessToken();
+    public string? GetAccessToken() => credentials.GetAccessToken();
 
     private static string GenerateUsername()
     {
