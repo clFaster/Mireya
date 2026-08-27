@@ -53,23 +53,6 @@ Media3/ExoPlayer, and native-control behavior belongs in `Mireya.Client.Android`
 Run the checks relevant to the changed area and report both completed and omitted
 checks in the handoff.
 
-```powershell
-# API and application behavior
-dotnet test src/Mireya.Application.Tests/Mireya.Application.Tests.csproj -c Release
-
-# Generated API client and client-side services
-dotnet test src/Mireya.ApiClient.Tests/Mireya.ApiClient.Tests.csproj -c Release
-
-# Shared display-client behavior
-dotnet test src/Mireya.Client.Core.Tests/Mireya.Client.Core.Tests.csproj -c Release
-
-# Backend build
-dotnet build src/Mireya.Api/Mireya.Api.csproj -c Release
-
-# Desktop client build
-dotnet build src/Mireya.Client.Desktop/Mireya.Client.Desktop.csproj -c Release
-```
-
 For Android changes, build the Android project for the connected device's ABI, test
 the affected behavior on an emulator or device, inspect logcat, and run the shared
 client tests when shared code is involved. Follow `docs/debugging/android.md` rather
