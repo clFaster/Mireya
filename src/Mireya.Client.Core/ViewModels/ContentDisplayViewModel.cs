@@ -118,6 +118,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     // Event to notify video component to start playback
     public event Action<string, bool>? VideoPlaybackRequested; // path, isMuted
     public event Action? VideoStopRequested;
+    public event Action? ReturnToServerSelectionRequested;
 
     /// <summary>
     ///     Creates sample data for XAML design tools. Runtime code should resolve this
@@ -998,6 +999,12 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
+    private void ReturnToServerSelection()
+    {
+        ReturnToServerSelectionRequested?.Invoke();
+    }
+
+    [RelayCommand]
     private void NextAsset()
     {
         _logger.LogInformation("Manual advance to next asset");
@@ -1035,6 +1042,7 @@ public sealed partial class ContentDisplayViewModel : ViewModelBase, IDisposable
             _advanceTimer.Stop();
             _advanceTimer.Tick -= OnAdvanceTimerTick;
         }
+        VideoStopRequested?.Invoke();
         _hubService.OnConfigurationUpdateReceived -= OnConfigurationUpdateReceived;
         _hubService.OnStartAssetSync -= OnStartAssetSync;
         _hubService.OnCommandReceived -= OnCommandReceived;

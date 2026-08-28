@@ -38,6 +38,30 @@ public sealed class ContentDisplayViewModelScreenInfoTests
         Assert.False(viewModel.IsScreenInfoVisible);
     }
 
+    [Fact]
+    public void ServerSelectionCommandRequestsNavigation()
+    {
+        using var viewModel = CreateViewModel();
+        var navigationRequested = false;
+        viewModel.ReturnToServerSelectionRequested += () => navigationRequested = true;
+
+        viewModel.ReturnToServerSelectionCommand.Execute(null);
+
+        Assert.True(navigationRequested);
+    }
+
+    [Fact]
+    public void DisposingViewModelStopsVideoPlayback()
+    {
+        var viewModel = CreateViewModel();
+        var videoStopRequested = false;
+        viewModel.VideoStopRequested += () => videoStopRequested = true;
+
+        viewModel.Dispose();
+
+        Assert.True(videoStopRequested);
+    }
+
     private static ContentDisplayViewModel CreateViewModel()
     {
         var authenticationService = Substitute.For<IAuthenticationService>();

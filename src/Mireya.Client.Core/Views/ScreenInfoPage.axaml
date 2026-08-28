@@ -119,7 +119,7 @@
                 BorderThickness="0,1,0,0"
                 Padding="24,16">
             <StackPanel MaxWidth="720"
-                        Spacing="8"
+                        Spacing="12"
                         HorizontalAlignment="Stretch">
                 <Button Command="{Binding CloseScreenInfoCommand}"
                         Height="56"
@@ -133,7 +133,21 @@
                         FontWeight="SemiBold"
                         Content="Back to playback" />
 
-                <TextBlock Text="Press Enter, OK, Space, Escape, or Back to return"
+                <Button Command="{Binding ReturnToServerSelectionCommand}"
+                        Height="56"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Background="#1B1F33"
+                        BorderBrush="#495173"
+                        BorderThickness="1"
+                        Foreground="#D7DBF4"
+                        CornerRadius="12"
+                        FontSize="17"
+                        FontWeight="SemiBold"
+                        Content="Back to server selection" />
+
+                <TextBlock Text="Press Enter, OK, Space, Escape, or Back to resume playback"
                            FontSize="13"
                            TextAlignment="Center"
                            Foreground="#687096" />

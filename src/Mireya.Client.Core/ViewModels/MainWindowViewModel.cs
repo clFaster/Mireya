@@ -128,7 +128,37 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         // Dispose the previous view if it supports disposal
         DisposeCurrentView();
 
-        CurrentView = _serviceProvider.GetRequiredService<ContentDisplayViewModel>();
+        var content = _serviceProvider.GetRequiredService<ContentDisplayViewModel>();
+        content.ReturnToServerSelectionRequested += ReturnToServerSelection;
+        CurrentView = content;
+    }
+
+    /// <summary>Stops playback, disconnects from the active server, and shows server selection.</summary>
+    public void ReturnToServerSelection()
+    {
+        if (CurrentView is not ContentDisplayViewModel)
+            return;
+
+        _logger.LogInformation("Returning to server selection");
+
+        // Replace the playback view immediately so its timers and native renderers stop.
+        ShowBackendSelection();
+
+        _ = DisconnectFromCurrentServerAsync();
+    }
+
+    private async Task DisconnectFromCurrentServerAsync()
+    {
+        try
+        {
+            var hubService = _serviceProvider.GetRequiredService<IScreenHubService>();
+            await hubService.DisconnectAsync();
+            _logger.LogInformation("Disconnected from current server");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to disconnect cleanly from the current server");
+        }
     }
 
     /// <summary>Whether the primary input can currently control the playback Screen Info page.</summary>
@@ -273,6 +303,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void DisposeCurrentView()
     {
+        if (CurrentView is ContentDisplayViewModel content)
+            content.ReturnToServerSelectionRequested -= ReturnToServerSelection;
+
         if (CurrentView is IDisposable disposable)
         {
             _logger.LogDebug("Disposing current view: {ViewType}", CurrentView.GetType().Name);
