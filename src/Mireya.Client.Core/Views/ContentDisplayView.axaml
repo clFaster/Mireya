@@ -8,13 +8,12 @@
              mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
              x:Class="Mireya.Client.Avalonia.Views.ContentDisplayView"
              x:DataType="vm:ContentDisplayViewModel"
-             Design.DataContext="{x:Static vm:ContentDisplayViewModel.DesignInstance}"
+             d:DataContext="{x:Static vm:ContentDisplayViewModel.DesignInstance}"
              Background="Black">
 
     <Grid>
         <!-- Image display -->
-        <components:ImageAssetDisplay DataContext="{Binding}"
-                                      IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Image}}" />
+        <components:ImageAssetDisplay IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.Image}}" />
 
         <!-- Video display (platform renderer injected via IAssetViewFactory) -->
         <ContentControl x:Name="VideoHost"
@@ -25,17 +24,15 @@
                         IsVisible="False" />
 
         <!-- No content message -->
-        <components:NoContentDisplay DataContext="{Binding}"
-                                     IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.None}}" />
+        <components:NoContentDisplay IsVisible="{Binding CurrentContentType, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static vm:ContentType.None}}" />
 
         <!-- Full-screen, on-demand diagnostics page. Native renderer hosts are hidden in
              code-behind while this page is open so it also works over video and websites. -->
-        <views:ScreenInfoPage DataContext="{Binding}"
-                              IsVisible="{Binding IsScreenInfoVisible}" />
+        <views:ScreenInfoPage IsVisible="{Binding IsScreenInfoVisible}" />
 
         <!-- Remote identify remains an operator-triggered locating aid, independent of
              the on-demand Screen Info page. -->
-        <components:IdentifyOverlay DataContext="{Binding}" />
+        <components:IdentifyOverlay />
     </Grid>
 
 </UserControl>
