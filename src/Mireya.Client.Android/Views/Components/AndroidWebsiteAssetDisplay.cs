@@ -7,7 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Platform;
 using Mireya.Client.Avalonia.Platform;
 
-namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
+namespace Mireya.Client.Avalonia.Views.Components;
 
 /// <summary>
 ///     Android implementation of <see cref="IWebsiteRenderer" />. Hosts a native

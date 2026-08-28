@@ -2,8 +2,9 @@ using Android.App;
 using Android.Runtime;
 using Avalonia;
 using Avalonia.Android;
+using Mireya.Client.Avalonia.Platform;
 
-namespace Mireya.Client.Avalonia.AndroidTv;
+namespace Mireya.Client.Avalonia;
 
 /// <summary>
 ///     Android application entry point (Avalonia 12 hosting model). It names the shared <see cref="App" /> as the Avalonia

@@ -1,7 +1,6 @@
 using System;
-using Mireya.Client.Avalonia.Platform;
 
-namespace Mireya.Client.Avalonia.Desktop;
+namespace Mireya.Client.Avalonia.Platform;
 
 /// <summary>
 ///     Composition root for the Windows/Linux desktop head. Wires the shared services

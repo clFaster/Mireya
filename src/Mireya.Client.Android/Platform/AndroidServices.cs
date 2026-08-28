@@ -1,8 +1,6 @@
 using System;
-using Mireya.Client.Avalonia.AndroidTv.Platform;
-using Mireya.Client.Avalonia.Platform;
 
-namespace Mireya.Client.Avalonia.AndroidTv;
+namespace Mireya.Client.Avalonia.Platform;
 
 /// <summary>
 ///     Composition root for the Android TV head. Wires the shared services from

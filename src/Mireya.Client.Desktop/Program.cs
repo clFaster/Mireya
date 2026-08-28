@@ -1,6 +1,6 @@
 ﻿using System;
 using Avalonia;
-using Mireya.Client.Avalonia.Desktop;
+using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia;
 

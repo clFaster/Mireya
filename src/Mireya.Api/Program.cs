@@ -23,6 +23,7 @@ using Mireya.Application.Services.Reporting;
 using Mireya.Application.Services.ScreenManagement;
 using Mireya.Database;
 using Mireya.Database.Models;
+using MireyaDigitalSignage.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 

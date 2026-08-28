@@ -1,8 +1,7 @@
 using Avalonia.Controls;
-using Mireya.Client.Avalonia.AndroidTv.Views.Components;
-using Mireya.Client.Avalonia.Platform;
+using Mireya.Client.Avalonia.Views.Components;
 
-namespace Mireya.Client.Avalonia.AndroidTv.Platform;
+namespace Mireya.Client.Avalonia.Platform;
 
 /// <summary>
 ///     Android implementation of <see cref="IAssetViewFactory" />. Provides the

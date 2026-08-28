@@ -6,7 +6,7 @@ using Android.OS;
 using Android.Views;
 using Avalonia.Android;
 
-namespace Mireya.Client.Avalonia.AndroidTv;
+namespace Mireya.Client.Avalonia;
 
 /// <summary>
 ///     Android TV launcher activity. The shared <see cref="App" /> and the composition root

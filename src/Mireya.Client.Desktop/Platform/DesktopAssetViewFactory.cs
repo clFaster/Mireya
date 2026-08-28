@@ -1,8 +1,7 @@
 using Avalonia.Controls;
-using Mireya.Client.Avalonia.Platform;
 using Mireya.Client.Avalonia.Views.Components;
 
-namespace Mireya.Client.Avalonia.Desktop;
+namespace Mireya.Client.Avalonia.Platform;
 
 /// <summary>
 ///     Desktop implementation of <see cref="IAssetViewFactory" />. Provides the

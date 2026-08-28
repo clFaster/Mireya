@@ -12,7 +12,7 @@ using Mireya.Client.Avalonia.Platform;
 using Console = System.Console;
 using Uri = Android.Net.Uri;
 
-namespace Mireya.Client.Avalonia.AndroidTv.Views.Components;
+namespace Mireya.Client.Avalonia.Views.Components;
 
 /// <summary>
 ///     Android video renderer backed by Jetpack Media3/ExoPlayer. Media3 delegates
