@@ -6,7 +6,7 @@
     <Border Background="{Binding PanelBackground, ElementName=Root}"
             BorderBrush="{Binding PanelBorderBrush, ElementName=Root}"
             BorderThickness="1"
-            CornerRadius="16"
+            CornerRadius="{DynamicResource RadiusXl}"
             Padding="24">
         <StackPanel Spacing="16">
             <StackPanel Spacing="6">
@@ -19,7 +19,7 @@
                            FontSize="21"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap"
-                           Foreground="White" />
+                           Foreground="{DynamicResource TextHeadlineBrush}" />
                 <TextBlock Text="Mireya turns TVs and displays into centrally managed digital signs. Organize images, videos, and websites, schedule campaigns, and control every screen from a web console."
                            FontSize="14"
                            LineHeight="21"
@@ -30,7 +30,7 @@
             <Border Background="{Binding InsetBackground, ElementName=Root}"
                     BorderBrush="{Binding InsetBorderBrush, ElementName=Root}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="{DynamicResource RadiusLg}"
                     Padding="14">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                     <Border Width="28"
@@ -49,12 +49,12 @@
                         <TextBlock Text="{Binding CalloutTitle, ElementName=Root}"
                                    FontSize="14"
                                    FontWeight="SemiBold"
-                                   Foreground="#E8EAF6" />
+                                   Foreground="{DynamicResource TextFieldValueBrush}" />
                         <TextBlock Text="{Binding CalloutText, ElementName=Root}"
-                                   FontSize="13"
+                                   FontSize="{DynamicResource FontSizeSmall}"
                                    LineHeight="19"
                                    TextWrapping="Wrap"
-                                   Foreground="#8F98BE" />
+                                   Foreground="{DynamicResource TextCalloutBrush}" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -69,7 +69,7 @@
                     BorderThickness="1"
                     CornerRadius="8"
                     Foreground="{Binding ButtonForeground, ElementName=Root}"
-                    FontSize="13"
+                    FontSize="{DynamicResource FontSizeSmall}"
                     FontWeight="SemiBold"
                     Content="Get Mireya on GitHub  ↗"
                     ToolTip.Tip="Open github.com/clFaster/Mireya" />

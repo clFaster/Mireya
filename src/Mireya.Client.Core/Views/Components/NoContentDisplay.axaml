@@ -13,22 +13,22 @@
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
             <!-- Mireya branding in idle state -->
             <TextBlock Text="Mireya"
-                       FontSize="48"
+                       FontSize="{DynamicResource FontSizeDisplay}"
                        FontWeight="Bold"
-                       Foreground="#3D5AFE"
+                       Foreground="{DynamicResource AccentBrush}"
                        HorizontalAlignment="Center"
                        Opacity="0.8" />
             <TextBlock Text="{Binding StatusText}"
-                       FontSize="22"
-                       Foreground="#999"
+                       FontSize="{DynamicResource FontSizeTitle}"
+                       Foreground="{DynamicResource TextTertiaryBrush}"
                        HorizontalAlignment="Center" />
 
             <!-- First-run pairing / approval panel (UA3 + UA7) -->
             <Border IsVisible="{Binding IsAwaitingApproval}"
-                    Background="#11161F"
-                    BorderBrush="#3D5AFE"
+                    Background="{DynamicResource OverlayPanelBrush}"
+                    BorderBrush="{DynamicResource AccentBrush}"
                     BorderThickness="1"
-                    CornerRadius="16"
+                    CornerRadius="{DynamicResource RadiusXl}"
                     Padding="40,28"
                     Margin="0,12,0,0"
                     HorizontalAlignment="Center">
@@ -36,19 +36,19 @@
                     <TextBlock Text="PAIRING CODE"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="#7C8AA5"
+                               Foreground="{DynamicResource TextFieldLabelBrush}"
                                LetterSpacing="3"
                                HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding PairingCode}"
                                FontSize="46"
                                FontWeight="Bold"
-                               FontFamily="Consolas, monospace"
-                               Foreground="#EAF0FF"
+                               FontFamily="{DynamicResource MonospaceFontFamily}"
+                               Foreground="{DynamicResource TextFieldValueBrush}"
                                LetterSpacing="4"
                                HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding ApprovalStatusText}"
-                               FontSize="16"
-                               Foreground="#9AA4BA"
+                               FontSize="{DynamicResource FontSizeSubtitle}"
+                               Foreground="{DynamicResource TextDescriptionBrush}"
                                TextWrapping="Wrap"
                                MaxWidth="520"
                                TextAlignment="Center"
@@ -58,13 +58,13 @@
             </Border>
 
             <TextBlock Text="{Binding ScreenName}"
-                       FontSize="15"
-                       Foreground="#555"
+                       FontSize="{DynamicResource FontSizeBody}"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        HorizontalAlignment="Center"
                        Margin="0,8,0,0" />
             <TextBlock Text="{Binding ConnectionStatus}"
                        FontSize="12"
-                       Foreground="#444"
+                       Foreground="{DynamicResource TextFaintBrush}"
                        HorizontalAlignment="Center" />
         </StackPanel>
     </Border>

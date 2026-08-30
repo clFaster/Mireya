@@ -31,12 +31,21 @@
     <Color x:Key="AccentMutedColor">#8C9EFF</Color>
 
     <!-- Text -->
+    <Color x:Key="TextHeadlineColor">#FFFFFF</Color>
     <Color x:Key="TextPrimaryColor">#E0E0E0</Color>
     <Color x:Key="TextOnAccentColor">#FFFFFF</Color>
     <Color x:Key="TextSecondaryColor">#B0BEC5</Color>
     <Color x:Key="TextTertiaryColor">#78909C</Color>
     <Color x:Key="TextMutedColor">#546E7A</Color>
     <Color x:Key="TextFaintColor">#37474F</Color>
+
+    <!-- Text - contextual tiers used by info/status screens (Screen Info, idle, About) -->
+    <Color x:Key="TextAccentSoftColor">#C5CAE9</Color>
+    <Color x:Key="TextFieldLabelColor">#7986A8</Color>
+    <Color x:Key="TextFieldValueColor">#E8EAF6</Color>
+    <Color x:Key="TextDescriptionColor">#AAB2D5</Color>
+    <Color x:Key="TextCalloutColor">#8F98BE</Color>
+    <Color x:Key="TextHintColor">#687096</Color>
 
     <!-- Status -->
     <Color x:Key="SuccessColor">#66BB6A</Color>
@@ -46,6 +55,12 @@
     <!-- Badges -->
     <Color x:Key="BadgeSuccessBackgroundColor">#1B5E20</Color>
     <Color x:Key="BadgeSuccessForegroundColor">#A5D6A7</Color>
+    <Color x:Key="BadgeInfoBackgroundColor">#28326A</Color>
+
+    <!-- Secondary ("quiet") button variant, used alongside the primary AccentBrush button -->
+    <Color x:Key="SurfaceButtonSecondaryColor">#1B1F33</Color>
+    <Color x:Key="BorderButtonSecondaryColor">#495173</Color>
+    <Color x:Key="TextButtonSecondaryColor">#D7DBF4</Color>
 
     <!-- Brushes - prefer these over the Colors above when setting a Brush property -->
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}" />
@@ -66,6 +81,7 @@
     <SolidColorBrush x:Key="AccentAltBrush" Color="{StaticResource AccentAltColor}" />
     <SolidColorBrush x:Key="AccentMutedBrush" Color="{StaticResource AccentMutedColor}" />
 
+    <SolidColorBrush x:Key="TextHeadlineBrush" Color="{StaticResource TextHeadlineColor}" />
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccentColor}" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
@@ -73,11 +89,23 @@
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
     <SolidColorBrush x:Key="TextFaintBrush" Color="{StaticResource TextFaintColor}" />
 
+    <SolidColorBrush x:Key="TextAccentSoftBrush" Color="{StaticResource TextAccentSoftColor}" />
+    <SolidColorBrush x:Key="TextFieldLabelBrush" Color="{StaticResource TextFieldLabelColor}" />
+    <SolidColorBrush x:Key="TextFieldValueBrush" Color="{StaticResource TextFieldValueColor}" />
+    <SolidColorBrush x:Key="TextDescriptionBrush" Color="{StaticResource TextDescriptionColor}" />
+    <SolidColorBrush x:Key="TextCalloutBrush" Color="{StaticResource TextCalloutColor}" />
+    <SolidColorBrush x:Key="TextHintBrush" Color="{StaticResource TextHintColor}" />
+
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
 
     <SolidColorBrush x:Key="BadgeSuccessBackgroundBrush" Color="{StaticResource BadgeSuccessBackgroundColor}" />
     <SolidColorBrush x:Key="BadgeSuccessForegroundBrush" Color="{StaticResource BadgeSuccessForegroundColor}" />
+    <SolidColorBrush x:Key="BadgeInfoBackgroundBrush" Color="{StaticResource BadgeInfoBackgroundColor}" />
+
+    <SolidColorBrush x:Key="SurfaceButtonSecondaryBrush" Color="{StaticResource SurfaceButtonSecondaryColor}" />
+    <SolidColorBrush x:Key="BorderButtonSecondaryBrush" Color="{StaticResource BorderButtonSecondaryColor}" />
+    <SolidColorBrush x:Key="TextButtonSecondaryBrush" Color="{StaticResource TextButtonSecondaryColor}" />
 
 </ResourceDictionary>

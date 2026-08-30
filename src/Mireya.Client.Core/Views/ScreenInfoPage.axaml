@@ -7,7 +7,7 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
              x:Class="Mireya.Client.Avalonia.Views.ScreenInfoPage"
              x:DataType="vm:ContentDisplayViewModel"
-             Background="#0D0F1A">
+             Background="{DynamicResource SurfaceDeepBrush}">
 
     <Grid RowDefinitions="*,Auto">
     <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
@@ -18,66 +18,66 @@
 
             <StackPanel Spacing="8">
                 <TextBlock Text="SCREEN INFO"
-                           FontSize="13"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            FontWeight="SemiBold"
                            LetterSpacing="2"
-                           Foreground="#8C9EFF" />
+                           Foreground="{DynamicResource AccentMutedBrush}" />
                 <TextBlock Text="{Binding ScreenName}"
                            FontSize="36"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap"
-                           Foreground="White" />
+                           Foreground="{DynamicResource TextHeadlineBrush}" />
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Ellipse Width="12"
                              Height="12"
                              VerticalAlignment="Center"
                              Fill="{Binding ConnectionIndicatorColor}" />
                     <TextBlock Text="{Binding ConnectionStatus}"
-                               FontSize="16"
+                               FontSize="{DynamicResource FontSizeSubtitle}"
                                VerticalAlignment="Center"
-                               Foreground="#C5CAE9" />
+                               Foreground="{DynamicResource TextAccentSoftBrush}" />
                 </StackPanel>
             </StackPanel>
 
-            <Border Background="#171A2A"
-                    BorderBrush="#2C3150"
+            <Border Background="{DynamicResource SurfaceAltBrush}"
+                    BorderBrush="{DynamicResource BorderAltBrush}"
                     BorderThickness="1"
-                    CornerRadius="16"
+                    CornerRadius="{DynamicResource RadiusXl}"
                     Padding="24">
                 <StackPanel Spacing="20">
                     <TextBlock Text="Now playing"
                                FontSize="20"
                                FontWeight="SemiBold"
-                               Foreground="White" />
+                               Foreground="{DynamicResource TextHeadlineBrush}" />
 
                     <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
                         <TextBlock Grid.Row="0" Grid.Column="0"
                                    Text="Campaign"
                                    FontSize="14"
-                                   Foreground="#7986A8" />
+                                   Foreground="{DynamicResource TextFieldLabelBrush}" />
                         <TextBlock Grid.Row="0" Grid.Column="1"
                                    Text="{Binding CurrentCampaignName, FallbackValue=—}"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource FontSizeSubtitle}"
                                    TextWrapping="Wrap"
-                                   Foreground="#E8EAF6" />
+                                   Foreground="{DynamicResource TextFieldValueBrush}" />
 
                         <TextBlock Grid.Row="1" Grid.Column="0"
                                    Text="Asset"
                                    FontSize="14"
-                                   Foreground="#7986A8" />
+                                   Foreground="{DynamicResource TextFieldLabelBrush}" />
                         <TextBlock Grid.Row="1" Grid.Column="1"
                                    Text="{Binding CurrentAssetName, FallbackValue=—}"
-                                   FontSize="16"
+                                   FontSize="{DynamicResource FontSizeSubtitle}"
                                    TextWrapping="Wrap"
-                                   Foreground="#E8EAF6" />
+                                   Foreground="{DynamicResource TextFieldValueBrush}" />
 
                         <TextBlock Grid.Row="2" Grid.Column="0"
                                    Text="Position"
                                    FontSize="14"
-                                   Foreground="#7986A8" />
+                                   Foreground="{DynamicResource TextFieldLabelBrush}" />
                         <TextBlock Grid.Row="2" Grid.Column="1"
-                                   FontSize="16"
-                                   Foreground="#E8EAF6">
+                                   FontSize="{DynamicResource FontSizeSubtitle}"
+                                   Foreground="{DynamicResource TextFieldValueBrush}">
                             <Run Text="{Binding CurrentAssetPosition}" />
                             <Run Text=" of " />
                             <Run Text="{Binding TotalAssets}" />
@@ -86,39 +86,48 @@
                 </StackPanel>
             </Border>
 
-            <Border Background="#121522"
-                    BorderBrush="#232842"
+            <Border Background="{DynamicResource SurfaceAlt2Brush}"
+                    BorderBrush="{DynamicResource BorderAlt2Brush}"
                     BorderThickness="1"
-                    CornerRadius="16"
+                    CornerRadius="{DynamicResource RadiusXl}"
                     Padding="24">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Device status"
                                FontSize="20"
                                FontWeight="SemiBold"
-                               Foreground="White" />
+                               Foreground="{DynamicResource TextHeadlineBrush}" />
                     <TextBlock Text="{Binding StatusText}"
-                               FontSize="15"
+                               FontSize="{DynamicResource FontSizeBody}"
                                LineHeight="22"
                                TextWrapping="Wrap"
-                               Foreground="#AAB2D5" />
+                               Foreground="{DynamicResource TextDescriptionBrush}" />
                     <TextBlock Text="{Binding PairingCode}"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               FontFamily="Consolas, monospace"
+                               FontFamily="{DynamicResource MonospaceFontFamily}"
                                LetterSpacing="2"
                                TextWrapping="Wrap"
-                               Foreground="#8C9EFF" />
+                               Foreground="{DynamicResource AccentMutedBrush}" />
                 </StackPanel>
             </Border>
 
-            <components:AboutMireyaPanel />
+            <components:AboutMireyaPanel AccentBrush="{DynamicResource AccentMutedBrush}"
+                                         PanelBackground="{DynamicResource SurfaceAltBrush}"
+                                         PanelBorderBrush="{DynamicResource BorderAltBrush}"
+                                         BodyBrush="{DynamicResource TextDescriptionBrush}"
+                                         InsetBackground="{DynamicResource SurfaceDeepBrush}"
+                                         InsetBorderBrush="{DynamicResource BorderAlt2Brush}"
+                                         BadgeBackground="{DynamicResource BadgeInfoBackgroundBrush}"
+                                         ButtonBackground="{DynamicResource SurfaceButtonSecondaryBrush}"
+                                         ButtonBorderBrush="{DynamicResource BorderButtonSecondaryBrush}"
+                                         ButtonForeground="{DynamicResource TextButtonSecondaryBrush}" />
 
         </StackPanel>
     </ScrollViewer>
 
         <Border Grid.Row="1"
-                Background="#121522"
-                BorderBrush="#232842"
+                Background="{DynamicResource SurfaceAlt2Brush}"
+                BorderBrush="{DynamicResource BorderAlt2Brush}"
                 BorderThickness="0,1,0,0"
                 Padding="24,16">
             <StackPanel MaxWidth="720"
@@ -129,8 +138,8 @@
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Center"
-                        Background="#536DFE"
-                        Foreground="White"
+                        Background="{DynamicResource AccentAltBrush}"
+                        Foreground="{DynamicResource TextOnAccentBrush}"
                         CornerRadius="12"
                         FontSize="17"
                         FontWeight="SemiBold"
@@ -141,19 +150,19 @@
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Center"
-                        Background="#1B1F33"
-                        BorderBrush="#495173"
+                        Background="{DynamicResource SurfaceButtonSecondaryBrush}"
+                        BorderBrush="{DynamicResource BorderButtonSecondaryBrush}"
                         BorderThickness="1"
-                        Foreground="#D7DBF4"
+                        Foreground="{DynamicResource TextButtonSecondaryBrush}"
                         CornerRadius="12"
                         FontSize="17"
                         FontWeight="SemiBold"
                         Content="Back to server selection" />
 
                 <TextBlock Text="Press Enter, OK, Space, Escape, or Back to resume playback"
-                           FontSize="13"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            TextAlignment="Center"
-                           Foreground="#687096" />
+                           Foreground="{DynamicResource TextHintBrush}" />
             </StackPanel>
         </Border>
     </Grid>

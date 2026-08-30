@@ -10,7 +10,7 @@
              IsHitTestVisible="False">
 
     <Border IsVisible="{Binding IsIdentifying}"
-            Background="#3D5AFE"
+            Background="{DynamicResource AccentBrush}"
             Opacity="0.92"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch">
@@ -18,18 +18,18 @@
             <TextBlock Text="IDENTIFY"
                        FontSize="64"
                        FontWeight="Bold"
-                       Foreground="White"
+                       Foreground="{DynamicResource TextOnAccentBrush}"
                        LetterSpacing="8"
                        HorizontalAlignment="Center" />
             <TextBlock Text="{Binding ScreenName}"
                        FontSize="30"
-                       Foreground="White"
+                       Foreground="{DynamicResource TextOnAccentBrush}"
                        HorizontalAlignment="Center" />
             <TextBlock Text="{Binding PairingCode}"
-                       FontSize="34"
+                       FontSize="{DynamicResource FontSizeHeadline}"
                        FontWeight="Bold"
-                       FontFamily="Consolas, monospace"
-                       Foreground="White"
+                       FontFamily="{DynamicResource MonospaceFontFamily}"
+                       Foreground="{DynamicResource TextOnAccentBrush}"
                        LetterSpacing="4"
                        HorizontalAlignment="Center" />
         </StackPanel>
