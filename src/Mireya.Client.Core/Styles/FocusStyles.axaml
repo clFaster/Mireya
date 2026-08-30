@@ -1,0 +1,34 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Focus-visual styling shared by every platform and control. Fluent's default focus
+        adorner is subtle and easy to miss when there is no mouse to fall back on (Android
+        TV remote / D-pad navigation) or when tabbing via keyboard on desktop, so every
+        focusable control gets a clear accent glow plus a slight scale-up while focused.
+        Controls that expose their own border (Button, ListBoxItem, TextBox, ComboBox)
+        also get a crisp accent outline layered on top of the glow.
+    -->
+
+    <Style Selector="Button:focus-visible, ListBoxItem:focus-visible, ToggleSwitch:focus-visible, TextBox:focus-visible, ComboBox:focus-visible">
+        <Setter Property="RenderTransform" Value="scale(1.04)" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+        <Setter Property="Effect">
+            <DropShadowEffect Color="{DynamicResource AccentColor}"
+                               BlurRadius="16"
+                               OffsetX="0"
+                               OffsetY="0"
+                               Opacity="0.9" />
+        </Setter>
+    </Style>
+
+    <Style Selector="Button:focus-visible, ListBoxItem:focus-visible, TextBox:focus-visible, ComboBox:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentLightBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+</Styles>

@@ -8,7 +8,7 @@
              x:Class="Mireya.Client.Avalonia.Views.MainView"
              x:DataType="vm:MainWindowViewModel"
              d:DataContext="{x:Static vm:MainWindowViewModel.DesignInstance}"
-             Background="#1A1A2E">
+             Background="{DynamicResource AppBackgroundBrush}">
 
     <Grid>
         <ContentControl Content="{Binding CurrentView}">
@@ -28,14 +28,14 @@
                 VerticalAlignment="Top"
                 Margin="20"
                 Padding="16,10"
-                CornerRadius="8"
+                CornerRadius="{DynamicResource RadiusMd}"
                 Background="#E62A2A44"
-                BorderBrush="#536DFE"
+                BorderBrush="{DynamicResource AccentAltBrush}"
                 BorderThickness="1"
                 BoxShadow="0 4 14 0 #80000000">
             <TextBlock Text="{Binding AutoStartCountdownText}"
-                       Foreground="#ECEFF1"
-                       FontSize="13"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       FontSize="{DynamicResource FontSizeSmall}"
                        FontWeight="SemiBold" />
         </Border>
     </Grid>

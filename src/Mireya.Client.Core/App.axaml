@@ -6,10 +6,18 @@
              RequestedThemeVariant="Dark">
 
     <Application.Resources>
-        <converters:BoolToColorConverter x:Key="ErrorColorConverter"
-                                         TrueColor="#EF5350"
-                                         FalseColor="#66BB6A" />
-        <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Mireya.Client.Core/Styles/Colors.axaml" />
+                <ResourceInclude Source="avares://Mireya.Client.Core/Styles/Typography.axaml" />
+                <ResourceInclude Source="avares://Mireya.Client.Core/Styles/Spacing.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:BoolToColorConverter x:Key="ErrorColorConverter"
+                                             TrueColor="#EF5350"
+                                             FalseColor="#66BB6A" />
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
     </Application.Resources>
 
     <Application.DataTemplates>
@@ -18,9 +26,10 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://Mireya.Client.Core/Styles/FocusStyles.axaml" />
 
         <Style Selector="Window">
-            <Setter Property="Background" Value="#1A1A2E" />
+            <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />
         </Style>
     </Application.Styles>
 </Application>

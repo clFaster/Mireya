@@ -1,0 +1,83 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Mireya design tokens - color palette.
+        Single source of truth for the brushes used across the shared client UI
+        (Mireya.Client.Core) and its Desktop/Android hosts. Reference these via
+        DynamicResource/StaticResource in views instead of hardcoding hex values, so
+        future theming or platform-specific tuning only needs to change this file.
+    -->
+
+    <!-- Backgrounds -->
+    <Color x:Key="AppBackgroundColor">#1A1A2E</Color>
+    <Color x:Key="SurfaceColor">#1E1E30</Color>
+    <Color x:Key="SurfaceInsetColor">#14142A</Color>
+    <Color x:Key="SurfaceAltColor">#171A2A</Color>
+    <Color x:Key="SurfaceAlt2Color">#121522</Color>
+    <Color x:Key="SurfaceDeepColor">#0D0F1A</Color>
+    <Color x:Key="OverlayPanelColor">#11161F</Color>
+
+    <!-- Borders -->
+    <Color x:Key="BorderDefaultColor">#333333</Color>
+    <Color x:Key="BorderSubtleColor">#2A2A44</Color>
+    <Color x:Key="BorderAltColor">#2C3150</Color>
+    <Color x:Key="BorderAlt2Color">#232842</Color>
+
+    <!-- Brand / accent -->
+    <Color x:Key="AccentColor">#3D5AFE</Color>
+    <Color x:Key="AccentLightColor">#7C93FF</Color>
+    <Color x:Key="AccentAltColor">#536DFE</Color>
+    <Color x:Key="AccentMutedColor">#8C9EFF</Color>
+
+    <!-- Text -->
+    <Color x:Key="TextPrimaryColor">#E0E0E0</Color>
+    <Color x:Key="TextOnAccentColor">#FFFFFF</Color>
+    <Color x:Key="TextSecondaryColor">#B0BEC5</Color>
+    <Color x:Key="TextTertiaryColor">#78909C</Color>
+    <Color x:Key="TextMutedColor">#546E7A</Color>
+    <Color x:Key="TextFaintColor">#37474F</Color>
+
+    <!-- Status -->
+    <Color x:Key="SuccessColor">#66BB6A</Color>
+    <Color x:Key="ErrorColor">#EF5350</Color>
+    <Color x:Key="WarningColor">#FFA726</Color>
+
+    <!-- Badges -->
+    <Color x:Key="BadgeSuccessBackgroundColor">#1B5E20</Color>
+    <Color x:Key="BadgeSuccessForegroundColor">#A5D6A7</Color>
+
+    <!-- Brushes - prefer these over the Colors above when setting a Brush property -->
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="SurfaceInsetBrush" Color="{StaticResource SurfaceInsetColor}" />
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="{StaticResource SurfaceAltColor}" />
+    <SolidColorBrush x:Key="SurfaceAlt2Brush" Color="{StaticResource SurfaceAlt2Color}" />
+    <SolidColorBrush x:Key="SurfaceDeepBrush" Color="{StaticResource SurfaceDeepColor}" />
+    <SolidColorBrush x:Key="OverlayPanelBrush" Color="{StaticResource OverlayPanelColor}" />
+
+    <SolidColorBrush x:Key="BorderDefaultBrush" Color="{StaticResource BorderDefaultColor}" />
+    <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtleColor}" />
+    <SolidColorBrush x:Key="BorderAltBrush" Color="{StaticResource BorderAltColor}" />
+    <SolidColorBrush x:Key="BorderAlt2Brush" Color="{StaticResource BorderAlt2Color}" />
+
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource AccentLightColor}" />
+    <SolidColorBrush x:Key="AccentAltBrush" Color="{StaticResource AccentAltColor}" />
+    <SolidColorBrush x:Key="AccentMutedBrush" Color="{StaticResource AccentMutedColor}" />
+
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccentColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiaryColor}" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+    <SolidColorBrush x:Key="TextFaintBrush" Color="{StaticResource TextFaintColor}" />
+
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+
+    <SolidColorBrush x:Key="BadgeSuccessBackgroundBrush" Color="{StaticResource BadgeSuccessBackgroundColor}" />
+    <SolidColorBrush x:Key="BadgeSuccessForegroundBrush" Color="{StaticResource BadgeSuccessForegroundColor}" />
+
+</ResourceDictionary>

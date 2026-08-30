@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Spacing and corner-radius scale. Use these instead of ad-hoc pixel values so
+        density stays consistent between sections/screens, and so platform-specific
+        breakpoints (touch vs. TV vs. desktop) can be retuned from one place.
+    -->
+    <x:Double x:Key="SpacingXs">4</x:Double>
+    <x:Double x:Key="SpacingSm">8</x:Double>
+    <x:Double x:Key="SpacingMd">12</x:Double>
+    <x:Double x:Key="SpacingLg">20</x:Double>
+    <x:Double x:Key="SpacingXl">30</x:Double>
+
+    <CornerRadius x:Key="RadiusSm">4</CornerRadius>
+    <CornerRadius x:Key="RadiusMd">6</CornerRadius>
+    <CornerRadius x:Key="RadiusLg">10</CornerRadius>
+    <CornerRadius x:Key="RadiusXl">16</CornerRadius>
+
+    <!--
+        Minimum interactive target sizes. 44px covers desktop pointer + Android touch
+        guidance (48dp); TvMinTouchTarget is larger again for remote-control focus
+        targets that also need to be comfortably readable from a couch.
+    -->
+    <x:Double x:Key="MinTouchTarget">44</x:Double>
+    <x:Double x:Key="TvMinTouchTarget">56</x:Double>
+
+</ResourceDictionary>

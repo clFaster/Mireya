@@ -12,7 +12,7 @@
         Title="Mireya Digital Signage"
         Width="800" Height="650"
         MinWidth="700" MinHeight="550"
-        Background="#1A1A2E">
+        Background="{DynamicResource AppBackgroundBrush}">
 
     <views:MainView />
 
