@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.ComponentModel;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -23,6 +24,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly AppSettings _appSettings;
+    private readonly IDisplayPresentationController _presentationController;
     private CancellationTokenSource? _autoStartCts;
     private bool _disposed;
 
@@ -34,6 +36,24 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
+
+    partial void OnCurrentViewChanged(ViewModelBase? oldValue, ViewModelBase? newValue)
+    {
+        if (oldValue is ContentDisplayViewModel oldContent)
+        {
+            oldContent.ReturnToServerSelectionRequested -= ReturnToServerSelection;
+            oldContent.PropertyChanged -= OnContentPropertyChanged;
+        }
+
+        if (newValue is ContentDisplayViewModel content)
+        {
+            content.ReturnToServerSelectionRequested += ReturnToServerSelection;
+            content.PropertyChanged += OnContentPropertyChanged;
+            ApplyContentPresentation(content);
+        }
+        else
+            _presentationController.Apply(DisplayPresentation.Interactive);
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AutoStartCountdownText))]
@@ -54,18 +74,21 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         _serviceProvider = null!;
         _logger = NullLogger<MainWindowViewModel>.Instance;
         _appSettings = null!;
+        _presentationController = new NoopDisplayPresentationController();
         CurrentView = ContentDisplayViewModel.DesignInstance;
     }
 
     public MainWindowViewModel(
         IServiceProvider serviceProvider,
         ILogger<MainWindowViewModel> logger,
-        AppSettings appSettings
+        AppSettings appSettings,
+        IDisplayPresentationController? presentationController = null
     )
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _appSettings = appSettings;
+        _presentationController = presentationController ?? new NoopDisplayPresentationController();
 
         _logger.LogInformation("MainWindowViewModel initialized");
 
@@ -129,9 +152,22 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
         DisposeCurrentView();
 
         var content = _serviceProvider.GetRequiredService<ContentDisplayViewModel>();
-        content.ReturnToServerSelectionRequested += ReturnToServerSelection;
         CurrentView = content;
     }
+
+    private void OnContentPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ContentDisplayViewModel.IsScreenInfoVisible)
+            && sender is ContentDisplayViewModel content)
+            ApplyContentPresentation(content);
+    }
+
+    private void ApplyContentPresentation(ContentDisplayViewModel content) =>
+        _presentationController.Apply(
+            content.IsScreenInfoVisible
+                ? DisplayPresentation.Interactive
+                : DisplayPresentation.Playback
+        );
 
     /// <summary>Stops playback, disconnects from the active server, and shows server selection.</summary>
     public void ReturnToServerSelection()
@@ -303,9 +339,6 @@ public sealed partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void DisposeCurrentView()
     {
-        if (CurrentView is ContentDisplayViewModel content)
-            content.ReturnToServerSelectionRequested -= ReturnToServerSelection;
-
         if (CurrentView is IDisposable disposable)
         {
             _logger.LogDebug("Disposing current view: {ViewType}", CurrentView.GetType().Name);

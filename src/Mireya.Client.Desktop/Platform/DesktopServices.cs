@@ -13,7 +13,11 @@ public static class DesktopServices
     {
         return DisplayClientServiceProviderFactory.Build<DesktopAssetViewFactory>(
             App.DefaultBackendUrl,
-            supportsFullscreen: true
+            new ClientPlatformCapabilities
+            {
+                SupportsFullscreen = true,
+                FormFactor = FormFactor.Desktop,
+            }
         );
     }
 }

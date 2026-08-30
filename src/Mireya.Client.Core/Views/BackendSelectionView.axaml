@@ -1,362 +1,357 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
-             xmlns:components="using:Mireya.Client.Avalonia.Views.Components"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
-             x:Class="Mireya.Client.Avalonia.Views.BackendSelectionView"
-             x:DataType="vm:BackendSelectionViewModel">
+<platform:AdaptiveUserControl xmlns="https://github.com/avaloniaui"
+                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                              xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+                              xmlns:components="using:Mireya.Client.Avalonia.Views.Components"
+                              xmlns:platform="using:Mireya.Client.Avalonia.Platform"
+                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                              mc:Ignorable="d"
+                              d:DesignWidth="1200"
+                              d:DesignHeight="800"
+                              x:Class="Mireya.Client.Avalonia.Views.BackendSelectionView"
+                              x:DataType="vm:BackendSelectionViewModel"
+                              Background="{DynamicResource AppBackgroundBrush}">
 
-    <!-- ErrorColorConverter is shared from App.axaml Application.Resources. -->
+    <platform:AdaptiveUserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusLg}" />
+            <Setter Property="Padding" Value="{DynamicResource MireyaCardPadding}" />
+        </Style>
+        <Style Selector="Border.hero-card">
+            <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderAltBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusXl}" />
+            <Setter Property="Padding" Value="{DynamicResource MireyaCardPadding}" />
+        </Style>
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="LetterSpacing" Value="1.5" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentMutedBrush}" />
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextHeadlineBrush}" />
+        </Style>
+        <Style Selector="Button.primary-action">
+            <Setter Property="Height" Value="{DynamicResource ControlHeightLg}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.secondary-action">
+            <Setter Property="Height" Value="{DynamicResource ControlHeightMd}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceButtonSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderButtonSecondaryBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextButtonSecondaryBrush}" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}" />
+        </Style>
 
-    <ScrollViewer>
-        <!--
-            MaxWidth caps the column on wide desktop windows while HorizontalAlignment="Stretch"
-            (plus the Margin) lets it fill the available width on phones/tablets instead of
-            floating as a narrow fixed-size dialog.
-        -->
-        <StackPanel MaxWidth="540"
-                    Margin="20,30"
-                    Spacing="{DynamicResource SpacingLg}"
-                    HorizontalAlignment="Stretch">
+        <Style Selector="platform|AdaptiveUserControl.tv TextBlock.desktop-hint">
+            <Setter Property="Text" Value="Use the D-pad to move. Press OK to select." />
+        </Style>
 
-            <!-- Header -->
-            <StackPanel Spacing="6" Margin="0,10,0,4">
-                <TextBlock Text="Mireya"
-                           FontSize="{DynamicResource FontSizeHeadline}"
-                           FontWeight="Bold"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           HorizontalAlignment="Center" />
-                <TextBlock Text="Digital Signage Client"
-                           FontSize="{DynamicResource FontSizeBody}"
-                           Foreground="{DynamicResource TextMutedBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,4" />
-                <Border Height="2" Background="{DynamicResource AccentBrush}" CornerRadius="1"
-                        Width="60" HorizontalAlignment="Center" Margin="0,4,0,0" />
-            </StackPanel>
+        <Style Selector="platform|AdaptiveUserControl.compact TextBlock.hero-title">
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
+        </Style>
 
-            <!-- Available Servers Section -->
-            <Border BorderBrush="{DynamicResource BorderDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource RadiusLg}"
-                    Padding="20"
-                    Background="{DynamicResource SurfaceBrush}">
-                <StackPanel Spacing="{DynamicResource SpacingMd}">
-                    <TextBlock Text="Available Servers"
-                               FontSize="{DynamicResource FontSizeSubtitle}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextSecondaryBrush}" />
+        <Style Selector="platform|AdaptiveUserControl.compact Border.hero-mark">
+            <Setter Property="Width" Value="52" />
+            <Setter Property="Height" Value="52" />
+        </Style>
+    </platform:AdaptiveUserControl.Styles>
 
-                    <!-- Server list -->
-                    <ListBox ItemsSource="{Binding Backends}"
-                             SelectedItem="{Binding SelectedBackend}"
-                             MinHeight="{DynamicResource MinTouchTarget}"
-                             MaxHeight="280"
-                             Background="{DynamicResource SurfaceInsetBrush}"
-                             BorderBrush="{DynamicResource BorderSubtleBrush}"
-                             BorderThickness="1"
-                             CornerRadius="{DynamicResource RadiusMd}"
-                             Padding="4"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <Border Padding="{DynamicResource MireyaPagePadding}">
+            <Grid x:Name="SetupLayout"
+                  Classes="setup-layout"
+                  ColumnDefinitions="*"
+                  RowDefinitions="Auto,Auto"
+                  MaxWidth="{DynamicResource ShellMaxWidth}"
+                  HorizontalAlignment="Center">
 
-                        <ListBox.Styles>
-                            <Style Selector="ListBoxItem">
-                                <Setter Property="Padding" Value="10,10" />
-                                <Setter Property="Margin" Value="0,3" />
-                                <Setter Property="MinHeight" Value="{DynamicResource MinTouchTarget}" />
-                                <Setter Property="CornerRadius" Value="5" />
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="VerticalContentAlignment" Value="Center" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
-                                <Setter Property="BorderThickness" Value="1" />
-                            </Style>
-                        </ListBox.Styles>
+                <StackPanel x:Name="SetupPrimary"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Classes="setup-primary"
+                            Spacing="{DynamicResource SpacingLg}">
+                    <Border Classes="hero-card">
+                        <Grid x:Name="HeroLayout"
+                              ColumnDefinitions="Auto,*"
+                              ColumnSpacing="{DynamicResource SpacingLg}">
+                            <Border x:Name="HeroMark"
+                                    Classes="hero-mark"
+                                    Width="64"
+                                    Height="64"
+                                    CornerRadius="{DynamicResource RadiusLg}"
+                                    Background="{DynamicResource AccentBrush}"
+                                    VerticalAlignment="Top">
+                                <TextBlock Text="M"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="30"
+                                           FontWeight="Bold"
+                                           Foreground="White" />
+                            </Border>
+                            <StackPanel x:Name="HeroCopy"
+                                        Grid.Column="1"
+                                        Spacing="{DynamicResource SpacingXs}">
+                                <TextBlock Classes="eyebrow" Text="MIREYA DISPLAY" />
+                                <TextBlock Classes="hero-title"
+                                           Text="Choose where this screen belongs"
+                                           FontSize="{DynamicResource FontSizeHeadline}"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextHeadlineBrush}" />
+                                <TextBlock Text="Connect to a Mireya server, then let this device settle into playback."
+                                           FontSize="{DynamicResource FontSizeBody}"
+                                           LineHeight="24"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextDescriptionBrush}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
 
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="vm:BackendItemViewModel">
-                                <!--
-                                    Columns:
-                                      [0] 14 px  – online status dot
-                                      [1] *      – server name + URL (takes remaining space)
-                                      [2] Auto   – CURRENT badge
-                                      [3] Auto   – delete button
-                                -->
-                                <Grid ColumnDefinitions="14,*,Auto,Auto"
-                                      ColumnSpacing="8"
-                                      VerticalAlignment="Center">
+                    <Border Classes="card">
+                        <StackPanel Spacing="{DynamicResource SpacingMd}">
+                            <StackPanel Spacing="{DynamicResource SpacingXs}">
+                                <TextBlock Classes="eyebrow" Text="01  SERVER" />
+                                <TextBlock Classes="section-title" Text="Available servers" />
+                                <TextBlock Text="Online servers are ready to connect."
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
+                            </StackPanel>
 
-                                    <!-- Online status dot -->
-                                    <Ellipse Grid.Column="0"
-                                             Width="8" Height="8"
-                                             VerticalAlignment="Center"
-                                             Fill="{Binding StatusDotBrush}" />
+                            <ListBox ItemsSource="{Binding Backends}"
+                                     SelectedItem="{Binding SelectedBackend}"
+                                     MinHeight="{DynamicResource MinTouchTarget}"
+                                     MaxHeight="320"
+                                     Background="{DynamicResource SurfaceInsetBrush}"
+                                     BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                     BorderThickness="1"
+                                     CornerRadius="{DynamicResource RadiusMd}"
+                                     Padding="{DynamicResource MireyaInsetXs}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.Styles>
+                                    <Style Selector="ListBoxItem">
+                                        <Setter Property="Padding" Value="{DynamicResource MireyaInsetSm}" />
+                                        <Setter Property="Margin" Value="0,2" />
+                                        <Setter Property="MinHeight" Value="{DynamicResource MinTouchTarget}" />
+                                        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="1" />
+                                    </Style>
+                                    <Style Selector="ListBoxItem:selected">
+                                        <Setter Property="Background" Value="#263263" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
+                                    </Style>
+                                </ListBox.Styles>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="vm:BackendItemViewModel">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                                              ColumnSpacing="{DynamicResource SpacingSm}"
+                                              VerticalAlignment="Center">
+                                            <Ellipse Grid.Column="0"
+                                                     Width="10"
+                                                     Height="10"
+                                                     Fill="{Binding StatusDotBrush}"
+                                                     VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Instance.Name}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="{DynamicResource FontSizeSmall}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           IsVisible="{Binding Instance.Name, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                <TextBlock Text="{Binding Instance.BaseUrl}"
+                                                           FontSize="{DynamicResource FontSizeCaption}"
+                                                           Foreground="{DynamicResource TextTertiaryBrush}"
+                                                           FontFamily="{DynamicResource MonospaceFontFamily}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <Border Grid.Column="2"
+                                                    Background="{DynamicResource BadgeSuccessBackgroundBrush}"
+                                                    CornerRadius="{DynamicResource RadiusSm}"
+                                                    Padding="8,4"
+                                                    IsVisible="{Binding Instance.IsCurrentBackend}">
+                                                <TextBlock Text="CURRENT"
+                                                           FontSize="{DynamicResource FontSizeCaption}"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource BadgeSuccessForegroundBrush}" />
+                                            </Border>
+                                            <Button Grid.Column="3"
+                                                    Command="{Binding DeleteCommand}"
+                                                    Content="×"
+                                                    Width="{DynamicResource MinTouchTarget}"
+                                                    Height="{DynamicResource MinTouchTarget}"
+                                                    Padding="0"
+                                                    HorizontalContentAlignment="Center"
+                                                    VerticalContentAlignment="Center"
+                                                    FontSize="20"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource TextMutedBrush}"
+                                                    CornerRadius="{DynamicResource RadiusSm}"
+                                                    ToolTip.Tip="Remove server" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
 
-                                     <!-- Server name + URL -->
-                                    <StackPanel Grid.Column="1"
-                                                Spacing="2"
-                                                VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Instance.Name}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   IsVisible="{Binding Instance.Name,
-                                                       Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                                        <TextBlock Text="{Binding Instance.BaseUrl}"
-                                                   FontSize="12"
-                                                   Foreground="{DynamicResource TextTertiaryBrush}"
-                                                   FontFamily="{DynamicResource MonospaceFontFamily}"
-                                                   VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-
-                                    <!-- "CURRENT" badge -->
-                                    <Border Grid.Column="2"
-                                            Background="{DynamicResource BadgeSuccessBackgroundBrush}"
-                                            CornerRadius="{DynamicResource RadiusSm}"
-                                            Padding="6,3"
-                                            VerticalAlignment="Center"
-                                            IsVisible="{Binding Instance.IsCurrentBackend}">
-                                        <TextBlock Text="CURRENT"
-                                                   FontSize="9"
-                                                   FontWeight="Bold"
-                                                   Foreground="{DynamicResource BadgeSuccessForegroundBrush}"
-                                                   LetterSpacing="0.5" />
-                                    </Border>
-
-                                    <!-- Delete button — sized to MinTouchTarget so it's a comfortable
-                                         tap target on phones/tablets and a clear D-pad focus target on TV. -->
-                                    <Button Grid.Column="3"
-                                            Command="{Binding DeleteCommand}"
-                                            Content="✕"
-                                            Width="{DynamicResource MinTouchTarget}"
-                                            Height="{DynamicResource MinTouchTarget}"
-                                            Padding="0"
-                                            HorizontalContentAlignment="Center"
-                                            VerticalContentAlignment="Center"
-                                            FontSize="14"
-                                            Background="Transparent"
-                                            Foreground="{DynamicResource TextMutedBrush}"
-                                            CornerRadius="{DynamicResource RadiusSm}"
-                                            VerticalAlignment="Center"
-                                            ToolTip.Tip="Remove server" />
-
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <!-- Online indicator legend -->
-                    <StackPanel Orientation="Horizontal" Spacing="14" Margin="2,0,0,0">
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
-                            <TextBlock Text="Online" FontSize="{DynamicResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
-                            <TextBlock Text="Offline" FontSize="{DynamicResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource WarningBrush}" VerticalAlignment="Center" />
-                            <TextBlock Text="Checking…" FontSize="{DynamicResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-
-                    <!-- Connect Button — only enabled when selected server is online -->
-                    <Button Content="Connect"
-                            Command="{Binding ConnectCommand}"
-                            Height="44"
-                            FontSize="{DynamicResource FontSizeBody}"
-                            FontWeight="SemiBold"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            Background="{DynamicResource AccentBrush}"
-                            Foreground="{DynamicResource TextOnAccentBrush}"
-                            CornerRadius="{DynamicResource RadiusMd}" />
-                </StackPanel>
-            </Border>
-
-            <!-- Add New Server Section -->
-            <Border BorderBrush="{DynamicResource BorderDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource RadiusLg}"
-                    Padding="20"
-                    Background="{DynamicResource SurfaceBrush}">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Add New Server"
-                               FontSize="{DynamicResource FontSizeSubtitle}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               Margin="0,0,0,2" />
-
-                    <TextBlock Text="Server URL"
-                               FontWeight="Medium"
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Foreground="{DynamicResource TextTertiaryBrush}" />
-                    <TextBox Text="{Binding NewBackendUrl}"
-                             PlaceholderText="https://your-mireya-server.com"
-                             FontSize="14"
-                             Padding="12,10"
-                             CornerRadius="{DynamicResource RadiusMd}"
-                             IsEnabled="{Binding IsVerifyingServer,
-                                         Converter={StaticResource InverseBoolConverter}}" />
-
-                    <Button Content="{Binding AddButtonLabel}"
-                            Command="{Binding AddBackendCommand}"
-                            IsEnabled="{Binding IsVerifyingServer,
-                                        Converter={StaticResource InverseBoolConverter}}"
-                            Height="40"
-                            FontSize="14"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            CornerRadius="{DynamicResource RadiusMd}" />
-                </StackPanel>
-            </Border>
-
-            <!-- Status / notification banner (auto-hides for success messages) -->
-            <Border BorderBrush="{DynamicResource TextFaintBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource RadiusLg}"
-                    Padding="16"
-                    Background="{DynamicResource SurfaceAltBrush}"
-                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                <TextBlock Text="{Binding StatusMessage}"
-                           TextWrapping="Wrap"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           LineHeight="20"
-                           Foreground="{Binding IsStatusError, Converter={StaticResource ErrorColorConverter}}" />
-            </Border>
-
-            <!-- Asset Cache Section -->
-            <Border BorderBrush="{DynamicResource BorderDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource RadiusLg}"
-                    Padding="20"
-                    Background="{DynamicResource SurfaceBrush}">
-                <StackPanel Spacing="{DynamicResource SpacingMd}">
-                    <TextBlock Text="Asset Cache"
-                               FontSize="{DynamicResource FontSizeSubtitle}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextSecondaryBrush}" />
-
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="Downloaded media"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       FontWeight="Medium"
-                                       Foreground="{DynamicResource TextPrimaryBrush}" />
-                            <TextBlock Text="{Binding AssetCacheSummary}"
+                            <TextBlock Classes="desktop-hint"
+                                       Text="Select a server above, then connect."
                                        FontSize="{DynamicResource FontSizeCaption}"
-                                       Foreground="{DynamicResource TextTertiaryBrush}" />
+                                       Foreground="{DynamicResource TextHintBrush}" />
+                            <Button Classes="primary-action"
+                                    Content="Connect to selected server"
+                                    Command="{Binding ConnectCommand}"
+                                    HorizontalAlignment="Stretch" />
                         </StackPanel>
+                    </Border>
 
-                        <Button Grid.Column="1"
-                                Content="{Binding ClearAssetCacheButtonLabel}"
-                                Command="{Binding ClearAssetCacheCommand}"
-                                MinWidth="110"
-                                Height="36"
-                                Padding="14,6"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                CornerRadius="{DynamicResource RadiusMd}"
-                                ToolTip.Tip="Delete downloaded asset files; required media will download again" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <!-- Display Settings Section -->
-            <Border BorderBrush="{DynamicResource BorderDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource RadiusLg}"
-                    Padding="20"
-                    Background="{DynamicResource SurfaceBrush}">
-                <StackPanel Spacing="{DynamicResource SpacingMd}">
-                    <TextBlock Text="Display Settings"
-                               FontSize="{DynamicResource FontSizeSubtitle}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               Margin="0,0,0,2" />
-
-                    <!-- Fullscreen is available only on windowed desktop clients. -->
-                    <Grid ColumnDefinitions="*,Auto"
-                          IsVisible="{Binding SupportsFullscreen}">
-                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="Fullscreen"
-                                       FontSize="{DynamicResource FontSizeSmall}"
+                    <Border Classes="card">
+                        <StackPanel Spacing="{DynamicResource SpacingMd}">
+                            <StackPanel Spacing="{DynamicResource SpacingXs}">
+                                <TextBlock Classes="eyebrow" Text="02  ADD SERVER" />
+                                <TextBlock Classes="section-title" Text="Connect somewhere new" />
+                            </StackPanel>
+                            <TextBlock Text="Server URL"
                                        FontWeight="Medium"
-                                       Foreground="{DynamicResource TextPrimaryBrush}" />
-                            <TextBlock Text="Launch the window maximised with no title bar"
-                                       FontSize="{DynamicResource FontSizeCaption}"
-                                       Foreground="{DynamicResource TextMutedBrush}" />
-                            <TextBlock Text="Applied immediately"
-                                       FontSize="10"
-                                       Foreground="{DynamicResource TextFaintBrush}"
-                                       FontStyle="Italic" />
-                        </StackPanel>
-                        <ToggleSwitch Grid.Column="1"
-                                      IsChecked="{Binding Fullscreen}"
-                                      VerticalAlignment="Center"
-                                      OffContent=""
-                                      OnContent="" />
-                    </Grid>
-
-                    <Border Height="1"
-                            Background="{DynamicResource BorderSubtleBrush}"
-                            IsVisible="{Binding SupportsFullscreen}" />
-
-                    <!-- AutoStart toggle -->
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="Auto Start"
                                        FontSize="{DynamicResource FontSizeSmall}"
-                                       FontWeight="Medium"
-                                       Foreground="{DynamicResource TextPrimaryBrush}" />
-                            <TextBlock Text="Skip server selection and connect automatically on launch"
-                                       FontSize="{DynamicResource FontSizeCaption}"
-                                       Foreground="{DynamicResource TextMutedBrush}" />
-                            <TextBlock Text="Takes effect on next launch"
-                                       FontSize="10"
-                                       Foreground="{DynamicResource TextFaintBrush}"
-                                       FontStyle="Italic" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                            <TextBox Text="{Binding NewBackendUrl}"
+                                     PlaceholderText="https://your-mireya-server.com"
+                                     Height="{DynamicResource ControlHeightLg}"
+                                     FontSize="{DynamicResource FontSizeBody}"
+                                     Padding="12,0"
+                                     VerticalContentAlignment="Center"
+                                     CornerRadius="{DynamicResource RadiusMd}"
+                                     IsEnabled="{Binding IsVerifyingServer, Converter={StaticResource InverseBoolConverter}}" />
+                            <Button Classes="secondary-action"
+                                    Content="{Binding AddButtonLabel}"
+                                    Command="{Binding AddBackendCommand}"
+                                    IsEnabled="{Binding IsVerifyingServer, Converter={StaticResource InverseBoolConverter}}"
+                                    HorizontalAlignment="Stretch" />
                         </StackPanel>
-                        <ToggleSwitch Grid.Column="1"
-                                      IsChecked="{Binding AutoStart}"
-                                      VerticalAlignment="Center"
-                                      OffContent=""
-                                      OnContent="" />
-                    </Grid>
+                    </Border>
 
-                    <!-- Save button -->
-                    <Button Content="Save Settings"
-                            Command="{Binding SaveSettingsCommand}"
-                            Height="40"
-                            FontSize="14"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
+                    <Border Background="{DynamicResource SurfaceAltBrush}"
+                            BorderBrush="{DynamicResource BorderAltBrush}"
+                            BorderThickness="1"
                             CornerRadius="{DynamicResource RadiusMd}"
-                            Margin="0,4,0,0" />
+                            Padding="{DynamicResource MireyaInsetMd}"
+                            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   TextWrapping="Wrap"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   LineHeight="22"
+                                   Foreground="{Binding IsStatusError, Converter={StaticResource ErrorColorConverter}}" />
+                    </Border>
                 </StackPanel>
-            </Border>
 
-            <!-- About Mireya — placed last so it doesn't compete with the server selection task above -->
-            <components:AboutMireyaPanel PanelBackground="{DynamicResource SurfaceBrush}"
-                                          PanelBorderBrush="{DynamicResource BorderDefaultBrush}"
-                                          AccentBrush="{DynamicResource AccentLightBrush}"
-                                          BodyBrush="#90A4AE"
-                                          InsetBackground="{DynamicResource SurfaceInsetBrush}"
-                                          InsetBorderBrush="{DynamicResource BorderSubtleBrush}"
-                                          BadgeBackground="#24305C"
-                                          ButtonBackground="{DynamicResource SurfaceInsetBrush}"
-                                          ButtonBorderBrush="{DynamicResource BorderDefaultBrush}"
-                                          ButtonForeground="#CFD8DC"
-                                          CalloutTitle="First time here?"
-                                          CalloutText="Add your server's reachable base URL below, then approve this screen from that server's admin console once it appears online." />
+                <StackPanel x:Name="SetupSecondary"
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Classes="setup-secondary"
+                            Margin="0,24,0,0"
+                            Spacing="{DynamicResource SpacingLg}">
+                    <Border Classes="card">
+                        <StackPanel Spacing="{DynamicResource SpacingMd}">
+                            <TextBlock Classes="eyebrow" Text="DEVICE" />
+                            <TextBlock Classes="section-title" Text="Playback preferences" />
 
-        </StackPanel>
+                            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding SupportsFullscreen}">
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Fullscreen"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               FontWeight="Medium"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    <TextBlock Text="Fill the desktop display"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1"
+                                              IsChecked="{Binding Fullscreen}"
+                                              MinWidth="{DynamicResource MinTouchTarget}"
+                                              MinHeight="{DynamicResource MinTouchTarget}"
+                                              OffContent=""
+                                              OnContent="" />
+                            </Grid>
+
+                            <Border Height="1"
+                                    Background="{DynamicResource BorderSubtleBrush}"
+                                    IsVisible="{Binding SupportsFullscreen}" />
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Auto-connect"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               FontWeight="Medium"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    <TextBlock Text="Start playback on the last server"
+                                               FontSize="{DynamicResource FontSizeCaption}"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1"
+                                              IsChecked="{Binding AutoStart}"
+                                              MinWidth="{DynamicResource MinTouchTarget}"
+                                              MinHeight="{DynamicResource MinTouchTarget}"
+                                              OffContent=""
+                                              OnContent="" />
+                            </Grid>
+
+                            <Button Classes="secondary-action"
+                                    Content="Save preferences"
+                                    Command="{Binding SaveSettingsCommand}"
+                                    HorizontalAlignment="Stretch" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card">
+                        <StackPanel Spacing="{DynamicResource SpacingMd}">
+                            <TextBlock Classes="eyebrow" Text="STORAGE" />
+                            <TextBlock Classes="section-title" Text="Downloaded media" />
+                            <TextBlock Text="{Binding AssetCacheSummary}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource TextDescriptionBrush}" />
+                            <Button Classes="secondary-action"
+                                    Content="{Binding ClearAssetCacheButtonLabel}"
+                                    Command="{Binding ClearAssetCacheCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    ToolTip.Tip="Delete downloaded asset files; required media will download again" />
+                        </StackPanel>
+                    </Border>
+
+                    <components:AboutMireyaPanel PanelBackground="{DynamicResource SurfaceBrush}"
+                                                  PanelBorderBrush="{DynamicResource BorderDefaultBrush}"
+                                                  AccentBrush="{DynamicResource AccentLightBrush}"
+                                                  BodyBrush="{DynamicResource TextDescriptionBrush}"
+                                                  InsetBackground="{DynamicResource SurfaceInsetBrush}"
+                                                  InsetBorderBrush="{DynamicResource BorderSubtleBrush}"
+                                                  BadgeBackground="{DynamicResource BadgeInfoBackgroundBrush}"
+                                                  ButtonBackground="{DynamicResource SurfaceInsetBrush}"
+                                                  ButtonBorderBrush="{DynamicResource BorderDefaultBrush}"
+                                                  ButtonForeground="{DynamicResource TextButtonSecondaryBrush}"
+                                                  CalloutTitle="First time here?"
+                                                  CalloutText="Add the server's reachable URL, then approve this screen in the Mireya admin console." />
+                </StackPanel>
+            </Grid>
+        </Border>
     </ScrollViewer>
 
-</UserControl>
+</platform:AdaptiveUserControl>

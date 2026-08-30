@@ -3,11 +3,13 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Markup.Xaml.Styling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Mireya.ApiClient.Data;
 using Mireya.ApiClient.Services;
 using Mireya.Client.Avalonia.Services;
+using Mireya.Client.Avalonia.Platform;
 using Mireya.Client.Avalonia.ViewModels;
 using Mireya.Client.Avalonia.Views;
 using Serilog;
@@ -159,6 +161,10 @@ public class App : Application
             );
         Services = serviceProvider;
 
+        // Retune the shared token scale once for the active input model. Views keep
+        // referencing the same semantic resources; only their resolved values differ.
+        ApplyDensity(serviceProvider.GetRequiredService<ClientPlatformCapabilities>().Density);
+
         // Apply database migrations and load settings in the same startup scope
         Log.Information("Initializing database and applying migrations...");
         using (var startupScope = serviceProvider.CreateScope())
@@ -192,5 +198,17 @@ public class App : Application
         var mainViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
         RootViewModel = mainViewModel;
         return (serviceProvider, appSettings, mainViewModel);
+    }
+
+    private static void ApplyDensity(UiDensity density)
+    {
+        if (density == UiDensity.Pointer || Current is not App app)
+            return;
+
+        var profile = density == UiDensity.Touch ? "Touch" : "Television";
+        var source = new Uri($"avares://Mireya.Client.Core/Styles/Density.{profile}.axaml");
+        app.Resources.MergedDictionaries.Add(
+            new ResourceInclude(new Uri("avares://Mireya.Client.Core/")) { Source = source }
+        );
     }
 }

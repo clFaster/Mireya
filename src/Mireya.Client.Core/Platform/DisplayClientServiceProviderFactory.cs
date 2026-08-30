@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Mireya.ApiClient;
 using Mireya.ApiClient.Data;
@@ -19,28 +20,39 @@ namespace Mireya.Client.Avalonia.Platform;
 /// </summary>
 public static class DisplayClientServiceProviderFactory
 {
+    /// <param name="defaultBackendUrl">Fallback backend URL for unattended deployments.</param>
+    /// <param name="capabilities">What the active head supports and which device class it runs on.</param>
+    /// <param name="configurePlatformServices">
+    ///     Optional hook for head-specific registrations, such as an
+    ///     <see cref="IDisplayPresentationController" /> that can actually rotate and
+    ///     un-chrome the native window. Registrations made here replace the shared
+    ///     defaults, so the hook runs last.
+    /// </param>
     public static IServiceProvider Build<TAssetViewFactory>(
         string defaultBackendUrl,
-        bool supportsFullscreen
+        ClientPlatformCapabilities capabilities,
+        Action<IServiceCollection>? configurePlatformServices = null
     )
         where TAssetViewFactory : class, IAssetViewFactory
     {
         var services = new ServiceCollection();
-        services.AddDisplayClientServices<TAssetViewFactory>(defaultBackendUrl, supportsFullscreen);
+        services.AddDisplayClientServices<TAssetViewFactory>(defaultBackendUrl, capabilities);
+        configurePlatformServices?.Invoke(services);
         return services.BuildServiceProvider();
     }
 
     private static void AddDisplayClientServices<TAssetViewFactory>(
         this IServiceCollection services,
         string defaultBackendUrl,
-        bool supportsFullscreen
+        ClientPlatformCapabilities capabilities
     )
         where TAssetViewFactory : class, IAssetViewFactory
     {
-        services.AddSingleton(
-            new ClientPlatformCapabilities { SupportsFullscreen = supportsFullscreen }
-        );
+        services.AddSingleton(capabilities);
         services.AddSingleton<AppSettings>();
+
+        // Replaced by the platform head when it can control orientation and system chrome.
+        services.TryAddSingleton<IDisplayPresentationController, NoopDisplayPresentationController>();
 
         services.AddLogging(builder =>
         {

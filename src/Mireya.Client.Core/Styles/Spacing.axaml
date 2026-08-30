@@ -2,15 +2,32 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        Spacing and corner-radius scale. Use these instead of ad-hoc pixel values so
-        density stays consistent between sections/screens, and so platform-specific
-        breakpoints (touch vs. TV vs. desktop) can be retuned from one place.
+        Baseline (pointer-density) spacing, sizing, and corner-radius scale.
+
+        This dictionary defines every layout token the shared UI is allowed to use. The
+        Touch and Television density profiles in Density.*.axaml override the *same keys*
+        and are merged on top at startup by App.ApplyDensity, so a view never branches on
+        the platform: it asks for SpacingLg or ControlHeightMd and gets the value that is
+        right for the device it happens to be running on.
+
+        Add new values here first (with a pointer-density default) before overriding them
+        in a profile, otherwise the lookup falls through to nothing on desktop.
     -->
+
+    <!-- Gaps between siblings -->
     <x:Double x:Key="SpacingXs">4</x:Double>
     <x:Double x:Key="SpacingSm">8</x:Double>
     <x:Double x:Key="SpacingMd">12</x:Double>
     <x:Double x:Key="SpacingLg">20</x:Double>
     <x:Double x:Key="SpacingXl">30</x:Double>
+    <x:Double x:Key="SpacingXxl">40</x:Double>
+
+    <!-- Thickness equivalents for Padding/Margin properties. Dynamic resources are
+         assigned at runtime, so Avalonia cannot apply the XAML Double-to-Thickness
+         converter used for literal values. -->
+    <Thickness x:Key="MireyaInsetXs">4</Thickness>
+    <Thickness x:Key="MireyaInsetSm">8</Thickness>
+    <Thickness x:Key="MireyaInsetMd">12</Thickness>
 
     <CornerRadius x:Key="RadiusSm">4</CornerRadius>
     <CornerRadius x:Key="RadiusMd">6</CornerRadius>
@@ -18,11 +35,36 @@
     <CornerRadius x:Key="RadiusXl">16</CornerRadius>
 
     <!--
-        Minimum interactive target sizes. 44px covers desktop pointer + Android touch
-        guidance (48dp); TvMinTouchTarget is larger again for remote-control focus
-        targets that also need to be comfortably readable from a couch.
+        Minimum interactive target size. 44 px covers desktop pointer input; the Touch
+        profile raises it to Android's 48 dp guidance and the Television profile raises it
+        again so D-pad focus targets stay readable from a couch.
     -->
     <x:Double x:Key="MinTouchTarget">44</x:Double>
-    <x:Double x:Key="TvMinTouchTarget">56</x:Double>
+
+    <!-- Button and input heights, smallest to largest emphasis -->
+    <x:Double x:Key="ControlHeightSm">34</x:Double>
+    <x:Double x:Key="ControlHeightMd">40</x:Double>
+    <x:Double x:Key="ControlHeightLg">48</x:Double>
+
+    <!-- Padding inside a card/section surface -->
+    <Thickness x:Key="MireyaCardPadding">20</Thickness>
+
+    <!-- Padding between a scrollable page's content and the surface edge -->
+    <Thickness x:Key="MireyaPagePadding">24</Thickness>
+
+    <!--
+        Readable measure for a single content column. Wide surfaces cap the column at this
+        width and centre it instead of stretching prose and forms across a whole 4K panel.
+    -->
+    <x:Double x:Key="ContentMaxWidth">640</x:Double>
+
+    <!-- Maximum width for an expanded two-column application shell. -->
+    <x:Double x:Key="ShellMaxWidth">1120</x:Double>
+
+    <!-- Width of the persistent section rail shown in the expanded setup layout -->
+    <x:Double x:Key="NavRailWidth">228</x:Double>
+
+    <!-- Glyph size used by the section rail and inline status icons -->
+    <x:Double x:Key="IconSize">18</x:Double>
 
 </ResourceDictionary>

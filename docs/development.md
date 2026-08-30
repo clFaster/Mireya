@@ -195,6 +195,26 @@ The display client is split into a shared Avalonia core and platform heads:
 - `Mireya.Client.Desktop` wires desktop services, WebView2, LibVLC, and desktop credential storage.
 - `Mireya.Client.Android` wires Android services, native Android WebView, Media3/ExoPlayer, and Android TV entry points.
 
+### Adaptive client UI
+
+Shared client views use three size classes based on the available device-independent
+width: compact below 640, medium from 640, and expanded from 1008. Android reports a
+phone, tablet (smallest width at least 600 dp), or television form factor at startup;
+desktop supplies the desktop form factor. Form factor selects the pointer, touch, or
+ten-foot design-token profile, while size class controls layout and responds to window
+resizing or device rotation. Televisions always resolve to the expanded layout.
+
+Keep colors and typography in `Styles/Colors.axaml` and `Styles/Typography.axaml`.
+Add spacing and control-size defaults to `Styles/Spacing.axaml`, then override the same
+semantic keys in `Density.Touch.axaml` or `Density.Television.axaml` when the input model
+requires it. Adaptive shared views derive from `AdaptiveUserControl` and can target its
+`compact`, `medium`, `expanded`, `desktop`, `touch`, and `tv` classes.
+
+Android setup and Screen Info use the device's natural orientation with system bars
+visible. Playback switches touch devices to sensor landscape, fixes televisions to
+landscape, hides system bars, and keeps the display awake. Keep those transitions in
+`IDisplayPresentationController` rather than adding view-specific Android calls.
+
 ### Android TV
 
 The Android project requires the .NET Android workload and an Android SDK. See

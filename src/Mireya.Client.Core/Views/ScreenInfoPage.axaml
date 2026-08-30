@@ -1,169 +1,242 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
-             xmlns:components="using:Mireya.Client.Avalonia.Views.Components"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="650"
-             x:Class="Mireya.Client.Avalonia.Views.ScreenInfoPage"
-             x:DataType="vm:ContentDisplayViewModel"
-             Background="{DynamicResource SurfaceDeepBrush}">
+<platform:AdaptiveUserControl xmlns="https://github.com/avaloniaui"
+                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                              xmlns:vm="using:Mireya.Client.Avalonia.ViewModels"
+                              xmlns:components="using:Mireya.Client.Avalonia.Views.Components"
+                              xmlns:platform="using:Mireya.Client.Avalonia.Platform"
+                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                              mc:Ignorable="d"
+                              d:DesignWidth="1200"
+                              d:DesignHeight="800"
+                              x:Class="Mireya.Client.Avalonia.Views.ScreenInfoPage"
+                              x:DataType="vm:ContentDisplayViewModel"
+                              d:DataContext="{x:Static vm:ContentDisplayViewModel.DesignInstance}"
+                              Background="{DynamicResource SurfaceDeepBrush}">
+
+    <platform:AdaptiveUserControl.Styles>
+        <Style Selector="Border.info-card">
+            <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderAltBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusXl}" />
+            <Setter Property="Padding" Value="{DynamicResource MireyaCardPadding}" />
+        </Style>
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="LetterSpacing" Value="1.7" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentMutedBrush}" />
+        </Style>
+        <Style Selector="TextBlock.info-heading">
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextHeadlineBrush}" />
+        </Style>
+        <Style Selector="TextBlock.info-label">
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFieldLabelBrush}" />
+        </Style>
+        <Style Selector="TextBlock.info-value">
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeSubtitle}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFieldValueBrush}" />
+        </Style>
+        <Style Selector="Button.primary-action">
+            <Setter Property="Height" Value="{DynamicResource ControlHeightLg}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.secondary-action">
+            <Setter Property="Height" Value="{DynamicResource ControlHeightLg}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceButtonSecondaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderButtonSecondaryBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextButtonSecondaryBrush}" />
+            <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="platform|AdaptiveUserControl.touch TextBlock.input-hint">
+            <Setter Property="Text" Value="Tap Back to playback to resume the signage canvas." />
+        </Style>
+        <Style Selector="platform|AdaptiveUserControl.tv TextBlock.input-hint">
+            <Setter Property="Text" Value="Press OK, Back, or Escape to resume playback." />
+        </Style>
+    </platform:AdaptiveUserControl.Styles>
 
     <Grid RowDefinitions="*,Auto">
-    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel MaxWidth="720"
-                    Margin="24,32"
-                    Spacing="24"
-                    HorizontalAlignment="Center">
+        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
+            <Border Padding="{DynamicResource MireyaPagePadding}">
+                <StackPanel MaxWidth="{DynamicResource ShellMaxWidth}"
+                            HorizontalAlignment="Center"
+                            Spacing="{DynamicResource SpacingXl}">
 
-            <StackPanel Spacing="8">
-                <TextBlock Text="SCREEN INFO"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           FontWeight="SemiBold"
-                           LetterSpacing="2"
-                           Foreground="{DynamicResource AccentMutedBrush}" />
-                <TextBlock Text="{Binding ScreenName}"
-                           FontSize="36"
-                           FontWeight="SemiBold"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource TextHeadlineBrush}" />
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <Ellipse Width="12"
-                             Height="12"
-                             VerticalAlignment="Center"
-                             Fill="{Binding ConnectionIndicatorColor}" />
-                    <TextBlock Text="{Binding ConnectionStatus}"
-                               FontSize="{DynamicResource FontSizeSubtitle}"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextAccentSoftBrush}" />
-                </StackPanel>
-            </StackPanel>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{DynamicResource SpacingLg}">
+                        <StackPanel Spacing="{DynamicResource SpacingSm}">
+                            <TextBlock Classes="eyebrow" Text="SCREEN INFO" />
+                            <TextBlock Text="{Binding ScreenName}"
+                                       FontSize="{DynamicResource FontSizeHeadline}"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextHeadlineBrush}" />
+                        </StackPanel>
+                        <Border Grid.Column="1"
+                                Padding="12,8"
+                                CornerRadius="999"
+                                Background="{DynamicResource SurfaceAltBrush}"
+                                BorderBrush="{DynamicResource BorderAltBrush}"
+                                BorderThickness="1"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Ellipse Width="10"
+                                         Height="10"
+                                         VerticalAlignment="Center"
+                                         Fill="{Binding ConnectionIndicatorColor}" />
+                                <TextBlock Text="{Binding ConnectionStatus}"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           FontWeight="Medium"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextAccentSoftBrush}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
-            <Border Background="{DynamicResource SurfaceAltBrush}"
-                    BorderBrush="{DynamicResource BorderAltBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource RadiusXl}"
-                    Padding="24">
-                <StackPanel Spacing="20">
-                    <TextBlock Text="Now playing"
-                               FontSize="20"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextHeadlineBrush}" />
+                    <Grid x:Name="InfoLayout"
+                          Classes="info-layout"
+                          ColumnDefinitions="*"
+                          RowDefinitions="Auto,Auto">
+                        <Border x:Name="NowPlayingCard"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Classes="info-card now-playing">
+                            <StackPanel Spacing="{DynamicResource SpacingLg}">
+                                <StackPanel Spacing="{DynamicResource SpacingXs}">
+                                    <TextBlock Classes="eyebrow" Text="LIVE PLAYBACK" />
+                                    <TextBlock Classes="info-heading" Text="Now playing" />
+                                </StackPanel>
 
-                    <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   Text="Campaign"
-                                   FontSize="14"
-                                   Foreground="{DynamicResource TextFieldLabelBrush}" />
-                        <TextBlock Grid.Row="0" Grid.Column="1"
-                                   Text="{Binding CurrentCampaignName, FallbackValue=—}"
-                                   FontSize="{DynamicResource FontSizeSubtitle}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextFieldValueBrush}" />
+                                <Grid ColumnDefinitions="112,*"
+                                      RowDefinitions="Auto,Auto,Auto"
+                                      RowSpacing="{DynamicResource SpacingLg}">
+                                    <TextBlock Grid.Row="0" Classes="info-label" Text="Campaign" />
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Classes="info-value"
+                                               Text="{Binding CurrentCampaignName, FallbackValue=—}"
+                                               TextWrapping="Wrap" />
 
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Text="Asset"
-                                   FontSize="14"
-                                   Foreground="{DynamicResource TextFieldLabelBrush}" />
-                        <TextBlock Grid.Row="1" Grid.Column="1"
-                                   Text="{Binding CurrentAssetName, FallbackValue=—}"
-                                   FontSize="{DynamicResource FontSizeSubtitle}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextFieldValueBrush}" />
+                                    <TextBlock Grid.Row="1" Classes="info-label" Text="Asset" />
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               Classes="info-value"
+                                               Text="{Binding CurrentAssetName, FallbackValue=—}"
+                                               TextWrapping="Wrap" />
 
-                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                   Text="Position"
-                                   FontSize="14"
-                                   Foreground="{DynamicResource TextFieldLabelBrush}" />
-                        <TextBlock Grid.Row="2" Grid.Column="1"
-                                   FontSize="{DynamicResource FontSizeSubtitle}"
-                                   Foreground="{DynamicResource TextFieldValueBrush}">
-                            <Run Text="{Binding CurrentAssetPosition}" />
-                            <Run Text=" of " />
-                            <Run Text="{Binding TotalAssets}" />
-                        </TextBlock>
+                                    <TextBlock Grid.Row="2" Classes="info-label" Text="Position" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Classes="info-value">
+                                        <Run Text="{Binding CurrentAssetPosition}" />
+                                        <Run Text=" of " />
+                                        <Run Text="{Binding TotalAssets}" />
+                                    </TextBlock>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource BorderAlt2Brush}" />
+                                <TextBlock Text="Playback continues as soon as this page closes."
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource TextHintBrush}" />
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel x:Name="DeviceColumn"
+                                    Grid.Row="1"
+                                    Grid.Column="0"
+                                    Classes="device-column"
+                                    Margin="0,24,0,0"
+                                    Spacing="{DynamicResource SpacingLg}">
+                            <Border Classes="info-card">
+                                <StackPanel Spacing="{DynamicResource SpacingMd}">
+                                    <TextBlock Classes="eyebrow" Text="DEVICE" />
+                                    <TextBlock Classes="info-heading" Text="Status" />
+                                    <TextBlock Text="{Binding StatusText}"
+                                               FontSize="{DynamicResource FontSizeBody}"
+                                               LineHeight="24"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextDescriptionBrush}" />
+                                    <Border Background="{DynamicResource SurfaceDeepBrush}"
+                                            BorderBrush="{DynamicResource BorderAlt2Brush}"
+                                            BorderThickness="1"
+                                            CornerRadius="{DynamicResource RadiusMd}"
+                                            Padding="{DynamicResource MireyaInsetMd}"
+                                            IsVisible="{Binding PairingCode, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="PAIRING CODE"
+                                                       FontSize="{DynamicResource FontSizeCaption}"
+                                                       LetterSpacing="1.2"
+                                                       Foreground="{DynamicResource TextHintBrush}" />
+                                            <TextBlock Text="{Binding PairingCode}"
+                                                       FontSize="{DynamicResource FontSizeTitle}"
+                                                       FontWeight="SemiBold"
+                                                       FontFamily="{DynamicResource MonospaceFontFamily}"
+                                                       LetterSpacing="2"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource AccentMutedBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <components:AboutMireyaPanel AccentBrush="{DynamicResource AccentMutedBrush}"
+                                                          PanelBackground="{DynamicResource SurfaceAltBrush}"
+                                                          PanelBorderBrush="{DynamicResource BorderAltBrush}"
+                                                          BodyBrush="{DynamicResource TextDescriptionBrush}"
+                                                          InsetBackground="{DynamicResource SurfaceDeepBrush}"
+                                                          InsetBorderBrush="{DynamicResource BorderAlt2Brush}"
+                                                          BadgeBackground="{DynamicResource BadgeInfoBackgroundBrush}"
+                                                          ButtonBackground="{DynamicResource SurfaceButtonSecondaryBrush}"
+                                                          ButtonBorderBrush="{DynamicResource BorderButtonSecondaryBrush}"
+                                                          ButtonForeground="{DynamicResource TextButtonSecondaryBrush}" />
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>
-
-            <Border Background="{DynamicResource SurfaceAlt2Brush}"
-                    BorderBrush="{DynamicResource BorderAlt2Brush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource RadiusXl}"
-                    Padding="24">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Device status"
-                               FontSize="20"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextHeadlineBrush}" />
-                    <TextBlock Text="{Binding StatusText}"
-                               FontSize="{DynamicResource FontSizeBody}"
-                               LineHeight="22"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource TextDescriptionBrush}" />
-                    <TextBlock Text="{Binding PairingCode}"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               FontFamily="{DynamicResource MonospaceFontFamily}"
-                               LetterSpacing="2"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource AccentMutedBrush}" />
-                </StackPanel>
-            </Border>
-
-            <components:AboutMireyaPanel AccentBrush="{DynamicResource AccentMutedBrush}"
-                                         PanelBackground="{DynamicResource SurfaceAltBrush}"
-                                         PanelBorderBrush="{DynamicResource BorderAltBrush}"
-                                         BodyBrush="{DynamicResource TextDescriptionBrush}"
-                                         InsetBackground="{DynamicResource SurfaceDeepBrush}"
-                                         InsetBorderBrush="{DynamicResource BorderAlt2Brush}"
-                                         BadgeBackground="{DynamicResource BadgeInfoBackgroundBrush}"
-                                         ButtonBackground="{DynamicResource SurfaceButtonSecondaryBrush}"
-                                         ButtonBorderBrush="{DynamicResource BorderButtonSecondaryBrush}"
-                                         ButtonForeground="{DynamicResource TextButtonSecondaryBrush}" />
-
-        </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
 
         <Border Grid.Row="1"
                 Background="{DynamicResource SurfaceAlt2Brush}"
                 BorderBrush="{DynamicResource BorderAlt2Brush}"
                 BorderThickness="0,1,0,0"
-                Padding="24,16">
-            <StackPanel MaxWidth="720"
-                        Spacing="12"
-                        HorizontalAlignment="Stretch">
-                <Button Command="{Binding CloseScreenInfoCommand}"
-                        Height="56"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Background="{DynamicResource AccentAltBrush}"
-                        Foreground="{DynamicResource TextOnAccentBrush}"
-                        CornerRadius="12"
-                        FontSize="17"
-                        FontWeight="SemiBold"
-                        Content="Back to playback" />
-
-                <Button Command="{Binding ReturnToServerSelectionCommand}"
-                        Height="56"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Background="{DynamicResource SurfaceButtonSecondaryBrush}"
-                        BorderBrush="{DynamicResource BorderButtonSecondaryBrush}"
-                        BorderThickness="1"
-                        Foreground="{DynamicResource TextButtonSecondaryBrush}"
-                        CornerRadius="12"
-                        FontSize="17"
-                        FontWeight="SemiBold"
-                        Content="Back to server selection" />
-
-                <TextBlock Text="Press Enter, OK, Space, Escape, or Back to resume playback"
-                           FontSize="{DynamicResource FontSizeSmall}"
+                Padding="{DynamicResource MireyaPagePadding}">
+            <StackPanel MaxWidth="{DynamicResource ShellMaxWidth}"
+                        HorizontalAlignment="Center"
+                        Spacing="{DynamicResource SpacingSm}">
+                <Grid x:Name="FooterActions"
+                      Classes="footer-actions"
+                      ColumnDefinitions="*"
+                      RowDefinitions="Auto,Auto">
+                    <Button Classes="primary-action"
+                            Command="{Binding CloseScreenInfoCommand}"
+                            Content="Back to playback" />
+                    <Button x:Name="ChooseServerAction"
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Classes="secondary-action choose-server-action"
+                            Margin="0,12,0,0"
+                            Command="{Binding ReturnToServerSelectionCommand}"
+                            Content="Choose another server" />
+                </Grid>
+                <TextBlock Classes="input-hint"
+                           Text="Press Enter, Space, Escape, or Back to resume playback."
+                           FontSize="{DynamicResource FontSizeCaption}"
                            TextAlignment="Center"
                            Foreground="{DynamicResource TextHintBrush}" />
             </StackPanel>
         </Border>
     </Grid>
-</UserControl>
+</platform:AdaptiveUserControl>

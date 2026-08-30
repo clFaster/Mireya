@@ -5,6 +5,7 @@ using Android.Content.PM;
 using Android.OS;
 using Android.Views;
 using Avalonia.Android;
+using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia;
 
@@ -21,7 +22,6 @@ namespace Mireya.Client.Avalonia;
     Exported = true,
     MainLauncher = false,
     LaunchMode = LaunchMode.SingleTop,
-    ScreenOrientation = ScreenOrientation.Landscape,
     ConfigurationChanges = ConfigChanges.Orientation
         | ConfigChanges.ScreenSize
         | ConfigChanges.UiMode
@@ -40,21 +40,13 @@ public class MainActivity : AvaloniaMainActivity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        AndroidServices.PresentationController.Attach(this);
+    }
 
-        // Run as an immersive full-screen kiosk: keep the screen on and hide the system
-        // bars so signage content fills the whole TV screen. The modern WindowInsets API
-        // is only available from API 30 (Android 11).
-        Window?.AddFlags(WindowManagerFlags.KeepScreenOn);
-        if (OperatingSystem.IsAndroidVersionAtLeast(30))
-        {
-            var controller = Window?.InsetsController;
-            if (controller is not null)
-            {
-                controller.Hide(WindowInsets.Type.SystemBars());
-                controller.SystemBarsBehavior = (int)
-                    WindowInsetsControllerBehavior.ShowTransientBarsBySwipe;
-            }
-        }
+    protected override void OnDestroy()
+    {
+        AndroidServices.PresentationController.Detach(this);
+        base.OnDestroy();
     }
 
     public override bool DispatchKeyEvent(KeyEvent? e)
