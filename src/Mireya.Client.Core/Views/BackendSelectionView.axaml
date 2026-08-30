@@ -12,13 +12,14 @@
 
     <ScrollViewer>
         <!--
-            Fixed Width keeps all sections the same size regardless of status-message length.
-            Margin provides breathing room within the 800 px window.
+            MaxWidth caps the column on wide desktop windows while HorizontalAlignment="Stretch"
+            (plus the Margin) lets it fill the available width on phones/tablets instead of
+            floating as a narrow fixed-size dialog.
         -->
-        <StackPanel Width="540"
-                    Margin="0,30"
+        <StackPanel MaxWidth="540"
+                    Margin="20,30"
                     Spacing="{DynamicResource SpacingLg}"
-                    HorizontalAlignment="Center">
+                    HorizontalAlignment="Stretch">
 
             <!-- Header -->
             <StackPanel Spacing="6" Margin="0,10,0,4">
@@ -51,8 +52,8 @@
                     <!-- Server list -->
                     <ListBox ItemsSource="{Binding Backends}"
                              SelectedItem="{Binding SelectedBackend}"
-                             MinHeight="60"
-                             MaxHeight="260"
+                             MinHeight="{DynamicResource MinTouchTarget}"
+                             MaxHeight="280"
                              Background="{DynamicResource SurfaceInsetBrush}"
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              BorderThickness="1"
@@ -62,8 +63,9 @@
 
                         <ListBox.Styles>
                             <Style Selector="ListBoxItem">
-                                <Setter Property="Padding" Value="10,8" />
-                                <Setter Property="Margin" Value="0,2" />
+                                <Setter Property="Padding" Value="10,10" />
+                                <Setter Property="Margin" Value="0,3" />
+                                <Setter Property="MinHeight" Value="{DynamicResource MinTouchTarget}" />
                                 <Setter Property="CornerRadius" Value="5" />
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -123,16 +125,17 @@
                                                    LetterSpacing="0.5" />
                                     </Border>
 
-                                    <!-- Delete button -->
+                                    <!-- Delete button — sized to MinTouchTarget so it's a comfortable
+                                         tap target on phones/tablets and a clear D-pad focus target on TV. -->
                                     <Button Grid.Column="3"
                                             Command="{Binding DeleteCommand}"
                                             Content="✕"
-                                            Width="26"
-                                            Height="26"
+                                            Width="{DynamicResource MinTouchTarget}"
+                                            Height="{DynamicResource MinTouchTarget}"
                                             Padding="0"
                                             HorizontalContentAlignment="Center"
                                             VerticalContentAlignment="Center"
-                                            FontSize="11"
+                                            FontSize="14"
                                             Background="Transparent"
                                             Foreground="{DynamicResource TextMutedBrush}"
                                             CornerRadius="{DynamicResource RadiusSm}"
