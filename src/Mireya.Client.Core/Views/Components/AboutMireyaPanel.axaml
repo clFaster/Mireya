@@ -7,21 +7,21 @@
             BorderBrush="{Binding PanelBorderBrush, ElementName=Root}"
             BorderThickness="1"
             CornerRadius="{DynamicResource RadiusXl}"
-            Padding="24">
-        <StackPanel Spacing="16">
-            <StackPanel Spacing="6">
+            Padding="{DynamicResource MireyaCardPadding}">
+        <StackPanel Spacing="{DynamicResource SpacingLg}">
+            <StackPanel Spacing="{DynamicResource SpacingXs}">
                 <TextBlock Text="ABOUT MIREYA"
-                           FontSize="12"
+                           FontSize="{DynamicResource FontSizeCaption}"
                            FontWeight="SemiBold"
                            LetterSpacing="1.8"
                            Foreground="{Binding AccentBrush, ElementName=Root}" />
                 <TextBlock Text="Open digital signage, under your control"
-                           FontSize="21"
+                           FontSize="{DynamicResource FontSizeTitle}"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource TextHeadlineBrush}" />
                 <TextBlock Text="Mireya turns TVs and displays into centrally managed digital signs. Organize images, videos, and websites, schedule campaigns, and control every screen from a web console."
-                           FontSize="14"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            LineHeight="21"
                            TextWrapping="Wrap"
                            Foreground="{Binding BodyBrush, ElementName=Root}" />
@@ -31,23 +31,23 @@
                     BorderBrush="{Binding InsetBorderBrush, ElementName=Root}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource RadiusLg}"
-                    Padding="14">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                    Padding="{DynamicResource MireyaInsetMd}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{DynamicResource SpacingMd}">
                     <Border Width="28"
                             Height="28"
                             CornerRadius="14"
                             Background="{Binding BadgeBackground, ElementName=Root}"
                             VerticalAlignment="Top">
                         <TextBlock Text="i"
-                                   FontSize="15"
+                                   FontSize="{DynamicResource FontSizeBody}"
                                    FontWeight="Bold"
                                    Foreground="{Binding AccentBrush, ElementName=Root}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
-                    <StackPanel Grid.Column="1" Spacing="4">
+                    <StackPanel Grid.Column="1" Spacing="{DynamicResource SpacingXs}">
                         <TextBlock Text="{Binding CalloutTitle, ElementName=Root}"
-                                   FontSize="14"
+                                   FontSize="{DynamicResource FontSizeSmall}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextFieldValueBrush}" />
                         <TextBlock Text="{Binding CalloutText, ElementName=Root}"
@@ -67,7 +67,7 @@
                     Background="{Binding ButtonBackground, ElementName=Root}"
                     BorderBrush="{Binding ButtonBorderBrush, ElementName=Root}"
                     BorderThickness="1"
-                    CornerRadius="8"
+                    CornerRadius="{DynamicResource RadiusMd}"
                     Foreground="{Binding ButtonForeground, ElementName=Root}"
                     FontSize="{DynamicResource FontSizeSmall}"
                     FontWeight="SemiBold"

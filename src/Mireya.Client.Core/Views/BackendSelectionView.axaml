@@ -36,6 +36,7 @@
         <Style Selector="TextBlock.section-title">
             <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Foreground" Value="{DynamicResource TextHeadlineBrush}" />
         </Style>
         <Style Selector="Button.primary-action">
@@ -60,18 +61,10 @@
             <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}" />
         </Style>
 
-        <Style Selector="platform|AdaptiveUserControl.tv TextBlock.desktop-hint">
-            <Setter Property="Text" Value="Use the D-pad to move. Press OK to select." />
-        </Style>
-
-        <Style Selector="platform|AdaptiveUserControl.compact TextBlock.hero-title">
-            <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
-        </Style>
-
-        <Style Selector="platform|AdaptiveUserControl.compact Border.hero-mark">
-            <Setter Property="Width" Value="52" />
-            <Setter Property="Height" Value="52" />
-        </Style>
+        <!-- The desktop-hint/hero-title/hero-mark defaults, and their .tv/.compact overrides,
+             live in the shared Styles/AdaptiveOverrides.axaml (Application-level) so the
+             conditional selectors can actually match this control as their ancestor. See that
+             file for why. -->
     </platform:AdaptiveUserControl.Styles>
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled">
@@ -94,8 +87,6 @@
                               ColumnSpacing="{DynamicResource SpacingLg}">
                             <Border x:Name="HeroMark"
                                     Classes="hero-mark"
-                                    Width="64"
-                                    Height="64"
                                     CornerRadius="{DynamicResource RadiusLg}"
                                     Background="{DynamicResource AccentBrush}"
                                     VerticalAlignment="Top">
@@ -112,7 +103,6 @@
                                 <TextBlock Classes="eyebrow" Text="MIREYA DISPLAY" />
                                 <TextBlock Classes="hero-title"
                                            Text="Choose where this screen belongs"
-                                           FontSize="{DynamicResource FontSizeHeadline}"
                                            FontWeight="SemiBold"
                                            TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextHeadlineBrush}" />
@@ -212,7 +202,6 @@
                             </ListBox>
 
                             <TextBlock Classes="desktop-hint"
-                                       Text="Select a server above, then connect."
                                        FontSize="{DynamicResource FontSizeCaption}"
                                        Foreground="{DynamicResource TextHintBrush}" />
                             <Button Classes="primary-action"

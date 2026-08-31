@@ -1,0 +1,58 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:Mireya.Client.Avalonia.Views">
+
+    <!--
+        Adaptive (form-factor/breakpoint) style overrides for properties that need the
+        AdaptiveUserControl's OWN class (.compact/.touch/.tv) as the required ancestor for a
+        descendant selector.
+
+        These MUST live at Application level, and the unconditioned "base" rule for each
+        property must live here too, rather than in each view's own
+        `<AdaptiveUserControl.Styles>` collection, for two reasons:
+          1. Avalonia's style engine scopes a control's local Styles to its descendants only,
+             so a selector such as "views|ScreenInfoPage.tv TextBlock.input-hint" declared
+             inside ScreenInfoPage's own Styles can never match ScreenInfoPage itself as the
+             ancestor and is silently dead.
+          2. Avalonia gives a control's own local Styles priority over Application-level
+             Styles for the same property, regardless of selector specificity. So if the base
+             rule stayed local, it would keep winning over this file's conditional overrides
+             even after fixing (1).
+        Keeping base + overrides together here, in one scope, lets normal "later selector
+        wins" precedence apply as expected.
+    -->
+
+    <Style Selector="TextBlock.input-hint">
+        <Setter Property="Text" Value="Press Enter, Space, Escape, or Back to resume playback." />
+    </Style>
+    <Style Selector="views|ScreenInfoPage.touch TextBlock.input-hint">
+        <Setter Property="Text" Value="Tap Back to playback to resume the signage canvas." />
+    </Style>
+    <Style Selector="views|ScreenInfoPage.tv TextBlock.input-hint">
+        <Setter Property="Text" Value="Use Up/Down to scroll. Press OK, Back, or Escape to resume playback." />
+    </Style>
+
+    <Style Selector="TextBlock.desktop-hint">
+        <Setter Property="Text" Value="Select a server above, then connect." />
+    </Style>
+    <Style Selector="views|BackendSelectionView.tv TextBlock.desktop-hint">
+        <Setter Property="Text" Value="Use the D-pad to move. Press OK to select." />
+    </Style>
+
+    <Style Selector="TextBlock.hero-title">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeHeadline}" />
+    </Style>
+    <Style Selector="views|BackendSelectionView.compact TextBlock.hero-title">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
+    </Style>
+
+    <Style Selector="Border.hero-mark">
+        <Setter Property="Width" Value="64" />
+        <Setter Property="Height" Value="64" />
+    </Style>
+    <Style Selector="views|BackendSelectionView.compact Border.hero-mark">
+        <Setter Property="Width" Value="52" />
+        <Setter Property="Height" Value="52" />
+    </Style>
+
+</Styles>

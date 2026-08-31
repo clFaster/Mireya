@@ -14,16 +14,18 @@
             Opacity="0.92"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="{DynamicResource SpacingLg}">
             <TextBlock Text="IDENTIFY"
-                       FontSize="64"
+                       FontSize="{DynamicResource FontSizeDisplay}"
                        FontWeight="Bold"
                        Foreground="{DynamicResource TextOnAccentBrush}"
                        LetterSpacing="8"
                        HorizontalAlignment="Center" />
             <TextBlock Text="{Binding ScreenName}"
-                       FontSize="30"
+                       FontSize="{DynamicResource FontSizeHeadline}"
                        Foreground="{DynamicResource TextOnAccentBrush}"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
                        HorizontalAlignment="Center" />
             <TextBlock Text="{Binding PairingCode}"
                        FontSize="{DynamicResource FontSizeHeadline}"

@@ -210,6 +210,16 @@ semantic keys in `Density.Touch.axaml` or `Density.Television.axaml` when the in
 requires it. Adaptive shared views derive from `AdaptiveUserControl` and can target its
 `compact`, `medium`, `expanded`, `desktop`, `touch`, and `tv` classes.
 
+A view's own `<AdaptiveUserControl.Styles>` collection cannot style the view itself: Avalonia
+scopes a control's local styles to its descendants, so a selector such as
+`views|ScreenInfoPage.tv TextBlock.input-hint` declared inside `ScreenInfoPage.axaml` can
+never match `ScreenInfoPage` as its own ancestor and is silently dead code. It also cannot be
+fixed by adding a plain (unconditioned) rule for the same property locally, because a
+control's local styles take priority over Application-level styles regardless of selector
+specificity. When a style needs the view's own `compact`/`touch`/`tv` class as an ancestor,
+put both the base rule and the conditional overrides together in
+`Styles/AdaptiveOverrides.axaml` (merged into `Application.Styles` in `App.axaml`) instead.
+
 Android setup and Screen Info use the device's natural orientation with system bars
 visible. Playback switches touch devices to sensor landscape, fixes televisions to
 landscape, hides system bars, and keeps the display awake. Keep those transitions in

@@ -27,6 +27,7 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Mireya.Client.Core/Styles/FocusStyles.axaml" />
+        <StyleInclude Source="avares://Mireya.Client.Core/Styles/AdaptiveOverrides.axaml" />
 
         <Style Selector="Window">
             <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}" />

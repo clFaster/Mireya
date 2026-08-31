@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Mireya.Client.Avalonia.Platform;
 
 namespace Mireya.Client.Avalonia.Views;
@@ -8,6 +10,32 @@ public partial class ScreenInfoPage : AdaptiveUserControl
     public ScreenInfoPage()
     {
         InitializeComponent();
+        AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        // The info cards can overflow the viewport (most notably on TV, where the
+        // available height is small) and contain only non-focusable text, so a
+        // D-pad remote has nothing to focus that would trigger Avalonia's
+        // automatic bring-into-view scrolling. Handle Up/Down directly so the
+        // rest of the screen info always stays reachable.
+        if (InfoScrollViewer is null)
+            return;
+
+        switch (e.Key)
+        {
+            case Key.Down:
+            case Key.PageDown:
+                InfoScrollViewer.PageDown();
+                e.Handled = true;
+                break;
+            case Key.Up:
+            case Key.PageUp:
+                InfoScrollViewer.PageUp();
+                e.Handled = true;
+                break;
+        }
     }
 
     protected override void OnSizeClassChanged(SizeClass sizeClass)

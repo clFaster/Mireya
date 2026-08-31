@@ -30,6 +30,7 @@
         <Style Selector="TextBlock.info-heading">
             <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Foreground" Value="{DynamicResource TextHeadlineBrush}" />
         </Style>
         <Style Selector="TextBlock.info-label">
@@ -63,16 +64,13 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
 
-        <Style Selector="platform|AdaptiveUserControl.touch TextBlock.input-hint">
-            <Setter Property="Text" Value="Tap Back to playback to resume the signage canvas." />
-        </Style>
-        <Style Selector="platform|AdaptiveUserControl.tv TextBlock.input-hint">
-            <Setter Property="Text" Value="Press OK, Back, or Escape to resume playback." />
-        </Style>
+        <!-- The default input-hint text, and its .touch/.tv overrides, live in the shared
+             Styles/AdaptiveOverrides.axaml (Application-level) so the conditional selectors
+             can actually match this control as their ancestor. See that file for why. -->
     </platform:AdaptiveUserControl.Styles>
 
     <Grid RowDefinitions="*,Auto">
-        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="InfoScrollViewer" Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
             <Border Padding="{DynamicResource MireyaPagePadding}">
                 <StackPanel MaxWidth="{DynamicResource ShellMaxWidth}"
                             HorizontalAlignment="Center"
@@ -232,7 +230,6 @@
                             Content="Choose another server" />
                 </Grid>
                 <TextBlock Classes="input-hint"
-                           Text="Press Enter, Space, Escape, or Back to resume playback."
                            FontSize="{DynamicResource FontSizeCaption}"
                            TextAlignment="Center"
                            Foreground="{DynamicResource TextHintBrush}" />
